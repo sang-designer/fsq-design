@@ -1,5 +1,6 @@
 .DS_Store
 *.zip
+projects.zip
 node_modules/
 .next/
 .env*
