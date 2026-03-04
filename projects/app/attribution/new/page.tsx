@@ -12,39 +12,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type Step = "campaign" | "partner" | "pixel" | "placement" | "map-partners";
+type Step = "campaign" | "partner" | "funding" | "pixel" | "placement" | "map-partners";
 
 const SIDEBAR_STEPS = [
   { key: "campaign" as Step, label: "Campaign Details" },
   { key: "partner" as Step, label: "Partner Details" },
+  { key: "funding" as Step, label: "Funding Allocation" },
   { key: "pixel" as Step, label: "Pixel Generation" },
   { key: "placement" as Step, label: "Placement Details" },
   { key: "review" as Step, label: "Review and Submit" },
 ];
 
 const INITIAL_PARTNERS = [
-  { name: "Viant", fundingSource: "Starcom" as string | null, mediaType: "Display", conversionType: "Visits and Sales Impact" as string | null, startDate: "4/31/2025" as string | null, endDate: "01/01/2024" as string | null, missingFields: 0 },
-  { name: "Adtheorent", fundingSource: null as string | null, mediaType: "Mobile", conversionType: null as string | null, startDate: null as string | null, endDate: null as string | null, missingFields: 9 },
-  { name: "Nexxen", fundingSource: "Starcom" as string | null, mediaType: "Video", conversionType: "Sales Impact" as string | null, startDate: "4/31/2025" as string | null, endDate: "01/01/2024" as string | null, missingFields: 0 },
+  { name: "Viant", fundingSource: "Starcom" as string | null, mediaType: "Display", conversionType: "Visits and Sales Impact" as string | null, startDate: "4/31/2025" as string | null, endDate: "01/01/2024" as string | null, missingFields: 0, estimatedSpend: "$125,000" },
+  { name: "Adtheorent", fundingSource: "Zenith" as string | null, mediaType: "Mobile", conversionType: "Visits and Sales Impact" as string | null, startDate: "4/31/2025" as string | null, endDate: null as string | null, missingFields: 2, estimatedSpend: "$85,000" },
+  { name: "Nexxen", fundingSource: "Starcom" as string | null, mediaType: "Video", conversionType: "Sales Impact" as string | null, startDate: "4/31/2025" as string | null, endDate: "01/01/2024" as string | null, missingFields: 0, estimatedSpend: "$210,000" },
 ];
 
 const ERROR_FIELDS = [
   "Ad Server",
-  "Ad Run Start Date",
-  "Ad Run End Date",
-  "Agency or Site Served",
   "Estimated Total Ad Spend",
-  "Conversion Funding Report Type",
-  "Funding Name for Visits",
-  "Funding Email for Visit",
-  "Sales/Account Manager Name",
 ];
 
 const PIXELS = [
-  { partner: "Ikea", adServer: "CM360", pixelId: "{pixel_id}", pixelType: "type_value", pixelImg: '<img src="https://p.placed.com/api/v2/sync...' },
-  { partner: "Spotify", adServer: "CM360", pixelId: "{pixel_id}", pixelType: "type_value", pixelImg: '<img src="https://p.placed.com/api/v2/sync...' },
-  { partner: "Viant", adServer: "DV360", pixelId: "{pixel_id}", pixelType: "type_value", pixelImg: '<img src="https://p.placed.cor...' },
-  { partner: "Kinfolk", adServer: "DV360", pixelId: "{pixel_id}", pixelType: "type_value", pixelImg: '<img src="https://p.placed.cor...' },
+  { partner: "Ikea", adServer: "CM360", pixelId: "PXL-4829A1", pixelType: "Impression", pixelImg: '<img src="https://p.placed.com/api/v2/sync/4829A1?campaign=ikea_q2" height="1" width="1" />', tracking: "" as string },
+  { partner: "Spotify", adServer: "CM360", pixelId: "PXL-7713B4", pixelType: "Click", pixelImg: '<img src="https://p.placed.com/api/v2/sync/7713B4?campaign=spotify_audio" height="1" width="1" />', tracking: "" as string },
+  { partner: "Viant", adServer: "DV360", pixelId: "PXL-3356C8", pixelType: "Impression", pixelImg: '<img src="https://p.placed.com/api/v2/sync/3356C8?campaign=viant_display" height="1" width="1" />', tracking: "" as string },
+  { partner: "Kinfolk", adServer: "DV360", pixelId: "PXL-9041D2", pixelType: "Conversion", pixelImg: '<img src="https://p.placed.com/api/v2/sync/9041D2?campaign=kinfolk_video" height="1" width="1" />', tracking: "" as string },
 ];
 
 function Header() {
@@ -384,16 +378,11 @@ const FUNDING_NAME_OPTIONS = ["Starcom_Visits_2025", "Zenith_SI_2025", "OMD_Cust
 const SALES_MANAGER_OPTIONS = ["Sarah Johnson", "Michael Chen", "Emily Rodriguez", "David Kim", "Amanda Wilson"];
 const AD_OPS_OPTIONS = ["James Lee", "Lisa Wang", "Robert Brown", "Jennifer Taylor", "Kevin Martinez"];
 
-function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [] }: { mode: "add" | "edit"; onDiscard: () => void; onSave: (formData: Record<string, string>) => void; errorFields?: string[] }) {
+function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValues = {} }: { mode: "add" | "edit"; onDiscard: () => void; onSave: (formData: Record<string, string>) => void; errorFields?: string[]; initialValues?: Record<string, string> }) {
   const [mediaTypeOpen, setMediaTypeOpen] = useState(true);
   const [mediaTypes, setMediaTypes] = useState([{ id: 1 }]);
 
-  const defaultValues: Record<string, string> = mode === "edit" ? {
-    "Partner/Platform Name": "Adtheorent",
-    "Media Type": "Mobile",
-  } : {};
-
-  const [formValues, setFormValues] = useState<Record<string, string>>(defaultValues);
+  const [formValues, setFormValues] = useState<Record<string, string>>(initialValues);
   const [clearedErrors, setClearedErrors] = useState<Set<string>>(new Set());
 
   const hasError = (field: string) => errorFields.includes(field) && !clearedErrors.has(field) && !formValues[field];
@@ -542,11 +531,21 @@ function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPar
   const [editMode, setEditMode] = useState<"add" | "edit">("add");
   const [editErrorFields, setEditErrorFields] = useState<string[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editInitialValues, setEditInitialValues] = useState<Record<string, string>>({});
 
   const totalMissing = partners.reduce((sum, p) => sum + p.missingFields, 0);
 
   const handleEdit = (partner: typeof partners[0], index: number) => {
     setEditingIndex(index);
+    setEditInitialValues({
+      "Partner/Platform Name": partner.name,
+      "Media Type": partner.mediaType,
+      "Estimated Total Ad Spend": partner.estimatedSpend,
+      ...(partner.fundingSource ? { "Agency or Site Served": partner.fundingSource } : {}),
+      ...(partner.conversionType ? { "Conversion Funding Report Type": partner.conversionType } : {}),
+      ...(partner.startDate ? { "Ad Run Start Date": partner.startDate } : {}),
+      ...(partner.endDate ? { "Ad Run End Date": partner.endDate } : {}),
+    });
     if (partner.missingFields > 0) {
       setEditMode("edit");
       setEditErrorFields(ERROR_FIELDS);
@@ -561,6 +560,7 @@ function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPar
     setEditingIndex(null);
     setEditMode("add");
     setEditErrorFields([]);
+    setEditInitialValues({});
     onEditingPartnerChange(true);
   };
 
@@ -615,6 +615,7 @@ function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPar
         <AddPartnerForm
           mode={editMode}
           errorFields={editErrorFields}
+          initialValues={editInitialValues}
           onDiscard={() => onEditingPartnerChange(false)}
           onSave={handleSave}
         />
@@ -759,11 +760,160 @@ function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPar
   );
 }
 
+const FUNDING_PARTNERS = [
+  { name: "Viant", mediaType: "Display", estimatedSpend: 125000 },
+  { name: "Adtheorent", mediaType: "Mobile", estimatedSpend: 85000 },
+  { name: "Nexxen", mediaType: "Video", estimatedSpend: 210000 },
+];
+
+function FundingAllocationContent() {
+  const [allocations, setAllocations] = useState(
+    FUNDING_PARTNERS.map((p) => ({
+      ...p,
+      partnerFunded: "",
+      agencyFunded: "",
+    }))
+  );
+
+  const formatCurrency = (value: string) => {
+    const num = value.replace(/[^0-9.]/g, "");
+    if (!num) return "";
+    const parts = num.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
+  };
+
+  const parseCurrency = (value: string) => parseFloat(value.replace(/,/g, "")) || 0;
+
+  const updateAllocation = (index: number, field: "partnerFunded" | "agencyFunded", value: string) => {
+    setAllocations((prev) =>
+      prev.map((a, i) => (i === index ? { ...a, [field]: formatCurrency(value) } : a))
+    );
+  };
+
+  const totalEstimated = allocations.reduce((sum, a) => sum + a.estimatedSpend, 0);
+  const totalPartner = allocations.reduce((sum, a) => sum + parseCurrency(a.partnerFunded), 0);
+  const totalAgency = allocations.reduce((sum, a) => sum + parseCurrency(a.agencyFunded), 0);
+  const totalAllocated = totalPartner + totalAgency;
+  const totalRemaining = totalEstimated - totalAllocated;
+
+  return (
+    <>
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-[#020617]">Funding Allocation</h2>
+        <p className="mt-1 text-sm leading-5 text-[#646464]">
+          Specify how much each media partner and agency is funding for this campaign.
+        </p>
+      </div>
+
+      <div className="mb-4 h-px w-full bg-[#e2e8f0]" />
+
+      {/* Summary Cards */}
+      <div className="mb-6 grid grid-cols-3 gap-4">
+        <div className="rounded-lg border border-border bg-white px-4 py-3">
+          <p className="text-xs font-medium text-[#6b7280]">Total Estimated Spend</p>
+          <p className="mt-0.5 text-lg font-semibold text-[#1f2430]">${totalEstimated.toLocaleString()}</p>
+        </div>
+        <div className="rounded-lg border border-border bg-white px-4 py-3">
+          <p className="text-xs font-medium text-[#6b7280]">Total Allocated</p>
+          <p className="mt-0.5 text-lg font-semibold text-[#1f2430]">${totalAllocated.toLocaleString()}</p>
+        </div>
+        <div className="rounded-lg border border-border bg-white px-4 py-3">
+          <p className="text-xs font-medium text-[#6b7280]">Remaining</p>
+          <p className="mt-0.5 text-lg font-semibold text-[#1f2430]">
+            ${Math.abs(totalRemaining).toLocaleString()}
+            {totalRemaining < 0 && <span className="ml-1 text-sm font-medium">over</span>}
+          </p>
+        </div>
+      </div>
+
+      {/* Allocation Table */}
+      <div className="overflow-hidden rounded-xl border border-border">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border bg-[#f8fafc]">
+              <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Partner</th>
+              <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Media Type</th>
+              <th className="px-5 py-3.5 text-right text-sm font-medium text-[#64748b]">Estimated Spend</th>
+              <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Partner Funded</th>
+              <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Agency Funded</th>
+              <th className="px-5 py-3.5 text-right text-sm font-medium text-[#64748b]">Allocated</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allocations.map((alloc, i) => {
+              const allocated = parseCurrency(alloc.partnerFunded) + parseCurrency(alloc.agencyFunded);
+              const remaining = alloc.estimatedSpend - allocated;
+              return (
+                <tr key={alloc.name} className="border-b border-border last:border-b-0">
+                  <td className="px-5 py-4">
+                    <p className="text-sm font-medium text-[#1f2430]">{alloc.name}</p>
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className="rounded-full bg-[#f1f5f9] px-2.5 py-1 text-xs font-medium text-[#475569]">{alloc.mediaType}</span>
+                  </td>
+                  <td className="px-5 py-4 text-right text-sm font-medium text-[#1f2430]">
+                    ${alloc.estimatedSpend.toLocaleString()}
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#64748b]">$</span>
+                      <input
+                        type="text"
+                        value={alloc.partnerFunded}
+                        onChange={(e) => updateAllocation(i, "partnerFunded", e.target.value)}
+                        placeholder="0"
+                        className="w-[140px] rounded-lg border border-border bg-white py-2 pl-7 pr-3 text-sm text-[#1f2430] outline-none placeholder:text-[#cbd5e1] focus:border-[#2d46f6] focus:ring-1 focus:ring-[#2d46f6]/20"
+                      />
+                    </div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#64748b]">$</span>
+                      <input
+                        type="text"
+                        value={alloc.agencyFunded}
+                        onChange={(e) => updateAllocation(i, "agencyFunded", e.target.value)}
+                        placeholder="0"
+                        className="w-[140px] rounded-lg border border-border bg-white py-2 pl-7 pr-3 text-sm text-[#1f2430] outline-none placeholder:text-[#cbd5e1] focus:border-[#2d46f6] focus:ring-1 focus:ring-[#2d46f6]/20"
+                      />
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <p className="text-sm font-medium text-[#1f2430]">
+                      ${allocated.toLocaleString()}
+                    </p>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-border bg-[#f8fafc]">
+              <td className="px-5 py-3.5 text-sm font-semibold text-[#1f2430]" colSpan={2}>Total</td>
+              <td className="px-5 py-3.5 text-right text-sm font-semibold text-[#1f2430]">${totalEstimated.toLocaleString()}</td>
+              <td className="px-5 py-3.5 text-sm font-semibold text-[#2d46f6]">${totalPartner.toLocaleString()}</td>
+              <td className="px-5 py-3.5 text-sm font-semibold text-[#2d46f6]">${totalAgency.toLocaleString()}</td>
+              <td className="px-5 py-3.5 text-right text-sm font-semibold text-[#1f2430]">${totalAllocated.toLocaleString()}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </>
+  );
+}
+
 type PixelState = "empty" | "empty-uploaded" | "populated";
 
 function PixelGenerationContent({ pixelState }: { pixelState: PixelState }) {
   const [openActionRow, setOpenActionRow] = useState<number | null>(null);
   const [showUploadBanner, setShowUploadBanner] = useState(pixelState === "empty-uploaded");
+  const [pixels, setPixels] = useState(PIXELS.map((p) => ({ ...p })));
+  const [viewPixelRow, setViewPixelRow] = useState<number | null>(null);
+
+  const updateTracking = (index: number, value: string) => {
+    setPixels((prev) => prev.map((p, i) => (i === index ? { ...p, tracking: value } : p)));
+  };
 
   return (
     <>
@@ -815,9 +965,9 @@ function PixelGenerationContent({ pixelState }: { pixelState: PixelState }) {
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm text-[#171417]">
               <span className="text-[#757575]">Showing </span>
-              <span className="font-medium">{PIXELS.length}</span>
+              <span className="font-medium">{pixels.length}</span>
               <span className="text-[#757575]"> of </span>
-              <span className="font-medium">{PIXELS.length}</span>
+              <span className="font-medium">{pixels.length}</span>
               <span className="text-[#757575]"> results</span>
             </p>
             <div className="flex items-center gap-2">
@@ -831,9 +981,12 @@ function PixelGenerationContent({ pixelState }: { pixelState: PixelState }) {
               <button className="rounded-md border border-[#e2e8f0] bg-white p-2 hover:bg-gray-50">
                 <Mail className="size-4 text-[#64748b]" />
               </button>
-              <button className="flex items-center gap-1.5 rounded-md border border-[#212be9] bg-[#fcfcfc] px-2 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">
+              <button className="group relative rounded-md border border-[#212be9] bg-[#fcfcfc] p-2 text-[#212be9] transition-colors hover:bg-[#ebf1ff]">
                 <Download className="size-4" />
-                <span className="px-1">Download All</span>
+                <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#0f172a] px-2.5 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                  Download All
+                  <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#0f172a]" />
+                </span>
               </button>
             </div>
           </div>
@@ -845,23 +998,59 @@ function PixelGenerationContent({ pixelState }: { pixelState: PixelState }) {
                   <th className="w-10 px-4 py-3" />
                   <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Tracking</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel ID</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">{"Pixel <img>"}</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel</th>
                   <th className="w-[80px] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {PIXELS.map((pixel, i) => (
+                {pixels.map((pixel, i) => (
                   <tr key={i} className="border-b border-[#e2e8f0]">
                     <td className="w-10 px-4 py-4">
                       <div className="size-4 rounded border border-[#0f172a]" />
                     </td>
                     <td className="px-4 py-4 text-sm font-medium text-black">{pixel.partner}</td>
                     <td className="px-4 py-4 text-sm text-black">{pixel.adServer}</td>
+                    <td className="px-4 py-4">
+                      <Select value={pixel.tracking || undefined} onValueChange={(val) => updateTracking(i, val)}>
+                        <SelectTrigger className={`w-[120px] ${pixel.tracking ? "" : "border-[#f59e0b]"}`} size="sm">
+                          <SelectValue placeholder="Select..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Partner">Partner</SelectItem>
+                          <SelectItem value="Agency">Agency</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </td>
                     <td className="px-4 py-4 text-sm text-black">{pixel.pixelId}</td>
                     <td className="px-4 py-4 text-sm text-black">{pixel.pixelType}</td>
-                    <td className="max-w-[260px] truncate px-4 py-4 text-sm text-black">{pixel.pixelImg}</td>
+                    <td className="relative px-4 py-4">
+                      <button
+                        onClick={() => setViewPixelRow(viewPixelRow === i ? null : i)}
+                        className="rounded px-2 py-1 text-xs font-medium text-[#212be9] transition-colors hover:bg-[#f0f1ff]"
+                      >
+                        View
+                      </button>
+                      {viewPixelRow === i && (
+                        <div className="absolute bottom-full left-1/2 z-20 mb-2 w-[360px] -translate-x-1/2 rounded-lg border border-[#e2e8f0] bg-white p-3 shadow-lg">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-xs font-medium text-[#64748b]">Pixel Tag</span>
+                            <button
+                              onClick={() => { navigator.clipboard.writeText(pixel.pixelImg); }}
+                              className="rounded px-1.5 py-0.5 text-xs font-medium text-[#212be9] hover:bg-[#f0f1ff]"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                          <code className="block break-all rounded-md bg-[#f8fafc] p-2.5 text-xs leading-relaxed text-[#334155]">
+                            {pixel.pixelImg}
+                          </code>
+                          <div className="absolute left-1/2 top-full -mt-px -translate-x-1/2 border-[6px] border-transparent border-t-white drop-shadow-sm" />
+                        </div>
+                      )}
+                    </td>
                     <td className="relative w-[80px] px-4 py-4 text-center">
                       <button
                         onClick={() => setOpenActionRow(openActionRow === i ? null : i)}
@@ -884,7 +1073,7 @@ function PixelGenerationContent({ pixelState }: { pixelState: PixelState }) {
             </table>
           </div>
 
-          {PIXELS.length > 10 && (
+          {pixels.length > 10 && (
           <div className="mt-6 flex items-center justify-end gap-1">
             <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-[#64748b] hover:bg-gray-50">
               <ChevronLeft className="size-4" />
@@ -1569,9 +1758,10 @@ function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy }: { onBac
 function Sidebar({ currentStep, hasUploadedFile, onUpload, isUploading, onStepClick }: { currentStep: Step; hasUploadedFile: boolean; onUpload: () => void; isUploading: boolean; onStepClick: (step: Step) => void }) {
   const completedSteps: Step[] =
     currentStep === "partner" ? ["campaign"] :
-    currentStep === "pixel" ? ["campaign", "partner"] :
-    currentStep === "placement" ? ["campaign", "partner", "pixel"] :
-    currentStep === "map-partners" ? ["campaign", "partner", "pixel"] : [];
+    currentStep === "funding" ? ["campaign", "partner"] :
+    currentStep === "pixel" ? ["campaign", "partner", "funding"] :
+    currentStep === "placement" ? ["campaign", "partner", "funding", "pixel"] :
+    currentStep === "map-partners" ? ["campaign", "partner", "funding", "pixel"] : [];
 
 
   const sidebarCurrentStep: Step = currentStep === "map-partners" ? "placement" : currentStep;
@@ -1660,10 +1850,11 @@ export default function NewCampaignPage() {
 
   const progressPercent =
     currentStep === "campaign" ? 0 :
-    currentStep === "partner" ? 20 :
-    currentStep === "pixel" ? 40 :
-    currentStep === "placement" ? 60 :
-    currentStep === "map-partners" ? 60 : 60;
+    currentStep === "partner" ? 16 :
+    currentStep === "funding" ? 32 :
+    currentStep === "pixel" ? 48 :
+    currentStep === "placement" ? 64 :
+    currentStep === "map-partners" ? 64 : 64;
 
   const displayName = campaignName.trim() || "Draft";
 
@@ -1720,6 +1911,7 @@ export default function NewCampaignPage() {
             <CampaignDetailsContent showForm={showForm} onShowForm={() => setShowForm(true)} campaignName={campaignName} onCampaignNameChange={setCampaignName} onUpload={handleUpload} hasUploadedFile={hasUploadedFile} isUploading={isUploading} />
           )}
           {currentStep === "partner" && <PartnerDetailsContent hasUploadedFile={hasUploadedFile} isEditingPartner={isEditingPartner} onEditingPartnerChange={setIsEditingPartner} />}
+          {currentStep === "funding" && <FundingAllocationContent />}
           {currentStep === "pixel" && <PixelGenerationContent pixelState={pixelState} />}
           {currentStep === "placement" && (
             <PlacementDetailsContent
@@ -1761,6 +1953,23 @@ export default function NewCampaignPage() {
                 Back to Campaign Details
               </button>
               <button
+                onClick={() => goToStep("funding")}
+                className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]"
+              >
+                Continue to Funding Allocation
+              </button>
+            </div>
+          )}
+
+          {currentStep === "funding" && (
+            <div className="mt-8 flex items-center justify-between py-4">
+              <button
+                onClick={() => goToStep("partner")}
+                className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
+              >
+                Back to Partner Details
+              </button>
+              <button
                 onClick={() => goToStep("pixel")}
                 className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]"
               >
@@ -1772,10 +1981,10 @@ export default function NewCampaignPage() {
           {currentStep === "pixel" && (
             <div className="mt-8 flex items-center justify-between py-4">
               <button
-                onClick={() => goToStep("partner")}
+                onClick={() => goToStep("funding")}
                 className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
               >
-                Back to Partner Details
+                Back to Funding Allocation
               </button>
               <button
                 onClick={() => goToStep("placement")}

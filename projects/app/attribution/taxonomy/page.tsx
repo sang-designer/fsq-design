@@ -475,8 +475,65 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
   const [sortField, setSortField] = useState<keyof PlacementRow | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
-  const [bulkResolving, setBulkResolving] = useState(false);
   const [bulkForm, setBulkForm] = useState<Partial<PlacementRow>>({});
+  const [panelOpen, setPanelOpen] = useState(false);
+
+  const isBulkMode = selectedRows.size > 0 && editingRow === null;
+  const isEditMode = editingRow !== null && editForm !== null;
+  const bulkFieldCount = Object.values(bulkForm).filter(Boolean).length;
+
+  const openEditPanel = (sortedIndex: number) => {
+    const originalIndex = rows.indexOf(sortedRows[sortedIndex]);
+    setEditingRow(originalIndex);
+    setEditForm({ ...rows[originalIndex] });
+    setSelectedRows(new Set());
+    setBulkForm({});
+    setPanelOpen(true);
+  };
+
+  const saveEdit = () => {
+    if (editingRow === null || !editForm) return;
+    setRows((prev) =>
+      prev.map((r, i) => {
+        if (i !== editingRow) return r;
+        const updated = { ...editForm };
+        if (updated.subPlacement && updated.channel && updated.status === "error") updated.status = "resolved";
+        if (updated.status === "parsed") updated.status = "resolved";
+        return updated;
+      })
+    );
+    closePanel();
+  };
+
+  const applyBulkChanges = () => {
+    if (bulkFieldCount === 0) return;
+    setRows((prev) =>
+      prev.map((r, i) => {
+        if (!selectedRows.has(i)) return r;
+        const updated = { ...r };
+        if (bulkForm.partner) updated.partner = bulkForm.partner;
+        if (bulkForm.channel) updated.channel = bulkForm.channel;
+        if (bulkForm.publisher) updated.publisher = bulkForm.publisher;
+        if (bulkForm.audience) updated.audience = bulkForm.audience;
+        if (bulkForm.adSize) updated.adSize = bulkForm.adSize;
+        if (bulkForm.creative) updated.creative = bulkForm.creative;
+        if (bulkForm.language) updated.language = bulkForm.language;
+        if (bulkForm.geography) updated.geography = bulkForm.geography;
+        if (updated.subPlacement && updated.channel && updated.status === "error") updated.status = "resolved";
+        if (updated.status === "parsed") updated.status = "resolved";
+        return updated;
+      })
+    );
+    closePanel();
+  };
+
+  const closePanel = () => {
+    setPanelOpen(false);
+    setEditingRow(null);
+    setEditForm(null);
+    setSelectedRows(new Set());
+    setBulkForm({});
+  };
 
   const toggleSort = (field: keyof PlacementRow) => {
     if (sortField === field) {
@@ -498,63 +555,25 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
   const someRowsSelected = selectedRows.size > 0 && selectedRows.size < rows.length;
 
   const toggleSelectAll = () => {
-    if (allRowsSelected) setSelectedRows(new Set());
-    else setSelectedRows(new Set(rows.map((_, i) => i)));
+    if (allRowsSelected) {
+      setSelectedRows(new Set());
+      setPanelOpen(false);
+    } else {
+      setSelectedRows(new Set(rows.map((_, i) => i)));
+      setEditingRow(null);
+      setEditForm(null);
+      setPanelOpen(true);
+    }
   };
 
   const toggleRowSelect = (originalIndex: number) => {
-    setSelectedRows((prev) => {
-      const next = new Set(prev);
-      if (next.has(originalIndex)) next.delete(originalIndex);
-      else next.add(originalIndex);
-      return next;
-    });
-  };
-
-  const openEditModal = (sortedIndex: number) => {
-    const originalIndex = rows.indexOf(sortedRows[sortedIndex]);
-    setEditingRow(originalIndex);
-    setEditForm({ ...rows[originalIndex] });
-  };
-
-  const saveEdit = () => {
-    if (editingRow === null || !editForm) return;
-    setRows((prev) =>
-      prev.map((r, i) => {
-        if (i !== editingRow) return r;
-        const updated = { ...editForm };
-        if (updated.subPlacement && updated.channel && updated.status === "error") updated.status = "resolved";
-        return updated;
-      })
-    );
+    const next = new Set(selectedRows);
+    if (next.has(originalIndex)) next.delete(originalIndex);
+    else next.add(originalIndex);
+    setSelectedRows(next);
     setEditingRow(null);
     setEditForm(null);
-  };
-
-  const openBulkResolve = () => {
-    setBulkForm({});
-    setBulkResolving(true);
-  };
-
-  const saveBulkResolve = () => {
-    setRows((prev) =>
-      prev.map((r, i) => {
-        if (!selectedRows.has(i)) return r;
-        const updated = { ...r };
-        if (bulkForm.channel) updated.channel = bulkForm.channel;
-        if (bulkForm.publisher) updated.publisher = bulkForm.publisher;
-        if (bulkForm.audience) updated.audience = bulkForm.audience;
-        if (bulkForm.adSize) updated.adSize = bulkForm.adSize;
-        if (bulkForm.creative) updated.creative = bulkForm.creative;
-        if (bulkForm.language) updated.language = bulkForm.language;
-        if (bulkForm.geography) updated.geography = bulkForm.geography;
-        if (updated.subPlacement && updated.channel && updated.status === "error") updated.status = "resolved";
-        if (updated.status === "parsed") updated.status = "resolved";
-        return updated;
-      })
-    );
-    setBulkResolving(false);
-    setSelectedRows(new Set());
+    setPanelOpen(next.size > 0);
   };
 
   const SortHeader = ({ field, label }: { field: keyof PlacementRow; label: string }) => (
@@ -630,14 +649,6 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
               <span className="ml-2 text-[#2d46f6]">({selectedRows.size} selected)</span>
             )}
           </p>
-          {selectedRows.size > 1 && (
-            <button
-              onClick={openBulkResolve}
-              className="flex items-center gap-1.5 rounded-md border border-[#2d46f6] px-3 py-2 text-sm font-medium text-[#2d46f6] transition-colors hover:bg-[#eff1fe]"
-            >
-              Resolve ({selectedRows.size})
-            </button>
-          )}
         </div>
         <div className="flex items-center gap-2">
           <div className="flex w-[200px] items-center rounded-md border border-border bg-white px-3 py-2">
@@ -710,7 +721,7 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
                 <td className="px-3 py-3 text-sm text-[#1f2430]">{row.language}</td>
                 <td className="px-3 py-3 text-sm text-[#1f2430]">{row.geography || <span className="text-[#dc2626]">—</span>}</td>
                 <td className="px-3 py-3">
-                  <button onClick={() => openEditModal(i)} className="text-sm font-medium text-[#2d46f6] hover:underline">edit</button>
+                  <button onClick={() => openEditPanel(i)} className="text-sm font-medium text-[#2d46f6] hover:underline">edit</button>
                 </td>
               </tr>
               );
@@ -741,13 +752,16 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
         </button>
       </div>
 
-      {/* Edit Modal */}
-      {editingRow !== null && editForm && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-6 backdrop-blur-[2px]">
-          <div className="w-[560px] max-w-full rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <div className="flex items-center gap-3">
-                <h3 className="text-lg font-semibold text-[#1f2430]">Edit Placement</h3>
+      {/* Right Side Panel */}
+      <div
+        className={`fixed inset-y-0 right-0 z-40 w-[400px] transform border-l border-border bg-white shadow-[-4px_0_20px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-in-out ${panelOpen && (isEditMode || isBulkMode) ? "translate-x-0" : "translate-x-full"}`}
+      >
+        <div className="flex h-full flex-col">
+          {/* Panel Header */}
+          <div className="flex items-center justify-between border-b border-border px-5 py-4">
+            {isEditMode && editForm && (
+              <div className="flex items-center gap-2.5">
+                <h3 className="text-base font-semibold text-[#1f2430]">Edit Placement</h3>
                 {editForm.status === "error" ? (
                   <Badge className="bg-red-50 text-[#dc2626] dark:bg-red-900/30">Error</Badge>
                 ) : editForm.status === "resolved" ? (
@@ -756,97 +770,118 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
                   <Badge className="bg-orange-50 text-[#f59e0b] dark:bg-orange-900/30">Needs Review</Badge>
                 )}
               </div>
-              <button onClick={() => { setEditingRow(null); setEditForm(null); }} className="rounded-full p-1.5 text-[#6b7280] transition-colors hover:bg-gray-100 hover:text-[#1f2430]">
-                <X className="size-4" />
-              </button>
-            </div>
-            <div className="max-h-[60vh] space-y-4 overflow-y-auto px-6 py-5">
-              {[
-                { label: "Sub Placement", field: "subPlacement" as const, options: SUB_PLACEMENT_OPTIONS },
-                { label: "Partner", field: "partner" as const, options: PARTNER_OPTIONS },
-                { label: "Channel", field: "channel" as const, options: CHANNEL_OPTIONS },
-                { label: "Publisher", field: "publisher" as const, options: PUBLISHER_OPTIONS },
-                { label: "Audience", field: "audience" as const, options: AUDIENCE_OPTIONS },
-                { label: "Ad Size", field: "adSize" as const, options: AD_SIZE_OPTIONS },
-                { label: "Creative", field: "creative" as const, options: CREATIVE_OPTIONS },
-                { label: "Language", field: "language" as const, options: LANGUAGE_OPTIONS },
-                { label: "Geography", field: "geography" as const, options: GEOGRAPHY_OPTIONS },
-              ].map(({ label, field, options }) => (
-                <div key={field} className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-[#1f2430]">{label}</label>
-                  <div className="relative">
-                    <select
-                      value={editForm[field]}
-                      onChange={(e) => setEditForm({ ...editForm, [field]: e.target.value })}
-                      className={`w-full appearance-none rounded-md border bg-white py-2 pl-3 pr-9 text-sm text-[#1f2430] outline-none focus:border-[#2d46f6] ${!editForm[field] ? "border-[#dc2626]" : "border-border"}`}
-                    >
-                      <option value="">Select...</option>
-                      {options.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#64748b]" />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
-              <button onClick={() => { setEditingRow(null); setEditForm(null); }} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-[#1f2430] transition-colors hover:bg-gray-50">Cancel</button>
-              <button onClick={saveEdit} className="rounded-lg bg-[#2d46f6] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2438d4]">Save Changes</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bulk Resolve Modal */}
-      {bulkResolving && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-6 backdrop-blur-[2px]">
-          <div className="w-[560px] max-w-full rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <div className="flex items-center gap-3">
-                <h3 className="text-lg font-semibold text-[#1f2430]">Bulk Resolve</h3>
-                <Badge className="bg-[#eff1fe] text-[#2d46f6]">{selectedRows.size} placements</Badge>
+            )}
+            {isBulkMode && (
+              <div className="flex items-center gap-2.5">
+                <h3 className="text-base font-semibold text-[#1f2430]">
+                  Bulk Edit ({selectedRows.size})
+                </h3>
               </div>
-              <button onClick={() => setBulkResolving(false)} className="rounded-full p-1.5 text-[#6b7280] transition-colors hover:bg-gray-100 hover:text-[#1f2430]">
-                <X className="size-4" />
-              </button>
-            </div>
-            <div className="max-h-[60vh] space-y-4 overflow-y-auto px-6 py-5">
-              <p className="text-sm text-[#6b7280]">Update fields for all selected placements. Only fields with a value will be applied.</p>
-              {[
-                { label: "Channel", field: "channel" as const, options: CHANNEL_OPTIONS },
-                { label: "Publisher", field: "publisher" as const, options: PUBLISHER_OPTIONS },
-                { label: "Audience", field: "audience" as const, options: AUDIENCE_OPTIONS },
-                { label: "Ad Size", field: "adSize" as const, options: AD_SIZE_OPTIONS },
-                { label: "Creative", field: "creative" as const, options: CREATIVE_OPTIONS },
-                { label: "Language", field: "language" as const, options: LANGUAGE_OPTIONS },
-                { label: "Geography", field: "geography" as const, options: GEOGRAPHY_OPTIONS },
-              ].map(({ label, field, options }) => (
-                <div key={field} className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-[#1f2430]">{label}</label>
-                  <div className="relative">
-                    <select
-                      value={bulkForm[field] ?? ""}
-                      onChange={(e) => setBulkForm({ ...bulkForm, [field]: e.target.value || undefined })}
-                      className="w-full appearance-none rounded-md border border-border bg-white py-2 pl-3 pr-9 text-sm text-[#1f2430] outline-none focus:border-[#2d46f6]"
-                    >
-                      <option value="">— Keep existing —</option>
-                      {options.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#64748b]" />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
-              <button onClick={() => setBulkResolving(false)} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-[#1f2430] transition-colors hover:bg-gray-50">Cancel</button>
-              <button onClick={saveBulkResolve} className="rounded-lg bg-[#2d46f6] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2438d4]">Apply to {selectedRows.size} Placements</button>
+            )}
+            <button onClick={closePanel} className="rounded-full p-1.5 text-[#6b7280] transition-colors hover:bg-gray-100 hover:text-[#1f2430]">
+              <X className="size-4" />
+            </button>
+          </div>
+
+          {/* Panel Body */}
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            {isBulkMode && (
+              <p className="mb-4 text-sm text-[#6b7280]">
+                Set values below to apply to all {selectedRows.size} selected placement{selectedRows.size > 1 ? "s" : ""}. Only fields you change will be updated.
+              </p>
+            )}
+
+            <div className="flex flex-col gap-4">
+              {([
+                { label: "Sub Placement", field: "subPlacement" as const, options: SUB_PLACEMENT_OPTIONS, editOnly: true },
+                { label: "Partner", field: "partner" as const, options: PARTNER_OPTIONS, editOnly: false },
+                { label: "Channel", field: "channel" as const, options: CHANNEL_OPTIONS, editOnly: false },
+                { label: "Publisher", field: "publisher" as const, options: PUBLISHER_OPTIONS, editOnly: false },
+                { label: "Audience", field: "audience" as const, options: AUDIENCE_OPTIONS, editOnly: false },
+                { label: "Ad Size", field: "adSize" as const, options: AD_SIZE_OPTIONS, editOnly: false },
+                { label: "Creative", field: "creative" as const, options: CREATIVE_OPTIONS, editOnly: false },
+                { label: "Language", field: "language" as const, options: LANGUAGE_OPTIONS, editOnly: false },
+                { label: "Geography", field: "geography" as const, options: GEOGRAPHY_OPTIONS, editOnly: false },
+              ] as const).map(({ label, field, options, editOnly }) => {
+                if (isBulkMode && editOnly) return null;
+
+                if (isEditMode && editForm) {
+                  return (
+                    <div key={field} className="flex flex-col gap-1.5">
+                      <label className="text-sm font-medium text-[#1f2430]">{label}</label>
+                      <div className="relative">
+                        <select
+                          value={editForm[field]}
+                          onChange={(e) => setEditForm({ ...editForm, [field]: e.target.value })}
+                          className={`w-full appearance-none rounded-md border bg-white py-2 pl-3 pr-9 text-sm text-[#1f2430] outline-none focus:border-[#2d46f6] ${!editForm[field] ? "border-[#dc2626]" : "border-border"}`}
+                        >
+                          <option value="">Select...</option>
+                          {options.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#64748b]" />
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (isBulkMode) {
+                  return (
+                    <div key={field} className="flex flex-col gap-1.5">
+                      <label className="text-sm font-medium text-[#1f2430]">{label}</label>
+                      <div className="relative">
+                        <select
+                          value={bulkForm[field] ?? ""}
+                          onChange={(e) => setBulkForm({ ...bulkForm, [field]: e.target.value || undefined })}
+                          className={`w-full appearance-none rounded-md border bg-white py-2 pl-3 pr-9 text-sm outline-none transition-colors focus:border-[#2d46f6] ${bulkForm[field] ? "border-[#2d46f6] text-[#1f2430]" : "border-border text-[#64748b]"}`}
+                        >
+                          <option value="">— No change —</option>
+                          {options.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#64748b]" />
+                      </div>
+                    </div>
+                  );
+                }
+
+                return null;
+              })}
             </div>
           </div>
+
+          {/* Panel Footer */}
+          <div className="border-t border-border px-5 py-4">
+            {isEditMode && (
+              <div className="flex items-center justify-end gap-3">
+                <button onClick={closePanel} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-[#1f2430] transition-colors hover:bg-gray-50">Cancel</button>
+                <button onClick={saveEdit} className="rounded-lg bg-[#2d46f6] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2438d4]">Save Changes</button>
+              </div>
+            )}
+            {isBulkMode && (
+              <div className="flex flex-col gap-3">
+                {bulkFieldCount > 0 && (
+                  <p className="text-center text-xs text-[#6b7280]">
+                    {bulkFieldCount} field{bulkFieldCount > 1 ? "s" : ""} will be updated across {selectedRows.size} row{selectedRows.size > 1 ? "s" : ""}
+                  </p>
+                )}
+                <div className="flex items-center justify-end gap-3">
+                  <button onClick={closePanel} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-[#1f2430] transition-colors hover:bg-gray-50">Cancel</button>
+                  <button
+                    onClick={applyBulkChanges}
+                    disabled={bulkFieldCount === 0}
+                    className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${bulkFieldCount > 0 ? "bg-[#2d46f6] hover:bg-[#2438d4]" : "cursor-not-allowed bg-[#a0aec0]"}`}
+                  >
+                    Apply to {selectedRows.size} Row{selectedRows.size > 1 ? "s" : ""}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Footer */}
       <div className="mt-8 flex items-center justify-between">
