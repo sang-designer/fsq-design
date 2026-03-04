@@ -1,0 +1,55 @@
+export const creditOptions = [
+  { label: "20,000 Credits / $20", value: "20000" },
+  { label: "50,000 Credits / $50", value: "50000" },
+  { label: "100,000 Credits / $100", value: "100000" },
+  { label: "150,000 Credits / $150", value: "150000" },
+  { label: "200,000 Credits / $200", value: "200000" },
+  { label: "250,000 Credits / $250", value: "250000" },
+];
+
+export const chartData = [
+  { date: "5/1", pro: 0, premium: 0 },
+  { date: "5/2", pro: 0, premium: 0 },
+  { date: "5/3", pro: 500, premium: 0 },
+  { date: "5/4", pro: 500, premium: 0 },
+  { date: "5/5", pro: 800, premium: 0 },
+  { date: "5/6", pro: 800, premium: 0 },
+  { date: "5/7", pro: 700, premium: 0 },
+  { date: "5/8", pro: 700, premium: 0 },
+  { date: "5/9", pro: 1200, premium: 0 },
+  { date: "5/10", pro: 1200, premium: 0 },
+  { date: "5/11", pro: 1500, premium: 0 },
+  { date: "5/12", pro: 1500, premium: 0 },
+  { date: "5/13", pro: 1800, premium: 0 },
+  { date: "5/14", pro: 1800, premium: 0 },
+  { date: "5/15", pro: 2000, premium: 0 },
+  { date: "5/16", pro: 2000, premium: 0 },
+  { date: "5/17", pro: 2200, premium: 0 },
+  { date: "5/18", pro: 2200, premium: 0 },
+  { date: "5/19", pro: 2500, premium: 0 },
+  { date: "5/20", pro: 2500, premium: 0 },
+  { date: "5/21", pro: 3000, premium: 0 },
+  { date: "5/22", pro: 3000, premium: 0 },
+  { date: "5/23", pro: 2800, premium: 0 },
+  { date: "5/24", pro: 2800, premium: 0 },
+  { date: "5/25", pro: 3500, premium: 0 },
+  { date: "5/26", pro: 3500, premium: 0 },
+  { date: "5/27", pro: 2000, premium: 0 },
+  { date: "5/28", pro: 2000, premium: 0 },
+  { date: "5/29", pro: 1500, premium: 0 },
+  { date: "5/30", pro: 1500, premium: 0 },
+];
+
+export const transactions = [
+  { date: "April 25, 2025", description: "Autopay", status: "Paid", call: "100,000", credits: "100,000 / $100", balance: "$145.08" },
+  { date: "March 25, 2025", description: "Autopay", status: "Paid", call: "100,000", credits: "100,000 / $100", balance: "$45.08" },
+  { date: "February 25, 2025", description: "Autopay", status: "Paid", call: "100,000", credits: "100,000 / $100", balance: "$45.08" },
+  { date: "January 25, 2025", description: "One time pay", status: "Paid", call: "65,000", credits: "50,000 / $50", balance: "$45.08" },
+  { date: "December 25, 2024", description: "One time pay", status: "Paid", call: "65,000", credits: "50,000 / $50", balance: "$45.08" },
+  { date: "November 25, 2024", description: "One time pay", status: "Paid", call: "60,044", credits: "50,000 / $50", balance: "$45.08" },
+  { date: "October 25, 2024", description: "Free credits", status: "", call: "54,345", credits: "0 / $0", balance: "$45.08" },
+  { date: "September 25, 2024", description: "Free credits", status: "", call: "34,098", credits: "0 / $0", balance: "$45.08" },
+  { date: "August 25, 2024", description: "Free credits", status: "", call: "3,098", credits: "0 / $0", balance: "$45.08" },
+];
+
+export const states = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
