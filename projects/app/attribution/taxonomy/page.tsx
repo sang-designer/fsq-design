@@ -211,7 +211,7 @@ export default function TaxonomyPage() {
 
       <div className="sticky top-0 z-30 bg-white">
         <div className="flex items-center justify-between px-12 py-2.5">
-          <div className="mx-auto flex w-full max-w-[1328px] items-center justify-between">
+          <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-semibold tracking-tight text-[#020617]">McDonalds Q1-Q2 2025</h1>
               <span className="rounded-full bg-[#ebf1ff] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[#212be9]">{completionPercent}%</span>
@@ -225,7 +225,7 @@ export default function TaxonomyPage() {
         <div className="h-[2px] w-full bg-[#ebf1ff]"><div className="h-full bg-[#212be9] transition-all duration-700 ease-out" style={{ width: `${completionPercent}%` }} /></div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-[1328px] gap-6 px-12 py-6">
+      <div className="flex w-full gap-6 px-12 py-6">
         {/* Left sidebar */}
         <aside className="w-[280px] shrink-0">
           <nav className="space-y-2">
@@ -828,6 +828,18 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
                 }
 
                 if (isBulkMode) {
+                  const selectedRowValues = [...selectedRows].map((i) => rows[i][field]);
+                  const uniqueValues = new Set(selectedRowValues.filter(Boolean));
+                  const isMixed = uniqueValues.size > 1;
+                  const commonValue = uniqueValues.size === 1 ? [...uniqueValues][0] : "";
+                  const validOptions = options.filter((opt) =>
+                    [...selectedRows].every((i) => {
+                      const rowVal = rows[i][field];
+                      return !rowVal || rowVal === opt;
+                    })
+                  );
+                  const isDisabled = isMixed && validOptions.length === 0;
+
                   return (
                     <div key={field} className="flex flex-col gap-1.5">
                       <label className="text-sm font-medium text-[#1f2430]">{label}</label>
@@ -835,15 +847,22 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
                         <select
                           value={bulkForm[field] ?? ""}
                           onChange={(e) => setBulkForm({ ...bulkForm, [field]: e.target.value || undefined })}
-                          className={`w-full appearance-none rounded-md border bg-white py-2 pl-3 pr-9 text-sm outline-none transition-colors focus:border-[#2d46f6] ${bulkForm[field] ? "border-[#2d46f6] text-[#1f2430]" : "border-border text-[#64748b]"}`}
+                          disabled={isDisabled}
+                          className={`w-full appearance-none rounded-md border bg-white py-2 pl-3 pr-9 text-sm outline-none transition-colors focus:border-[#2d46f6] ${isDisabled ? "cursor-not-allowed bg-[#f8fafc] text-[#94a3b8]" : bulkForm[field] ? "border-[#2d46f6] text-[#1f2430]" : "border-border text-[#64748b]"}`}
                         >
-                          <option value="">— No change —</option>
-                          {options.map((opt) => (
+                          <option value="">{isMixed ? `Mixed (${uniqueValues.size} values)` : commonValue ? commonValue : "— No change —"}</option>
+                          {validOptions.map((opt) => (
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
                         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#64748b]" />
                       </div>
+                      {isMixed && !isDisabled && (
+                        <p className="text-xs text-[#f59e0b]">Values differ across selected rows</p>
+                      )}
+                      {isDisabled && (
+                        <p className="text-xs text-[#94a3b8]">No common values available</p>
+                      )}
                     </div>
                   );
                 }

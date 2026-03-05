@@ -92,7 +92,7 @@ export default function ReviewPage() {
 
       <div className="sticky top-0 z-30 bg-white">
         <div className="flex items-center justify-between px-12 py-2.5">
-          <div className="mx-auto flex w-full max-w-[1328px] items-center justify-between">
+          <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-semibold tracking-tight text-[#020617]">McDonalds Q1-Q2 2025</h1>
               <span className="rounded-full bg-[#ebf1ff] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[#212be9]">{progressPercent}%</span>
@@ -112,7 +112,7 @@ export default function ReviewPage() {
       </div>
 
       {submitError && (
-        <div className="mx-auto mt-6 flex w-full max-w-[1328px] items-center gap-3 rounded-lg border border-[#dc2626] bg-[#fef2f2] px-4 py-3">
+        <div className="mt-6 flex w-full items-center gap-3 rounded-lg border border-[#dc2626] bg-[#fef2f2] px-12 py-3">
           <Info className="size-5 text-[#dc2626]" />
           <p className="flex-1 text-sm font-medium text-[#020617]">There was an error submitting your campaign. Please try again.</p>
           <button onClick={() => setSubmitError(false)} className="p-1 text-[#8d8d8d] hover:text-[#020617]">
@@ -121,7 +121,7 @@ export default function ReviewPage() {
         </div>
       )}
 
-      <div className="mx-auto flex w-full max-w-[1328px] gap-6 px-12 py-6">
+      <div className="flex w-full gap-6 px-12 py-6">
         {/* Sidebar */}
         <aside className="w-[280px] shrink-0">
           <nav className="space-y-2">

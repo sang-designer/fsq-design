@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, ChevronDown, ChevronUp, Calendar, CircleDashed, Check, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Search, Download, Copy, Mail, X, Loader2, GripVertical, MousePointerClick, ArrowRight, OctagonAlert, SquarePen, Trash2 } from "lucide-react";
+import { Upload, ChevronDown, ChevronUp, Calendar, CircleDashed, Check, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Search, Download, Copy, Mail, X, Loader2, GripVertical, MousePointerClick, ArrowRight, OctagonAlert, SquarePen, Trash2, FileText, Info } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState, useRef, useCallback, useEffect, DragEvent } from "react";
@@ -225,6 +225,9 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
   const [email, setEmail] = useState("");
   const [country, setCountry] = useState("");
   const [storeChains, setStoreChains] = useState("");
+  const [customStoreList, setCustomStoreList] = useState("");
+  const [storeFile, setStoreFile] = useState<{ name: string; uploadedBy: string; uploadedAt: string } | null>(null);
+  const storeFileInputRef = useRef<HTMLInputElement>(null);
   const [geoTargeting, setGeoTargeting] = useState("");
   const [geoLocations, setGeoLocations] = useState("");
   const [notes, setNotes] = useState("");
@@ -435,18 +438,121 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
               <div className="flex flex-col gap-4">
                 <div className="flex gap-4">
                   <SelectField label="Country" value={country} onChange={setCountry} />
-                  <SelectField
-                    label="Store Chains to be measured"
-                    value={storeChains}
-                    onChange={setStoreChains}
-                    helpText={
-                      <span>
+                  <div className="flex flex-1 flex-col gap-2 min-w-[280px]">
+                    <label className="text-sm font-semibold text-black">Store Chains to be measured</label>
+                    <div className="relative flex items-center">
+                      <select
+                        value={storeChains}
+                        onChange={(e) => {
+                          setStoreChains(e.target.value);
+                          if (e.target.value !== "Custom list") {
+                            setCustomStoreList("");
+                            setStoreFile(null);
+                          }
+                        }}
+                        className={`w-full appearance-none rounded-md border border-[#f0f0f0] bg-[#fcfcfc] py-2 pl-3 pr-9 text-sm text-[#020617] outline-none focus:border-[#212be9] ${!storeChains ? "text-[#8d8d8d]" : ""}`}
+                      >
+                        <option value="">Type or Select</option>
+                        <option value="McDonalds US">McDonalds US</option>
+                        <option value="Starbucks">Starbucks</option>
+                        <option value="Walmart">Walmart</option>
+                        <option value="Target">Target</option>
+                        <option value="Costco">Costco</option>
+                        <option value="Whole Foods">Whole Foods</option>
+                        <option value="Kroger">Kroger</option>
+                        <option value="Walgreens">Walgreens</option>
+                        <option value="CVS">CVS</option>
+                        <option value="Custom list">Custom list</option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 size-4 text-[#8d8d8d]" />
+                    </div>
+                    {storeChains !== "Custom list" && (
+                      <p className="text-xs text-[#6b7280]">
                         If you have a custom list, please{" "}
-                        <span className="cursor-pointer text-[#212be9]">upload a file</span>{" "}
+                        <button
+                          type="button"
+                          onClick={() => setStoreChains("Custom list")}
+                          className="cursor-pointer text-[#212be9] hover:underline"
+                        >
+                          upload a file
+                        </button>{" "}
                         or contact your representative.
-                      </span>
-                    }
-                  />
+                      </p>
+                    )}
+
+                    {storeChains === "Custom list" && (
+                      <div className="mt-1 flex flex-col gap-3 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-4">
+                        <p className="text-sm font-medium text-[#1f2430]">Custom Store List</p>
+                        <p className="text-xs text-[#6b7280]">
+                          Manually enter store{" "}
+                          <span className="group/info relative inline-flex items-center gap-0.5">
+                            info
+                            <Info className="inline size-3.5 cursor-help text-[#94a3b8] transition-colors group-hover/info:text-[#6b7280]" />
+                            <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#1f2430] px-3 py-2 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover/info:opacity-100">
+                              Store Name, Address, City, State/Province, Zip Code/Postal Code
+                            </span>
+                          </span>
+                          {" "}or upload a file with your list.
+                        </p>
+                        <textarea
+                          value={customStoreList}
+                          onChange={(e) => setCustomStoreList(e.target.value)}
+                          placeholder={"e.g. Target, 123 Main St, New York, NY, 10001"}
+                          rows={4}
+                          className="w-full rounded-md border border-[#e2e8f0] bg-white px-3 py-2 text-sm text-[#1f2430] outline-none placeholder:text-[#94a3b8] focus:border-[#212be9] focus:ring-1 focus:ring-[#212be9]/20"
+                        />
+                        <div className="flex items-center gap-3">
+                          <input
+                            ref={storeFileInputRef}
+                            type="file"
+                            accept=".csv,.xlsx,.xls,.txt"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setStoreFile({
+                                  name: file.name,
+                                  uploadedBy: "Sang Yeo",
+                                  uploadedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+                                });
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => storeFileInputRef.current?.click()}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#2d46f6] px-3 py-1.5 text-sm font-medium text-[#2d46f6] transition-colors hover:bg-[#f0f1ff]"
+                          >
+                            <Upload className="size-3.5" />
+                            Upload file
+                          </button>
+                          <span className="text-xs text-[#94a3b8]">CSV, Excel, or TXT</span>
+                        </div>
+
+                        {storeFile && (
+                          <div className="flex items-center gap-3 rounded-lg border border-[#e2e8f0] bg-white px-4 py-3">
+                            <div className="flex size-10 items-center justify-center rounded-lg bg-[#eef2ff]">
+                              <FileText className="size-5 text-[#2d46f6]" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-[#1f2430]">{storeFile.name}</p>
+                              <p className="text-xs text-[#6b7280]">Uploaded by {storeFile.uploadedBy} · {storeFile.uploadedAt}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setStoreFile(null);
+                                if (storeFileInputRef.current) storeFileInputRef.current.value = "";
+                              }}
+                              className="rounded-full p-1 text-[#94a3b8] transition-colors hover:bg-gray-100 hover:text-[#1f2430]"
+                            >
+                              <X className="size-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-4">
                   <SelectField label="Geographic targeting level" value={geoTargeting} onChange={setGeoTargeting} />
@@ -1943,7 +2049,7 @@ export default function NewCampaignPage() {
 
       <div className="sticky top-0 z-30 bg-white">
         <div className="flex items-center justify-between px-12 py-2.5">
-          <div className="mx-auto flex w-full max-w-[1328px] items-center justify-between">
+          <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-semibold tracking-tight text-[#020617]">{displayName}</h1>
               <span className="rounded-full bg-[#ebf1ff] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[#212be9]">{progressPercent}%</span>
@@ -1957,7 +2063,7 @@ export default function NewCampaignPage() {
         <div className="h-[2px] w-full bg-[#ebf1ff]"><div className="h-full bg-[#212be9] transition-all duration-700 ease-out" style={{ width: `${Math.max(progressPercent, 0.1)}%` }} /></div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-[1328px] gap-6 px-12 py-6">
+      <div className="flex w-full gap-6 px-12 py-6">
         <Sidebar currentStep={currentStep} hasUploadedFile={hasUploadedFile} onUpload={handleUpload} isUploading={isUploading} onStepClick={(step) => {
           if (step === ("review" as Step)) {
             window.location.href = "/attribution/taxonomy/review";
