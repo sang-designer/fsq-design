@@ -143,7 +143,75 @@ function InputField({ label, placeholder = "", value, onChange, error }: { label
   );
 }
 
-function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaignNameChange, onUpload, hasUploadedFile, isUploading }: { showForm: boolean; onShowForm: () => void; campaignName: string; onCampaignNameChange: (v: string) => void; onUpload: () => void; hasUploadedFile: boolean; isUploading: boolean }) {
+const BRAND_OPTIONS = [
+  "McDonalds", "Burger King", "Wendy's", "Chick-fil-A", "Subway",
+  "Starbucks", "Taco Bell", "Domino's", "Pizza Hut", "Chipotle",
+  "Dunkin'", "Popeyes", "KFC", "Panera Bread", "Five Guys",
+];
+
+function BrandSearchSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  const filtered = BRAND_OPTIONS.filter((b) =>
+    b.toLowerCase().includes(search.toLowerCase())
+  );
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div className="relative flex flex-1 flex-col gap-1.5" ref={ref}>
+      <label className="text-sm font-medium text-[#1f2430]">Brand</label>
+      <button
+        onClick={() => { setOpen(!open); setSearch(""); }}
+        className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      >
+        <span className={value ? "text-[#1f2430]" : "text-muted-foreground"}>{value || "Select brand"}</span>
+        <ChevronDown className="size-4 opacity-50" />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
+          <div className="flex items-center border-b px-3 py-2">
+            <Search className="mr-2 size-4 text-[#64748b]" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search brands..."
+              autoFocus
+              className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+          <div className="max-h-[200px] overflow-y-auto p-1">
+            {filtered.length === 0 ? (
+              <p className="px-2 py-4 text-center text-sm text-muted-foreground">No brands found</p>
+            ) : (
+              filtered.map((b) => (
+                <button
+                  key={b}
+                  onClick={() => { onChange(b); setOpen(false); }}
+                  className={`flex w-full items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent ${value === b ? "font-medium text-[#1f2430]" : "text-[#1f2430]"}`}
+                >
+                  <span className="flex-1 text-left">{b}</span>
+                  {value === b && <Check className="size-4 text-[#1f2430]" />}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaignNameChange, onUpload, hasUploadedFile, isUploading, measurementBudget, onMeasurementBudgetChange, metric, onMetricChange }: { showForm: boolean; onShowForm: () => void; campaignName: string; onCampaignNameChange: (v: string) => void; onUpload: () => void; hasUploadedFile: boolean; isUploading: boolean; measurementBudget: string; onMeasurementBudgetChange: (v: string) => void; metric: string; onMetricChange: (v: string) => void }) {
   const formRef = useRef<HTMLDivElement>(null);
 
   const [advertiser, setAdvertiser] = useState("");
@@ -160,6 +228,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
   const [geoTargeting, setGeoTargeting] = useState("");
   const [geoLocations, setGeoLocations] = useState("");
   const [notes, setNotes] = useState("");
+  const [brand, setBrand] = useState("");
 
   type PartnerRow = {
     name: string;
@@ -205,6 +274,9 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
       setGeoTargeting("National");
       setGeoLocations("All US Markets");
       setNotes("Q1-Q2 2025 brand awareness campaign across digital channels.");
+      setBrand("McDonalds");
+      onMeasurementBudgetChange(measurementBudget || "420,000");
+      onMetricChange(metric || "Visits and Sales");
     }
   }, [hasUploadedFile]);
 
@@ -219,6 +291,39 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
           <p>
             <span className="cursor-pointer text-[#3333ff]">Learn more</span> about Attribution on Foursquare Documentation.
           </p>
+        </div>
+      </div>
+
+      {/* Brand, Budget, Metric */}
+      <div className="mb-6 flex gap-6">
+        <BrandSearchSelect value={brand} onChange={setBrand} />
+        <div className="flex flex-1 flex-col gap-1.5">
+          <label className="text-sm font-medium text-[#1f2430]">Measurement Budget</label>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#64748b]">$</span>
+            <input
+              type="text"
+              value={measurementBudget}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^0-9]/g, "");
+                onMeasurementBudgetChange(raw ? parseInt(raw).toLocaleString() : "");
+              }}
+              placeholder="0"
+              className="h-9 w-full rounded-md border border-input bg-transparent py-2 pl-7 pr-3 text-sm text-[#1f2430] shadow-xs outline-none placeholder:text-[#94a3b8] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            />
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col gap-1.5">
+          <label className="text-sm font-medium text-[#1f2430]">Metric</label>
+          <Select value={metric || undefined} onValueChange={onMetricChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select metric" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Visits">Visits</SelectItem>
+              <SelectItem value="Visits and Sales">Visits and Sales</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -766,64 +871,39 @@ const FUNDING_PARTNERS = [
   { name: "Nexxen", mediaType: "Video", estimatedSpend: 210000 },
 ];
 
-function FundingAllocationContent() {
+function FundingAllocationContent({ measurementBudget }: { measurementBudget: number }) {
+  const totalOriginalSpend = FUNDING_PARTNERS.reduce((sum, p) => sum + p.estimatedSpend, 0);
+
   const [allocations, setAllocations] = useState(
     FUNDING_PARTNERS.map((p) => ({
       ...p,
-      partnerFunded: "",
-      agencyFunded: "",
+      fundingVisits: "",
+      fundingSalesImpact: "",
     }))
   );
 
-  const formatCurrency = (value: string) => {
-    const num = value.replace(/[^0-9.]/g, "");
-    if (!num) return "";
-    const parts = num.split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
-  };
-
-  const parseCurrency = (value: string) => parseFloat(value.replace(/,/g, "")) || 0;
-
-  const updateAllocation = (index: number, field: "partnerFunded" | "agencyFunded", value: string) => {
+  const updateAllocation = (index: number, field: "fundingVisits" | "fundingSalesImpact", value: string) => {
     setAllocations((prev) =>
-      prev.map((a, i) => (i === index ? { ...a, [field]: formatCurrency(value) } : a))
+      prev.map((a, i) => (i === index ? { ...a, [field]: value } : a))
     );
   };
-
-  const totalEstimated = allocations.reduce((sum, a) => sum + a.estimatedSpend, 0);
-  const totalPartner = allocations.reduce((sum, a) => sum + parseCurrency(a.partnerFunded), 0);
-  const totalAgency = allocations.reduce((sum, a) => sum + parseCurrency(a.agencyFunded), 0);
-  const totalAllocated = totalPartner + totalAgency;
-  const totalRemaining = totalEstimated - totalAllocated;
 
   return (
     <>
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-[#020617]">Funding Allocation</h2>
         <p className="mt-1 text-sm leading-5 text-[#646464]">
-          Specify how much each media partner and agency is funding for this campaign.
+          Specify who is funding visits and sales impact for each media partner.
         </p>
       </div>
 
       <div className="mb-4 h-px w-full bg-[#e2e8f0]" />
 
-      {/* Summary Cards */}
-      <div className="mb-6 grid grid-cols-3 gap-4">
-        <div className="rounded-lg border border-border bg-white px-4 py-3">
-          <p className="text-xs font-medium text-[#6b7280]">Total Estimated Spend</p>
-          <p className="mt-0.5 text-lg font-semibold text-[#1f2430]">${totalEstimated.toLocaleString()}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-white px-4 py-3">
-          <p className="text-xs font-medium text-[#6b7280]">Total Allocated</p>
-          <p className="mt-0.5 text-lg font-semibold text-[#1f2430]">${totalAllocated.toLocaleString()}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-white px-4 py-3">
-          <p className="text-xs font-medium text-[#6b7280]">Remaining</p>
-          <p className="mt-0.5 text-lg font-semibold text-[#1f2430]">
-            ${Math.abs(totalRemaining).toLocaleString()}
-            {totalRemaining < 0 && <span className="ml-1 text-sm font-medium">over</span>}
-          </p>
+      {/* Summary Card */}
+      <div className="mb-6">
+        <div className="rounded-lg border border-border bg-white px-4 py-3 w-fit">
+          <p className="text-xs font-medium text-[#6b7280]">Measurement Budget</p>
+          <p className="mt-0.5 text-lg font-semibold text-[#1f2430]">${measurementBudget.toLocaleString()}</p>
         </div>
       </div>
 
@@ -834,16 +914,12 @@ function FundingAllocationContent() {
             <tr className="border-b border-border bg-[#f8fafc]">
               <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Partner</th>
               <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Media Type</th>
-              <th className="px-5 py-3.5 text-right text-sm font-medium text-[#64748b]">Estimated Spend</th>
-              <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Partner Funded</th>
-              <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Agency Funded</th>
-              <th className="px-5 py-3.5 text-right text-sm font-medium text-[#64748b]">Allocated</th>
+              <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Who is funding visits</th>
+              <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Who is funding sales impact</th>
             </tr>
           </thead>
           <tbody>
             {allocations.map((alloc, i) => {
-              const allocated = parseCurrency(alloc.partnerFunded) + parseCurrency(alloc.agencyFunded);
-              const remaining = alloc.estimatedSpend - allocated;
               return (
                 <tr key={alloc.name} className="border-b border-border last:border-b-0">
                   <td className="px-5 py-4">
@@ -852,51 +928,32 @@ function FundingAllocationContent() {
                   <td className="px-5 py-4">
                     <span className="rounded-full bg-[#f1f5f9] px-2.5 py-1 text-xs font-medium text-[#475569]">{alloc.mediaType}</span>
                   </td>
-                  <td className="px-5 py-4 text-right text-sm font-medium text-[#1f2430]">
-                    ${alloc.estimatedSpend.toLocaleString()}
+                  <td className="px-5 py-4">
+                    <Select value={alloc.fundingVisits || undefined} onValueChange={(val) => updateAllocation(i, "fundingVisits", val)}>
+                      <SelectTrigger className={`w-[150px] ${alloc.fundingVisits ? "" : "border-[#f59e0b]"}`} size="sm">
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Agency">Agency</SelectItem>
+                        <SelectItem value="Partner">Partner</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </td>
                   <td className="px-5 py-4">
-                    <div className="relative">
-                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#64748b]">$</span>
-                      <input
-                        type="text"
-                        value={alloc.partnerFunded}
-                        onChange={(e) => updateAllocation(i, "partnerFunded", e.target.value)}
-                        placeholder="0"
-                        className="w-[140px] rounded-lg border border-border bg-white py-2 pl-7 pr-3 text-sm text-[#1f2430] outline-none placeholder:text-[#cbd5e1] focus:border-[#2d46f6] focus:ring-1 focus:ring-[#2d46f6]/20"
-                      />
-                    </div>
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="relative">
-                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#64748b]">$</span>
-                      <input
-                        type="text"
-                        value={alloc.agencyFunded}
-                        onChange={(e) => updateAllocation(i, "agencyFunded", e.target.value)}
-                        placeholder="0"
-                        className="w-[140px] rounded-lg border border-border bg-white py-2 pl-7 pr-3 text-sm text-[#1f2430] outline-none placeholder:text-[#cbd5e1] focus:border-[#2d46f6] focus:ring-1 focus:ring-[#2d46f6]/20"
-                      />
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 text-right">
-                    <p className="text-sm font-medium text-[#1f2430]">
-                      ${allocated.toLocaleString()}
-                    </p>
+                    <Select value={alloc.fundingSalesImpact || undefined} onValueChange={(val) => updateAllocation(i, "fundingSalesImpact", val)}>
+                      <SelectTrigger className={`w-[150px] ${alloc.fundingSalesImpact ? "" : "border-[#f59e0b]"}`} size="sm">
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Agency">Agency</SelectItem>
+                        <SelectItem value="Partner">Partner</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </td>
                 </tr>
               );
             })}
           </tbody>
-          <tfoot>
-            <tr className="border-t-2 border-border bg-[#f8fafc]">
-              <td className="px-5 py-3.5 text-sm font-semibold text-[#1f2430]" colSpan={2}>Total</td>
-              <td className="px-5 py-3.5 text-right text-sm font-semibold text-[#1f2430]">${totalEstimated.toLocaleString()}</td>
-              <td className="px-5 py-3.5 text-sm font-semibold text-[#2d46f6]">${totalPartner.toLocaleString()}</td>
-              <td className="px-5 py-3.5 text-sm font-semibold text-[#2d46f6]">${totalAgency.toLocaleString()}</td>
-              <td className="px-5 py-3.5 text-right text-sm font-semibold text-[#1f2430]">${totalAllocated.toLocaleString()}</td>
-            </tr>
-          </tfoot>
         </table>
       </div>
     </>
@@ -998,7 +1055,7 @@ function PixelGenerationContent({ pixelState }: { pixelState: PixelState }) {
                   <th className="w-10 px-4 py-3" />
                   <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Tracking</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Tagging</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel ID</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel</th>
@@ -1021,6 +1078,7 @@ function PixelGenerationContent({ pixelState }: { pixelState: PixelState }) {
                         <SelectContent>
                           <SelectItem value="Partner">Partner</SelectItem>
                           <SelectItem value="Agency">Agency</SelectItem>
+                          <SelectItem value="Both">Both</SelectItem>
                         </SelectContent>
                       </Select>
                     </td>
@@ -1845,6 +1903,8 @@ export default function NewCampaignPage() {
   const [showForm, setShowForm] = useState(false);
   const [hasUploadedFile, setHasUploadedFile] = useState(initialStep === "map-partners" || initialStep === "placement");
   const [campaignName, setCampaignName] = useState("");
+  const [measurementBudget, setMeasurementBudget] = useState("");
+  const [metric, setMetric] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isEditingPartner, setIsEditingPartner] = useState(false);
 
@@ -1908,10 +1968,10 @@ export default function NewCampaignPage() {
 
         <main className="flex-1">
           {currentStep === "campaign" && (
-            <CampaignDetailsContent showForm={showForm} onShowForm={() => setShowForm(true)} campaignName={campaignName} onCampaignNameChange={setCampaignName} onUpload={handleUpload} hasUploadedFile={hasUploadedFile} isUploading={isUploading} />
+            <CampaignDetailsContent showForm={showForm} onShowForm={() => setShowForm(true)} campaignName={campaignName} onCampaignNameChange={setCampaignName} onUpload={handleUpload} hasUploadedFile={hasUploadedFile} isUploading={isUploading} measurementBudget={measurementBudget} onMeasurementBudgetChange={setMeasurementBudget} metric={metric} onMetricChange={setMetric} />
           )}
           {currentStep === "partner" && <PartnerDetailsContent hasUploadedFile={hasUploadedFile} isEditingPartner={isEditingPartner} onEditingPartnerChange={setIsEditingPartner} />}
-          {currentStep === "funding" && <FundingAllocationContent />}
+          {currentStep === "funding" && <FundingAllocationContent measurementBudget={parseInt(measurementBudget.replace(/,/g, "") || "0")} />}
           {currentStep === "pixel" && <PixelGenerationContent pixelState={pixelState} />}
           {currentStep === "placement" && (
             <PlacementDetailsContent

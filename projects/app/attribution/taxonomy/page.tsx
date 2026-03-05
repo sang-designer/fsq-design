@@ -481,6 +481,7 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
   const isBulkMode = selectedRows.size > 0 && editingRow === null;
   const isEditMode = editingRow !== null && editForm !== null;
   const bulkFieldCount = Object.values(bulkForm).filter(Boolean).length;
+  const selectedAreAllNeedsReview = isBulkMode && [...selectedRows].every((i) => rows[i].status === "parsed");
 
   const openEditPanel = (sortedIndex: number) => {
     const originalIndex = rows.indexOf(sortedRows[sortedIndex]);
@@ -862,20 +863,39 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
             )}
             {isBulkMode && (
               <div className="flex flex-col gap-3">
-                {bulkFieldCount > 0 && (
+                {!selectedAreAllNeedsReview && bulkFieldCount > 0 && (
                   <p className="text-center text-xs text-[#6b7280]">
                     {bulkFieldCount} field{bulkFieldCount > 1 ? "s" : ""} will be updated across {selectedRows.size} row{selectedRows.size > 1 ? "s" : ""}
                   </p>
                 )}
                 <div className="flex items-center justify-end gap-3">
                   <button onClick={closePanel} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-[#1f2430] transition-colors hover:bg-gray-50">Cancel</button>
-                  <button
-                    onClick={applyBulkChanges}
-                    disabled={bulkFieldCount === 0}
-                    className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${bulkFieldCount > 0 ? "bg-[#2d46f6] hover:bg-[#2438d4]" : "cursor-not-allowed bg-[#a0aec0]"}`}
-                  >
-                    Apply to {selectedRows.size} Row{selectedRows.size > 1 ? "s" : ""}
-                  </button>
+                  {selectedAreAllNeedsReview ? (
+                    <button
+                      onClick={() => {
+                        setRows((prev) =>
+                          prev.map((r, i) => {
+                            if (!selectedRows.has(i)) return r;
+                            const updated = { ...r, ...Object.fromEntries(Object.entries(bulkForm).filter(([, v]) => v)) };
+                            updated.status = "resolved";
+                            return updated;
+                          })
+                        );
+                        closePanel();
+                      }}
+                      className="rounded-lg bg-[#2d46f6] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2438d4]"
+                    >
+                      Resolve {selectedRows.size} Item{selectedRows.size > 1 ? "s" : ""}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={applyBulkChanges}
+                      disabled={bulkFieldCount === 0}
+                      className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${bulkFieldCount > 0 ? "bg-[#2d46f6] hover:bg-[#2438d4]" : "cursor-not-allowed bg-[#a0aec0]"}`}
+                    >
+                      Apply to {selectedRows.size} Row{selectedRows.size > 1 ? "s" : ""}
+                    </button>
+                  )}
                 </div>
               </div>
             )}
