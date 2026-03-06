@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, ChevronDown, ChevronUp, Calendar, CircleDashed, Check, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Search, Download, Copy, Mail, X, Loader2, GripVertical, MousePointerClick, ArrowRight, OctagonAlert, SquarePen, Trash2, FileText, Info } from "lucide-react";
+import { Upload, ChevronDown, ChevronUp, Calendar as CalendarIcon, CircleDashed, Check, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Search, Download, Copy, Mail, X, Loader2, GripVertical, MousePointerClick, ArrowRight, OctagonAlert, SquarePen, Trash2, FileText, Info } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState, useRef, useCallback, useEffect, DragEvent } from "react";
@@ -11,6 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 type Step = "campaign" | "partner" | "funding" | "pixel" | "placement" | "map-partners";
 
@@ -24,9 +27,9 @@ const SIDEBAR_STEPS = [
 ];
 
 const INITIAL_PARTNERS = [
-  { name: "Viant", fundingSource: "Starcom" as string | null, mediaType: "Display", conversionType: "Visits and Sales Impact" as string | null, startDate: "4/31/2025" as string | null, endDate: "01/01/2024" as string | null, missingFields: 0, estimatedSpend: "$125,000" },
-  { name: "Adtheorent", fundingSource: "Zenith" as string | null, mediaType: "Mobile", conversionType: "Visits and Sales Impact" as string | null, startDate: "4/31/2025" as string | null, endDate: null as string | null, missingFields: 2, estimatedSpend: "$85,000" },
-  { name: "Nexxen", fundingSource: "Starcom" as string | null, mediaType: "Video", conversionType: "Sales Impact" as string | null, startDate: "4/31/2025" as string | null, endDate: "01/01/2024" as string | null, missingFields: 0, estimatedSpend: "$210,000" },
+  { name: "Viant", fundingSource: "Starcom" as string | null, mediaType: "Display", conversionType: "Visits and Sales Impact" as string | null, startDate: "2025-04-01" as string | null, endDate: "2025-06-30" as string | null, missingFields: 0, estimatedSpend: "$125,000" },
+  { name: "Adtheorent", fundingSource: "Zenith" as string | null, mediaType: "Mobile", conversionType: "Visits and Sales Impact" as string | null, startDate: "2025-04-01" as string | null, endDate: null as string | null, missingFields: 2, estimatedSpend: "$85,000" },
+  { name: "Nexxen", fundingSource: "Starcom" as string | null, mediaType: "Video", conversionType: "Sales Impact" as string | null, startDate: "2025-04-01" as string | null, endDate: "2025-06-30" as string | null, missingFields: 0, estimatedSpend: "$210,000" },
 ];
 
 const ERROR_FIELDS = [
@@ -107,21 +110,49 @@ function SelectField({ label, placeholder = "Type or Select", helpText, value, o
   );
 }
 
-function DateField({ label, value, onChange, error }: { label: string; value?: string; onChange?: (v: string) => void; error?: boolean }) {
+function DateField({ label, value, onChange, error, min }: { label: string; value?: string; onChange?: (v: string) => void; error?: boolean; min?: string }) {
+  const [open, setOpen] = useState(false);
+
+  const selected = value ? new Date(value + "T00:00:00") : undefined;
+  const minDate = min ? new Date(min + "T00:00:00") : undefined;
+
+  const displayValue = selected && !isNaN(selected.getTime())
+    ? selected.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" })
+    : "";
+
   return (
     <div className="flex flex-1 flex-col gap-2">
       <label className={`text-sm font-semibold ${error ? "text-[#dc2626]" : "text-[#000033]"}`}>{label}</label>
-      <div className="relative flex items-center">
-        <Calendar className="pointer-events-none absolute left-3 size-4 text-[#8d8d8d]" />
-        <input
-          type="date"
-          value={value ?? ""}
-          onChange={(e) => onChange?.(e.target.value)}
-          placeholder="Type or Select"
-          className={`w-full rounded-md border py-2 pl-9 pr-3 text-sm text-[#020617] outline-none placeholder:text-[#8d8d8d] [&::-webkit-calendar-picker-indicator]:opacity-0 ${error ? "border-[#dc2626] bg-[#fef2f2] focus:border-[#dc2626]" : "border-[#f0f0f0] bg-[#fcfcfc] focus:border-[#212be9]"}`}
-        />
-        <ChevronDown className="pointer-events-none absolute right-3 size-4 text-[#8d8d8d]" />
-      </div>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={`relative flex w-full items-center rounded-md border py-2 pl-9 pr-3 text-left text-sm outline-none ${error ? "border-[#dc2626] bg-[#fef2f2]" : "border-[#f0f0f0] bg-[#fcfcfc] hover:border-[#d0d0d0]"} ${displayValue ? "text-[#020617]" : "text-[#8d8d8d]"}`}
+          >
+            <CalendarIcon className="pointer-events-none absolute left-3 size-4 text-[#8d8d8d]" />
+            {displayValue || "Select date"}
+            <ChevronDown className="pointer-events-none absolute right-3 size-4 text-[#8d8d8d]" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={selected}
+            onSelect={(date) => {
+              if (date) {
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, "0");
+                const dd = String(date.getDate()).padStart(2, "0");
+                onChange?.(`${yyyy}-${mm}-${dd}`);
+              }
+              setOpen(false);
+            }}
+            disabled={minDate ? { before: minDate } : undefined}
+            defaultMonth={selected || minDate || new Date()}
+            className="rounded-lg border"
+          />
+        </PopoverContent>
+      </Popover>
       {error && <p className="text-xs leading-4 text-[#dc2626]">This field is required</p>}
     </div>
   );
@@ -410,7 +441,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
                 </div>
                 <div className="flex gap-4">
                   <DateField label="Start Date" value={startDate} onChange={setStartDate} />
-                  <DateField label="End Date" value={endDate} onChange={setEndDate} />
+                  <DateField label="End Date" value={endDate} onChange={setEndDate} min={startDate} />
                 </div>
                 <div className="flex gap-4">
                   <InputField label="Conversion Window" placeholder="# days to observe a visit after initial ad exposure" value={conversionWindow} onChange={setConversionWindow} />
@@ -626,7 +657,7 @@ function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValu
             </div>
             <div className="flex gap-8">
               <DateField label="Ad Run Start Date" value={formValues["Ad Run Start Date"] ?? ""} onChange={(v) => updateField("Ad Run Start Date", v)} error={hasError("Ad Run Start Date")} />
-              <DateField label="Ad Run End Date" value={formValues["Ad Run End Date"] ?? ""} onChange={(v) => updateField("Ad Run End Date", v)} error={hasError("Ad Run End Date")} />
+              <DateField label="Ad Run End Date" value={formValues["Ad Run End Date"] ?? ""} onChange={(v) => updateField("Ad Run End Date", v)} error={hasError("Ad Run End Date")} min={formValues["Ad Run Start Date"] ?? ""} />
             </div>
             <div className="flex gap-8">
               <SelectField label="Agency or Site Served" value={formValues["Agency or Site Served"] ?? ""} onChange={(v) => updateField("Agency or Site Served", v)} error={hasError("Agency or Site Served")} options={AGENCY_OPTIONS} />
@@ -738,6 +769,12 @@ function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValu
 }
 
 function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPartnerChange }: { hasUploadedFile: boolean; isEditingPartner: boolean; onEditingPartnerChange: (v: boolean) => void }) {
+  const formatDate = (d: string | null) => {
+    if (!d) return "—";
+    const date = new Date(d + "T00:00:00");
+    if (isNaN(date.getTime())) return d;
+    return `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}/${date.getFullYear()}`;
+  };
   const [partners, setPartners] = useState(INITIAL_PARTNERS.map((p) => ({ ...p })));
   const [editMode, setEditMode] = useState<"add" | "edit">("add");
   const [editErrorFields, setEditErrorFields] = useState<string[]>([]);
@@ -915,8 +952,8 @@ function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPar
                     <td className="px-4 py-4 text-sm text-black">{partner.fundingSource ?? "—"}</td>
                     <td className="px-4 py-4 text-sm text-black">{partner.mediaType}</td>
                     <td className="px-4 py-4 text-sm text-black">{partner.conversionType ?? "—"}</td>
-                    <td className="px-4 py-4 text-sm text-black">{partner.startDate ?? "—"}</td>
-                    <td className="px-4 py-4 text-sm text-black">{partner.endDate ?? "—"}</td>
+                    <td className="px-4 py-4 text-sm text-black">{formatDate(partner.startDate)}</td>
+                    <td className="px-4 py-4 text-sm text-black">{formatDate(partner.endDate)}</td>
                     <td className="w-[80px] px-4 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button
@@ -936,6 +973,7 @@ function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPar
             </table>
           </div>
 
+          {partners.length > 10 && (
           <div className="mt-6 flex items-center justify-end gap-1">
             <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-[#64748b] hover:bg-gray-50">
               <ChevronLeft className="size-4" />
@@ -949,6 +987,7 @@ function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPar
               <ChevronRight className="size-4" />
             </button>
           </div>
+          )}
         </>
       ) : (
         <div className="flex items-center justify-between rounded-lg border border-[#e2e8f0] bg-[#fcfcfc] px-6 py-5">
@@ -1004,6 +1043,14 @@ function FundingAllocationContent({ measurementBudget }: { measurementBudget: nu
       </div>
 
       <div className="mb-4 h-px w-full bg-[#e2e8f0]" />
+
+      <Alert className="mb-6 border-[#bfdbfe] bg-[#eff6ff]">
+        <Info className="size-4 text-[#3b82f6]" />
+        <AlertTitle className="text-[#1e40af]">Select funding sources for each partner</AlertTitle>
+        <AlertDescription className="text-[#1e40af]/80">
+          For each media partner below, choose who is funding visits and who is funding sales impact.
+        </AlertDescription>
+      </Alert>
 
       {/* Summary Card */}
       <div className="mb-6">
@@ -1073,6 +1120,20 @@ function PixelGenerationContent({ pixelState }: { pixelState: PixelState }) {
   const [showUploadBanner, setShowUploadBanner] = useState(pixelState === "empty-uploaded");
   const [pixels, setPixels] = useState(PIXELS.map((p) => ({ ...p })));
   const [viewPixelRow, setViewPixelRow] = useState<number | null>(null);
+  const [copiedPixelRow, setCopiedPixelRow] = useState<number | null>(null);
+  const pixelPopoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (viewPixelRow === null) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (pixelPopoverRef.current && !pixelPopoverRef.current.contains(e.target as Node)) {
+        setViewPixelRow(null);
+        setCopiedPixelRow(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [viewPixelRow]);
 
   const updateTracking = (index: number, value: string) => {
     setPixels((prev) => prev.map((p, i) => (i === index ? { ...p, tracking: value } : p)));
@@ -1125,6 +1186,14 @@ function PixelGenerationContent({ pixelState }: { pixelState: PixelState }) {
 
       {pixelState === "populated" ? (
         <>
+          <Alert className="mb-6 border-[#bfdbfe] bg-[#eff6ff]">
+            <Info className="size-4 text-[#3b82f6]" />
+            <AlertTitle className="text-[#1e40af]">Assign tagging for each pixel</AlertTitle>
+            <AlertDescription className="text-[#1e40af]/80">
+              Select whether the pixel should be tagged by the Partner, Agency, or Both.
+            </AlertDescription>
+          </Alert>
+
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm text-[#171417]">
               <span className="text-[#757575]">Showing </span>
@@ -1198,14 +1267,18 @@ function PixelGenerationContent({ pixelState }: { pixelState: PixelState }) {
                         View
                       </button>
                       {viewPixelRow === i && (
-                        <div className="absolute bottom-full left-1/2 z-20 mb-2 w-[360px] -translate-x-1/2 rounded-lg border border-[#e2e8f0] bg-white p-3 shadow-lg">
+                        <div ref={pixelPopoverRef} className="absolute bottom-full left-1/2 z-20 mb-2 w-[360px] -translate-x-1/2 rounded-lg border border-[#e2e8f0] bg-white p-3 shadow-lg">
                           <div className="mb-2 flex items-center justify-between">
                             <span className="text-xs font-medium text-[#64748b]">Pixel Tag</span>
                             <button
-                              onClick={() => { navigator.clipboard.writeText(pixel.pixelImg); }}
-                              className="rounded px-1.5 py-0.5 text-xs font-medium text-[#212be9] hover:bg-[#f0f1ff]"
+                              onClick={() => {
+                                navigator.clipboard.writeText(pixel.pixelImg);
+                                setCopiedPixelRow(i);
+                                setTimeout(() => setCopiedPixelRow(null), 2000);
+                              }}
+                              className={`rounded px-1.5 py-0.5 text-xs font-medium ${copiedPixelRow === i ? "text-[#16a34a]" : "text-[#212be9] hover:bg-[#f0f1ff]"}`}
                             >
-                              Copy
+                              {copiedPixelRow === i ? "Copied" : "Copy"}
                             </button>
                           </div>
                           <code className="block break-all rounded-md bg-[#f8fafc] p-2.5 text-xs leading-relaxed text-[#334155]">
@@ -1224,8 +1297,6 @@ function PixelGenerationContent({ pixelState }: { pixelState: PixelState }) {
                       </button>
                       {openActionRow === i && (
                         <div className="absolute right-4 top-12 z-10 w-40 rounded-lg border border-[#e2e8f0] bg-white py-1 shadow-lg">
-                          <button className="flex w-full items-center px-4 py-2 text-left text-sm text-[#020617] hover:bg-gray-50">Copy img tag</button>
-                          <button className="flex w-full items-center px-4 py-2 text-left text-sm text-[#020617] hover:bg-gray-50">Copy URL</button>
                           <button className="flex w-full items-center px-4 py-2 text-left text-sm text-[#020617] hover:bg-gray-50">Email</button>
                           <button className="flex w-full items-center px-4 py-2 text-left text-sm text-[#020617] hover:bg-gray-50">Download</button>
                         </div>

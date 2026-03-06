@@ -9,10 +9,28 @@ import { Badge } from "@/components/ui/badge";
 type Token = { id: string; name: string };
 type TaxonomyCategory = { id: string; name: string; count: number; tokens: Token[] };
 
-const INITIAL_TOKENS: Token[] = Array.from({ length: 20 }, (_, i) => ({
-  id: `token-${i + 1}`,
-  name: `Token_name_${String(i + 1).padStart(2, "0")}`,
-}));
+const INITIAL_TOKENS: Token[] = [
+  { id: "token-1", name: "MCD_Display_Q1_Awareness" },
+  { id: "token-2", name: "MCD_Video_PreRoll_30s" },
+  { id: "token-3", name: "MCD_CTV_Hulu_Breakfast" },
+  { id: "token-4", name: "MCD_Mobile_InApp_GeoFence" },
+  { id: "token-5", name: "MCD_Audio_Spotify_Drive" },
+  { id: "token-6", name: "MCD_Social_Meta_Reels" },
+  { id: "token-7", name: "MCD_Native_Outbrain_Q2" },
+  { id: "token-8", name: "MCD_Display_Retarget_LunchDeal" },
+  { id: "token-9", name: "MCD_Video_YouTube_McFlurry" },
+  { id: "token-10", name: "MCD_DOOH_Billboard_NYC" },
+  { id: "token-11", name: "MCD_Programmatic_DV360_ValueMeal" },
+  { id: "token-12", name: "MCD_CTV_Peacock_FamilyMeal" },
+  { id: "token-13", name: "MCD_Search_Google_BrandTerms" },
+  { id: "token-14", name: "MCD_Display_300x250_McCrispy" },
+  { id: "token-15", name: "MCD_Mobile_320x50_AppPromo" },
+  { id: "token-16", name: "MCD_Audio_Pandora_Morning" },
+  { id: "token-17", name: "MCD_Social_TikTok_McPlant" },
+  { id: "token-18", name: "MCD_Video_ConnectedTV_Q2" },
+  { id: "token-19", name: "MCD_Display_728x90_HappyMeal" },
+  { id: "token-20", name: "MCD_Native_Taboola_Sustainability" },
+];
 
 const INITIAL_TAXONOMIES: TaxonomyCategory[] = [
   { id: "audience", name: "Audience", count: 42, tokens: Array.from({ length: 42 }, (_, i) => ({ id: `aud-${i}`, name: `Audience_Seg_${String(i + 1).padStart(2, "0")}` })) },
@@ -732,6 +750,7 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Pagination */}
+      {rows.length > 10 && (
       <div className="mt-6 flex items-center justify-end gap-1">
         <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-[#64748b] hover:bg-gray-50">
           <ChevronLeft className="size-4" />
@@ -752,6 +771,7 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
           <ChevronRight className="size-4" />
         </button>
       </div>
+      )}
 
       {/* Right Side Panel */}
       <div

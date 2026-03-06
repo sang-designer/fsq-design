@@ -131,17 +131,21 @@ export default function ReviewPage() {
               return (
               <button
                 key={step.label}
+                disabled={submitted}
                 onClick={() => {
+                  if (submitted) return;
                   const route = STEP_ROUTES[i];
                   if (route) router.push(route);
                 }}
                 className={`flex w-full items-center gap-2.5 rounded-md px-4 py-2 text-left text-sm font-medium transition-colors ${
-                  step.active ? "bg-[#ebf1ff] text-[#020617]" : "text-[#020617] hover:bg-gray-50"
+                  submitted
+                    ? "cursor-not-allowed text-[#94a3b8]"
+                    : step.active ? "bg-[#ebf1ff] text-[#020617]" : "text-[#020617] hover:bg-gray-50"
                 }`}
               >
                 <span className="flex-1 pl-1">{step.label}</span>
-                {isDone && <Check className="size-4 text-[#212be9]" />}
-                {isActive && <CircleDashed className="size-4 text-[#020617]" />}
+                {isDone && <Check className={`size-4 ${submitted ? "text-[#94a3b8]" : "text-[#212be9]"}`} />}
+                {isActive && !submitted && <CircleDashed className="size-4 text-[#020617]" />}
               </button>
               );
             })}
@@ -200,10 +204,12 @@ export default function ReviewPage() {
           <div className="mb-8">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-base font-semibold text-[#020617]">Campaign Details</h3>
-              <button className="flex items-center gap-1.5 text-sm font-medium text-[#212be9]">
-                <SquarePen className="size-4" />
-                Edit
-              </button>
+              {!submitted && (
+                <button className="flex items-center gap-1.5 text-sm font-medium text-[#212be9]">
+                  <SquarePen className="size-4" />
+                  Edit
+                </button>
+              )}
             </div>
 
             <div className="space-y-0">
@@ -236,10 +242,12 @@ export default function ReviewPage() {
               <h3 className="text-base font-semibold text-[#020617]">
                 Media Partners <span className="font-normal text-[#757575]">({String(MEDIA_PARTNERS.length).padStart(2, "0")})</span>
               </h3>
-              <button className="flex items-center gap-1.5 text-sm font-medium text-[#212be9]">
-                <SquarePen className="size-4" />
-                Edit
-              </button>
+              {!submitted && (
+                <button className="flex items-center gap-1.5 text-sm font-medium text-[#212be9]">
+                  <SquarePen className="size-4" />
+                  Edit
+                </button>
+              )}
             </div>
 
             <div className="mb-4 flex items-start gap-2 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-4 py-3">
@@ -309,30 +317,39 @@ export default function ReviewPage() {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between py-4">
-            <Link
-              href="/attribution/taxonomy"
-              className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] no-underline transition-colors hover:bg-[#ebf1ff]"
-            >
-              Back to Placement Details
-            </Link>
-            <button
-              onClick={handleSubmit}
-              disabled={!agreed || submitting || submitted}
-              className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white transition-colors ${
-                submitting
-                  ? "cursor-wait bg-[#212be9]/80"
-                  : submitted
-                  ? "cursor-not-allowed bg-[#212be9]/50"
-                  : agreed
-                  ? "bg-[#212be9] hover:bg-[#1a22c4]"
-                  : "cursor-not-allowed bg-[#212be9]/50"
-              }`}
-            >
-              {submitting && <Loader2 className="size-4 animate-spin" />}
-              {submitting ? "Submitting..." : "Submit Campaign"}
-            </button>
-          </div>
+          {!submitted ? (
+            <div className="flex items-center justify-between py-4">
+              <Link
+                href="/attribution/taxonomy"
+                className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] no-underline transition-colors hover:bg-[#ebf1ff]"
+              >
+                Back to Placement Details
+              </Link>
+              <button
+                onClick={handleSubmit}
+                disabled={!agreed || submitting || submitted}
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-white transition-colors ${
+                  submitting
+                    ? "cursor-wait bg-[#212be9]/80"
+                    : agreed
+                    ? "bg-[#212be9] hover:bg-[#1a22c4]"
+                    : "cursor-not-allowed bg-[#212be9]/50"
+                }`}
+              >
+                {submitting && <Loader2 className="size-4 animate-spin" />}
+                {submitting ? "Submitting..." : "Submit Campaign"}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center py-4">
+              <button
+                onClick={() => router.push("/attribution?submitted=mcdonalds-q1-q2-2025")}
+                className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
+              >
+                Back to Main
+              </button>
+            </div>
+          )}
         </main>
       </div>
 
