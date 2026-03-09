@@ -96,12 +96,16 @@ function ContributionSummaryPopover({ open, onClose }: { open: boolean; onClose:
   ];
 
   return (
-    <div ref={ref} className="absolute left-0 top-full z-50 mt-2 w-[340px] rounded-md border border-border bg-white shadow-lg sm:w-[380px]">
-      <div className="space-y-2 px-4 pb-2 pt-3">
-        <div>
-          <h3 className="text-base font-semibold text-foreground">Contribution Summary</h3>
-          <p className="text-xs text-muted-foreground">Joined May 2024</p>
-        </div>
+    <>
+      <div className="fixed inset-0 z-40 bg-black/30 sm:hidden" onClick={onClose} />
+      <div ref={ref} className="fixed inset-x-4 top-1/2 z-50 -translate-y-1/2 rounded-md border border-border bg-white shadow-lg sm:absolute sm:inset-x-auto sm:left-0 sm:top-full sm:mt-2 sm:w-[380px] sm:translate-y-0">
+        <div className="space-y-2 px-4 pb-2 pt-3">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Contribution Summary</h3>
+              <p className="text-xs text-muted-foreground">Joined May 2024</p>
+            </div>
+          </div>
 
         <div className="rounded-md border border-[#1e3a8a] bg-[#eff6ff] px-2.5 py-2 text-xs leading-4 text-[#1e3a8a]">
           Contribution numbers are calculated nightly through an offline job. As a result, the numbers may sometimes be out of sync.
@@ -133,6 +137,7 @@ function ContributionSummaryPopover({ open, onClose }: { open: boolean; onClose:
         ))}
       </div>
     </div>
+    </>
   );
 }
 
@@ -326,7 +331,35 @@ function HistoryTable() {
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border">
+      {/* Mobile card layout */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {pageRows.map((row, i) => (
+          <div key={i} className="rounded-lg border border-border bg-white p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-[#3333ff]">{row.placeName}</span>
+              <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
+                row.status === "Accepted"
+                  ? "bg-[#eff7f0] text-emerald-700"
+                  : "bg-[#f2eefb] text-[#3333ff]"
+              }`}>
+                {row.status}
+              </span>
+            </div>
+            {row.details && (
+              <p className="mb-2 truncate text-xs text-muted-foreground">{row.details}</p>
+            )}
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+              <span>{row.contributionType}</span>
+              <span>{row.reviewType}</span>
+              <span className="tabular-nums">{row.created}</span>
+              {row.resolved && <span className="tabular-nums">{row.resolved}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop table layout */}
+      <div className="hidden overflow-x-auto rounded-lg border border-border md:block">
         <table className="w-full min-w-[800px] text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-white text-xs font-medium text-muted-foreground">
@@ -423,8 +456,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white font-sans">
       {/* Global Nav */}
-      <header className="sticky top-0 z-50 bg-white">
-        <img src="/Global header/placemaker.svg" alt="Placemaker" className="w-full" />
+      <header className="sticky top-0 z-50 overflow-hidden bg-white">
+        <img src="/Global header/placemaker.svg" alt="Placemaker" className="h-14 w-auto min-w-full object-cover object-left" />
       </header>
 
       {/* Page Content */}
