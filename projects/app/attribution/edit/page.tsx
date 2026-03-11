@@ -10,6 +10,7 @@ import {
   UserCircle,
   PackageOpen,
   Loader2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -55,8 +56,19 @@ export default function EditCampaignPage() {
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<typeof MOCK_CAMPAIGNS>([]);
   const [resultSearch, setResultSearch] = useState("");
+  const [emptyQuery, setEmptyQuery] = useState(false);
 
   function handleSearch() {
+    const hasInput = salesforceUrl.trim() || campaignName.trim() || startDate || endDate || opportunityOwner;
+    if (!hasInput) {
+      setHasSearched(true);
+      setSearchResults([]);
+      setEmptyQuery(true);
+      setLoading(false);
+      return;
+    }
+
+    setEmptyQuery(false);
     setLoading(true);
     setHasSearched(true);
     setSearchResults([]);
@@ -172,7 +184,16 @@ export default function EditCampaignPage() {
                 onKeyDown={(e) => { if (e.key === "Enter" && salesforceUrl.trim()) handleSearch(); }}
                 className="h-10 w-full rounded-md border border-[#f0f0f0] bg-white pl-3 pr-10 text-sm text-[#020617] placeholder:text-[#8d8d8d] focus:border-[#212be9] focus:outline-none focus:ring-1 focus:ring-[#212be9]"
               />
-              <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#8d8d8d]" />
+              {salesforceUrl ? (
+                <button
+                  onClick={() => { setSalesforceUrl(""); setHasSearched(false); setSearchResults([]); setResultSearch(""); }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8d8d8d] hover:text-[#171417]"
+                >
+                  <X className="size-4" />
+                </button>
+              ) : (
+                <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#8d8d8d]" />
+              )}
             </div>
           </div>
 
@@ -184,95 +205,123 @@ export default function EditCampaignPage() {
             {/* Campaign Name */}
             <div className="flex flex-1 flex-col gap-2">
               <label className="text-sm font-medium text-[#000033]">Campaign Name</label>
-              <input
-                type="text"
-                placeholder="e.g Golden Corral 2025"
-                value={campaignName}
-                onChange={(e) => setCampaignName(e.target.value)}
-                className="h-10 w-full rounded-md border border-[#f0f0f0] bg-white px-3 text-sm text-[#020617] placeholder:text-[#8d8d8d] focus:border-[#212be9] focus:outline-none focus:ring-1 focus:ring-[#212be9]"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="e.g Golden Corral 2025"
+                  value={campaignName}
+                  onChange={(e) => setCampaignName(e.target.value)}
+                  className="h-10 w-full rounded-md border border-[#f0f0f0] bg-white pl-3 pr-9 text-sm text-[#020617] placeholder:text-[#8d8d8d] focus:border-[#212be9] focus:outline-none focus:ring-1 focus:ring-[#212be9]"
+                />
+                {campaignName && (
+                  <button onClick={() => setCampaignName("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8d8d8d] hover:text-[#171417]">
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Start Date */}
             <div className="flex flex-1 flex-col gap-2">
               <label className="text-sm font-medium text-[#000033]">Start Date</label>
-              <Popover open={startOpen} onOpenChange={setStartOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className={`flex h-10 w-full items-center gap-2 rounded-md border border-[#f0f0f0] bg-[#fcfcfc] px-3 text-left text-sm ${startDate ? "text-[#020617]" : "text-[#8d8d8d]"}`}
-                  >
-                    <CalendarIcon className="size-4 text-[#8d8d8d]" />
-                    {startDate ? formatDate(startDate) : "\u00A0"}
+              <div className="relative">
+                <Popover open={startOpen} onOpenChange={setStartOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={`flex h-10 w-full items-center gap-2 rounded-md border border-[#f0f0f0] bg-[#fcfcfc] px-3 pr-9 text-left text-sm ${startDate ? "text-[#020617]" : "text-[#8d8d8d]"}`}
+                    >
+                      <CalendarIcon className="size-4 text-[#8d8d8d]" />
+                      {startDate ? formatDate(startDate) : "\u00A0"}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={startSelected}
+                      onSelect={(date) => {
+                        if (date) {
+                          const y = date.getFullYear();
+                          const m = String(date.getMonth() + 1).padStart(2, "0");
+                          const d = String(date.getDate()).padStart(2, "0");
+                          setStartDate(`${y}-${m}-${d}`);
+                        }
+                        setStartOpen(false);
+                      }}
+                      defaultMonth={startSelected || new Date()}
+                      className="rounded-lg border"
+                    />
+                  </PopoverContent>
+                </Popover>
+                {startDate && (
+                  <button onClick={() => setStartDate("")} className="absolute right-3 top-1/2 z-10 -translate-y-1/2 text-[#8d8d8d] hover:text-[#171417]">
+                    <X className="size-3.5" />
                   </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startSelected}
-                    onSelect={(date) => {
-                      if (date) {
-                        const y = date.getFullYear();
-                        const m = String(date.getMonth() + 1).padStart(2, "0");
-                        const d = String(date.getDate()).padStart(2, "0");
-                        setStartDate(`${y}-${m}-${d}`);
-                      }
-                      setStartOpen(false);
-                    }}
-                    defaultMonth={startSelected || new Date()}
-                    className="rounded-lg border"
-                  />
-                </PopoverContent>
-              </Popover>
+                )}
+              </div>
             </div>
 
             {/* End Date */}
             <div className="flex flex-1 flex-col gap-2">
               <label className="text-sm font-medium text-[#000033]">End Date</label>
-              <Popover open={endOpen} onOpenChange={setEndOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className={`flex h-10 w-full items-center gap-2 rounded-md border border-[#f0f0f0] bg-[#fcfcfc] px-3 text-left text-sm ${endDate ? "text-[#020617]" : "text-[#8d8d8d]"}`}
-                  >
-                    <CalendarIcon className="size-4 text-[#8d8d8d]" />
-                    {endDate ? formatDate(endDate) : "\u00A0"}
+              <div className="relative">
+                <Popover open={endOpen} onOpenChange={setEndOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={`flex h-10 w-full items-center gap-2 rounded-md border border-[#f0f0f0] bg-[#fcfcfc] px-3 pr-9 text-left text-sm ${endDate ? "text-[#020617]" : "text-[#8d8d8d]"}`}
+                    >
+                      <CalendarIcon className="size-4 text-[#8d8d8d]" />
+                      {endDate ? formatDate(endDate) : "\u00A0"}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={endSelected}
+                      onSelect={(date) => {
+                        if (date) {
+                          const y = date.getFullYear();
+                          const m = String(date.getMonth() + 1).padStart(2, "0");
+                          const d = String(date.getDate()).padStart(2, "0");
+                          setEndDate(`${y}-${m}-${d}`);
+                        }
+                        setEndOpen(false);
+                      }}
+                      disabled={startSelected ? { before: startSelected } : undefined}
+                      defaultMonth={endSelected || startSelected || new Date()}
+                      className="rounded-lg border"
+                    />
+                  </PopoverContent>
+                </Popover>
+                {endDate && (
+                  <button onClick={() => setEndDate("")} className="absolute right-3 top-1/2 z-10 -translate-y-1/2 text-[#8d8d8d] hover:text-[#171417]">
+                    <X className="size-3.5" />
                   </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={endSelected}
-                    onSelect={(date) => {
-                      if (date) {
-                        const y = date.getFullYear();
-                        const m = String(date.getMonth() + 1).padStart(2, "0");
-                        const d = String(date.getDate()).padStart(2, "0");
-                        setEndDate(`${y}-${m}-${d}`);
-                      }
-                      setEndOpen(false);
-                    }}
-                    disabled={startSelected ? { before: startSelected } : undefined}
-                    defaultMonth={endSelected || startSelected || new Date()}
-                    className="rounded-lg border"
-                  />
-                </PopoverContent>
-              </Popover>
+                )}
+              </div>
             </div>
 
             {/* Opportunity Owner */}
             <div className="flex flex-1 flex-col gap-2">
               <label className="text-sm font-medium text-[#000033]">Opportunity Owner</label>
-              <Select value={opportunityOwner} onValueChange={setOpportunityOwner}>
-                <SelectTrigger className="h-10 w-full border-[#f0f0f0] bg-white text-sm data-[placeholder]:text-[#8d8d8d]">
-                  <SelectValue placeholder={"\u00A0"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {OWNER_OPTIONS.map((o) => (
-                    <SelectItem key={o} value={o}>{o}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <Select value={opportunityOwner} onValueChange={setOpportunityOwner}>
+                  <SelectTrigger className="h-10 w-full border-[#f0f0f0] bg-white pr-9 text-sm data-[placeholder]:text-[#8d8d8d]">
+                    <SelectValue placeholder={"\u00A0"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {OWNER_OPTIONS.map((o) => (
+                      <SelectItem key={o} value={o}>{o}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {opportunityOwner && (
+                  <button onClick={() => setOpportunityOwner("")} className="absolute right-3 top-1/2 z-10 -translate-y-1/2 text-[#8d8d8d] hover:text-[#171417]">
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -353,14 +402,25 @@ export default function EditCampaignPage() {
                     <td colSpan={6} className="py-16">
                       <div className="flex flex-col items-center gap-3">
                         <PackageOpen className="size-12 text-[#c0c0c0]" />
-                        <p className="text-sm font-semibold text-[#171417]">No results found</p>
-                        <p className="text-sm text-[#8d8d8d]">
-                          Adjust the fields to get more results, or{" "}
-                          <Link href="/attribution/new" className="text-[#212be9] underline">
-                            start a new campaign
-                          </Link>
-                          .
-                        </p>
+                        {emptyQuery ? (
+                          <>
+                            <p className="text-sm font-semibold text-[#171417]">No search criteria entered</p>
+                            <p className="text-sm text-[#8d8d8d]">
+                              Enter a Salesforce URL or fill in the filter fields above to find campaigns.
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm font-semibold text-[#171417]">No results found</p>
+                            <p className="text-sm text-[#8d8d8d]">
+                              Adjust the fields to get more results, or{" "}
+                              <Link href="/attribution/new" className="text-[#212be9] underline">
+                                start a new campaign
+                              </Link>
+                              .
+                            </p>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
