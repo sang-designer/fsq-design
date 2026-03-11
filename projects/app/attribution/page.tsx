@@ -775,7 +775,7 @@ export default function AttributionPage() {
                   <p className="mt-1 text-xs leading-4 text-[#646464]">Start fresh. We&apos;ll generate a new Salesforce opportunity on submission and will require all the details outlined.</p>
                 </div>
               </button>
-              <button onClick={() => setNewCampaignOpen(false)} className="group flex items-start gap-3 rounded-xl border border-border p-4 text-left transition-all hover:border-[#212be9] hover:shadow-md">
+              <button onClick={() => { setNewCampaignOpen(false); router.push("/attribution/edit"); }} className="group flex items-start gap-3 rounded-xl border border-border p-4 text-left transition-all hover:border-[#212be9] hover:shadow-md">
                 <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#f0f0f0] transition-colors group-hover:bg-[#eff0fd]">
                   <GitBranchPlus className="size-5 text-[#171417] group-hover:text-[#212be9]" />
                 </div>
