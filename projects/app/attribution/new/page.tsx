@@ -1,9 +1,9 @@
 "use client";
 
-import { Upload, ChevronDown, ChevronUp, Calendar as CalendarIcon, CircleDashed, Check, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Search, Download, Copy, Mail, X, Loader2, GripVertical, MousePointerClick, ArrowRight, OctagonAlert, SquarePen, Trash2, FileText, Info } from "lucide-react";
+import { Upload, ChevronDown, ChevronUp, Calendar as CalendarIcon, CircleDashed, Check, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Search, Download, Copy, Mail, X, Loader2, GripVertical, MousePointerClick, ArrowRight, OctagonAlert, SquarePen, Trash2, FileText, Info, CircleAlert } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState, useRef, useCallback, useEffect, DragEvent } from "react";
+import { useState, useRef, useCallback, useEffect, DragEvent, Suspense } from "react";
 import {
   Select,
   SelectContent,
@@ -243,7 +243,7 @@ function BrandSearchSelect({ value, onChange }: { value: string; onChange: (v: s
   );
 }
 
-function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaignNameChange, onUpload, hasUploadedFile, isUploading, measurementBudget, onMeasurementBudgetChange, metric, onMetricChange }: { showForm: boolean; onShowForm: () => void; campaignName: string; onCampaignNameChange: (v: string) => void; onUpload: () => void; hasUploadedFile: boolean; isUploading: boolean; measurementBudget: string; onMeasurementBudgetChange: (v: string) => void; metric: string; onMetricChange: (v: string) => void }) {
+function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaignNameChange, onUpload, hasUploadedFile, hasReuploaded, isUploading, measurementBudget, onMeasurementBudgetChange, metric, onMetricChange }: { showForm: boolean; onShowForm: () => void; campaignName: string; onCampaignNameChange: (v: string) => void; onUpload: () => void; hasUploadedFile: boolean; hasReuploaded?: boolean; isUploading: boolean; measurementBudget: string; onMeasurementBudgetChange: (v: string) => void; metric: string; onMetricChange: (v: string) => void }) {
   const formRef = useRef<HTMLDivElement>(null);
 
   const [advertiser, setAdvertiser] = useState("");
@@ -381,7 +381,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between rounded-lg border border-[#e0e0e0] p-4">
               <div>
-                <p className="text-sm font-medium text-black">Carta/Mcdonalds2024</p>
+                <p className="text-sm font-medium text-black">{hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}</p>
                 <p className="text-xs text-[#8d8d8d]">Uploaded today by Eric...</p>
               </div>
               <button className="text-[#212be9]">
@@ -389,12 +389,12 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
               </button>
             </div>
             <div className="flex flex-col gap-2">
-              <div className="flex h-16 items-center justify-center rounded-lg border-2 border-dashed border-[#e0e0e0] bg-[#f9f9f9]">
+              <button onClick={onUpload} className="flex h-16 w-full items-center justify-center rounded-lg border-2 border-dashed border-[#e0e0e0] bg-[#f9f9f9] transition-colors hover:border-[#212be9] hover:bg-[#f8f9ff]">
                 <div className="flex items-center gap-2">
                   <Upload className="size-4 text-[#212be9]" />
                   <span className="text-xs text-[#212be9]">Replace Uploaded File</span>
                 </div>
-              </div>
+              </button>
               <p className="text-xs text-[#8d8d8d]">Supported file types: .xls, .xlsx, .csv</p>
             </div>
           </div>
@@ -838,6 +838,7 @@ function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPar
         startDate: formData["Ad Run Start Date"] || null,
         endDate: formData["Ad Run End Date"] || null,
         missingFields: 0,
+        estimatedSpend: formData["Estimated Total Ad Spend"] || "$0",
       };
       setPartners((prev) => [...prev, newPartner]);
     }
@@ -1357,7 +1358,7 @@ const PLACEMENT_SUB_STEPS = [
 
 type PlacementState = "empty" | "uploaded" | "new-upload";
 
-function PlacementSubSteps({ activeStep }: { activeStep: number }) {
+function PlacementSubSteps({ activeStep, hasReuploaded }: { activeStep: number; hasReuploaded?: boolean }) {
   return (
     <div className="mb-6">
       <div className="mb-3 flex gap-0">
@@ -1392,7 +1393,7 @@ function PlacementSubSteps({ activeStep }: { activeStep: number }) {
   );
 }
 
-function PlacementDetailsContent({ placementState, onContinueToMapPartners, onUpload }: { placementState: PlacementState; onContinueToMapPartners: () => void; onUpload: () => void }) {
+function PlacementDetailsContent({ placementState, onContinueToMapPartners, onUpload, hasReuploaded }: { placementState: PlacementState; onContinueToMapPartners: () => void; onUpload: () => void; hasReuploaded?: boolean }) {
   const [showUploadBanner, setShowUploadBanner] = useState(placementState === "new-upload");
   const [editingDelimiters, setEditingDelimiters] = useState(false);
 
@@ -1441,7 +1442,7 @@ function PlacementDetailsContent({ placementState, onContinueToMapPartners, onUp
         </div>
       </div>
 
-      <PlacementSubSteps activeStep={1} />
+      <PlacementSubSteps activeStep={1} hasReuploaded={hasReuploaded} />
 
       {hasResults ? (
         <>
@@ -1453,7 +1454,7 @@ function PlacementDetailsContent({ placementState, onContinueToMapPartners, onUp
           <div className="mb-4">
             <p className="mb-3 text-sm font-semibold text-[#020617]">Processed Placement Data Results</p>
             <div className="flex items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-4 py-3">
-              <span className="text-sm font-medium text-[#020617]">Carta/Mcdonalds2024</span>
+              <span className="text-sm font-medium text-[#020617]">{hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}</span>
               <div className="flex items-center gap-6">
                 <span className="flex items-center gap-1 text-sm">
                   <Check className="size-4 text-[#16a34a]" />
@@ -1738,7 +1739,7 @@ function PartnerOnboardingModal({ step, onNext, onSkip, onBack, onDismissPermane
   );
 }
 
-function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy }: { onBackToMediaPlan: () => void; onContinueToTaxonomy: () => void }) {
+function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy, hasReuploaded }: { onBackToMediaPlan: () => void; onContinueToTaxonomy: () => void; hasReuploaded?: boolean }) {
   const [showOnboarding, setShowOnboarding] = useState(() => {
     if (typeof window !== "undefined") return !localStorage.getItem("hide-partner-onboarding");
     return true;
@@ -1866,7 +1867,7 @@ function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy }: { onBac
         </div>
       </div>
 
-      <PlacementSubSteps activeStep={2} />
+      <PlacementSubSteps activeStep={2} hasReuploaded={hasReuploaded} />
 
       <div className="mb-6 flex items-center gap-2">
         <p className="text-sm text-[#646464]">Map unassigned partners on the left to known media partners on the right.</p>
@@ -1991,13 +1992,24 @@ function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy }: { onBac
   );
 }
 
-function Sidebar({ currentStep, hasUploadedFile, onUpload, isUploading, onStepClick }: { currentStep: Step; hasUploadedFile: boolean; onUpload: () => void; isUploading: boolean; onStepClick: (step: Step) => void }) {
-  const completedSteps: Step[] =
+function Sidebar({ currentStep, hasUploadedFile, hasReuploaded, onUpload, isUploading, onStepClick }: { currentStep: Step; hasUploadedFile: boolean; hasReuploaded?: boolean; onUpload: () => void; isUploading: boolean; onStepClick: (step: Step) => void }) {
+  const completedSteps: Step[] = hasReuploaded ? [] :
     currentStep === "partner" ? ["campaign"] :
     currentStep === "funding" ? ["campaign", "partner"] :
     currentStep === "pixel" ? ["campaign", "partner", "funding"] :
     currentStep === "placement" ? ["campaign", "partner", "funding", "pixel"] :
     currentStep === "map-partners" ? ["campaign", "partner", "funding", "pixel"] : [];
+
+  const errorSteps: Step[] = (() => {
+    if (!hasReuploaded) return [];
+    const order: Step[] = ["campaign", "partner", "funding", "pixel", "placement"];
+    const sIdx = currentStep === "map-partners" ? order.indexOf("placement") : order.indexOf(currentStep);
+    const steps: Step[] = [];
+    for (let i = 0; i < sIdx; i++) steps.push(order[i]);
+    return steps;
+  })();
+
+  const fileName = hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024";
 
 
   const sidebarCurrentStep: Step = currentStep === "map-partners" ? "placement" : currentStep;
@@ -2008,6 +2020,7 @@ function Sidebar({ currentStep, hasUploadedFile, onUpload, isUploading, onStepCl
         {SIDEBAR_STEPS.map((step) => {
           const isActive = step.key === sidebarCurrentStep;
           const isDone = completedSteps.includes(step.key);
+          const isError = errorSteps.includes(step.key);
           return (
             <button
               key={step.label}
@@ -2017,8 +2030,9 @@ function Sidebar({ currentStep, hasUploadedFile, onUpload, isUploading, onStepCl
               }`}
             >
               <span className="flex-1 pl-1">{step.label}</span>
-              {isDone && <Check className="size-4 text-[#212be9]" />}
-              {isActive && !isDone && (
+              {isError && !isActive && <CircleAlert className="size-4 text-[#dc2626]" />}
+              {isDone && !isError && <Check className="size-4 text-[#212be9]" />}
+              {isActive && !isDone && !isError && (
                 (sidebarCurrentStep === "pixel" || sidebarCurrentStep === "placement")
                   ? <Loader2 className="size-4 animate-spin text-[#f59e0b]" />
                   : <CircleDashed className="size-4 text-[#020617]" />
@@ -2030,12 +2044,17 @@ function Sidebar({ currentStep, hasUploadedFile, onUpload, isUploading, onStepCl
 
       <div className="mt-12">
         <h3 className="text-base font-semibold text-black">Attachments</h3>
-        {hasUploadedFile ? (
+        {isUploading ? (
+          <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-dashed border-[#212be9] bg-[#f8f9ff] px-3 py-5">
+            <Loader2 className="size-5 animate-spin text-[#212be9]" />
+            <span className="text-xs font-medium text-[#212be9]">Processing...</span>
+          </div>
+        ) : hasUploadedFile ? (
           <div className="mt-4 flex flex-col gap-4">
             <div className="rounded-lg border border-[#e0e0e0] p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-black">Carta/Mcdonalds2024</p>
+                  <p className="text-sm font-medium text-black">{fileName}</p>
                   <p className="text-xs text-[#8d8d8d]">Uploaded today ago by Eric...</p>
                 </div>
                 <button className="text-[#212be9]">
@@ -2044,19 +2063,14 @@ function Sidebar({ currentStep, hasUploadedFile, onUpload, isUploading, onStepCl
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-center rounded-lg border border-dashed border-[#d9d9d9] bg-[#fcfcfc] px-3 py-5">
+              <button onClick={onUpload} className="flex w-full items-center justify-center rounded-lg border border-dashed border-[#d9d9d9] bg-[#fcfcfc] px-3 py-5 transition-colors hover:border-[#212be9] hover:bg-[#f8f9ff]">
                 <div className="flex items-center gap-2">
                   <Upload className="size-4 text-[#212be9]" />
                   <span className="text-xs text-[#212be9]">Replace Uploaded File</span>
                 </div>
-              </div>
+              </button>
               <p className="text-xs text-[#8d8d8d]">Supported file types: .xls, .xlsx, .csv</p>
             </div>
-          </div>
-        ) : isUploading ? (
-          <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-dashed border-[#212be9] bg-[#f8f9ff] px-3 py-5">
-            <Loader2 className="size-5 animate-spin text-[#212be9]" />
-            <span className="text-xs font-medium text-[#212be9]">Processing...</span>
           </div>
         ) : (
           <div className="mt-4 flex flex-col gap-2">
@@ -2075,6 +2089,14 @@ function Sidebar({ currentStep, hasUploadedFile, onUpload, isUploading, onStepCl
 }
 
 export default function NewCampaignPage() {
+  return (
+    <Suspense>
+      <NewCampaignContent />
+    </Suspense>
+  );
+}
+
+function NewCampaignContent() {
   const searchParams = useSearchParams();
   const initialStep = (searchParams.get("step") as Step) || "campaign";
   const [currentStep, setCurrentStep] = useState<Step>(initialStep);
@@ -2086,6 +2108,8 @@ export default function NewCampaignPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isEditingPartner, setIsEditingPartner] = useState(false);
   const [uploadBannerDismissed, setUploadBannerDismissed] = useState(false);
+  const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
+  const [hasReuploaded, setHasReuploaded] = useState(false);
 
   const progressPercent =
     currentStep === "campaign" ? 0 :
@@ -2105,15 +2129,33 @@ export default function NewCampaignPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleUpload = () => {
+  const doUpload = () => {
     if (isUploading) return;
+    const isReupload = hasUploadedFile;
     setIsUploading(true);
+    setUploadBannerDismissed(false);
     setTimeout(() => {
       setIsUploading(false);
       setHasUploadedFile(true);
       setShowForm(true);
+      if (isReupload) {
+        setHasReuploaded(true);
+      }
       setCampaignName("McDonalds Q1-Q2 2025");
     }, 2400);
+  };
+
+  const handleUpload = () => {
+    if (hasUploadedFile) {
+      setShowReplaceConfirm(true);
+    } else {
+      doUpload();
+    }
+  };
+
+  const confirmReplace = () => {
+    setShowReplaceConfirm(false);
+    doUpload();
   };
 
   return (
@@ -2144,17 +2186,23 @@ export default function NewCampaignPage() {
               <p className="text-base font-semibold text-black">Upload Results</p>
               <div className="flex items-center gap-1">
                 <FileText className="size-4 text-[#8d8d8d]" />
-                <span className="text-xs text-black">Carta/Mcdonalds2024</span>
+                <span className="text-xs text-black">{hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}</span>
               </div>
             </div>
             <div className="flex flex-1 items-stretch">
-              {[
+              {(hasReuploaded ? [
+                { label: "Campaign Details", status: "warning" as const },
+                { label: "Partner Details", status: "error" as const },
+                { label: "Funding Allocation", status: "error" as const },
+                { label: "Pixel Generation", status: "warning" as const },
+                { label: "Placement Details", status: "error" as const },
+              ] : [
                 { label: "Campaign Details", status: "success" as const },
                 { label: "Partner Details", status: hasUploadedFile ? "warning" as const : "error" as const },
                 { label: "Funding Allocation", status: "warning" as const },
                 { label: "Pixel Generation", status: "warning" as const },
                 { label: "Placement Details", status: "warning" as const },
-              ].map((item, i) => (
+              ]).map((item, i) => (
                 <div key={item.label} className="flex flex-1 items-stretch">
                   {i > 0 && <div className="mx-0 w-px self-stretch bg-[#e0e0e0]" />}
                   <div className="flex flex-1 flex-col items-start gap-2 px-4">
@@ -2179,7 +2227,7 @@ export default function NewCampaignPage() {
         </div>
       )}
       <div className="flex w-full gap-6 px-12 py-6">
-        <Sidebar currentStep={currentStep} hasUploadedFile={hasUploadedFile} onUpload={handleUpload} isUploading={isUploading} onStepClick={(step) => {
+        <Sidebar currentStep={currentStep} hasUploadedFile={hasUploadedFile} hasReuploaded={hasReuploaded} onUpload={handleUpload} isUploading={isUploading} onStepClick={(step) => {
           if (step === ("review" as Step)) {
             window.location.href = "/attribution/taxonomy/review";
           } else {
@@ -2202,7 +2250,7 @@ export default function NewCampaignPage() {
             </div>
           )}
           {currentStep === "campaign" && (
-            <CampaignDetailsContent showForm={showForm} onShowForm={() => setShowForm(true)} campaignName={campaignName} onCampaignNameChange={setCampaignName} onUpload={handleUpload} hasUploadedFile={hasUploadedFile} isUploading={isUploading} measurementBudget={measurementBudget} onMeasurementBudgetChange={setMeasurementBudget} metric={metric} onMetricChange={setMetric} />
+            <CampaignDetailsContent showForm={showForm} onShowForm={() => setShowForm(true)} campaignName={campaignName} onCampaignNameChange={setCampaignName} onUpload={handleUpload} hasUploadedFile={hasUploadedFile} hasReuploaded={hasReuploaded} isUploading={isUploading} measurementBudget={measurementBudget} onMeasurementBudgetChange={setMeasurementBudget} metric={metric} onMetricChange={setMetric} />
           )}
           {currentStep === "partner" && <PartnerDetailsContent hasUploadedFile={hasUploadedFile} isEditingPartner={isEditingPartner} onEditingPartnerChange={setIsEditingPartner} />}
           {currentStep === "funding" && <FundingAllocationContent measurementBudget={parseInt(measurementBudget.replace(/,/g, "") || "0")} />}
@@ -2212,12 +2260,14 @@ export default function NewCampaignPage() {
               placementState={placementState}
               onContinueToMapPartners={() => goToStep("map-partners")}
               onUpload={handleUpload}
+              hasReuploaded={hasReuploaded}
             />
           )}
           {currentStep === "map-partners" && (
             <MapPartnersContent
               onBackToMediaPlan={() => goToStep("placement")}
               onContinueToTaxonomy={() => window.location.href = "/attribution/taxonomy"}
+              hasReuploaded={hasReuploaded}
             />
           )}
 
@@ -2307,6 +2357,38 @@ export default function NewCampaignPage() {
           )}
         </main>
       </div>
+
+      {showReplaceConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowReplaceConfirm(false)}>
+          <div className="w-full max-w-[480px] rounded-xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#fee2e2]">
+                <CircleAlert className="size-5 text-[#dc2626]" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-[#171417]">Replace Existing Media Plan?</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[#555]">
+                  Uploading a new media plan will overwrite previously parsed data. This may result in missing information in earlier steps, and you may need to re-enter required details.
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setShowReplaceConfirm(false)}
+                className="rounded-md border border-border px-4 py-2 text-sm font-medium text-[#171417] transition-colors hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmReplace}
+                className="rounded-md bg-[#dc2626] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#b91c1c]"
+              >
+                Replace
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

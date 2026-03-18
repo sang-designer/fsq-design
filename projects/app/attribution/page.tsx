@@ -21,10 +21,12 @@ import {
   LogOut,
   Pencil,
   Trash2,
+  Users,
+  User,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 
 type CampaignStatus = "Pending" | "Completed" | "Action Required";
 
@@ -300,6 +302,14 @@ function DateRangePicker({
 }
 
 export default function AttributionPage() {
+  return (
+    <Suspense>
+      <AttributionPageContent />
+    </Suspense>
+  );
+}
+
+function AttributionPageContent() {
   const [activeTab, setActiveTab] = useState<"all" | "watchlist">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -753,7 +763,7 @@ export default function AttributionPage() {
       {/* New Campaign Modal */}
       {newCampaignOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm" onClick={() => setNewCampaignOpen(false)}>
-          <div className="mt-[10vh] w-full max-w-[720px] rounded-xl bg-white p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="mt-[10vh] w-full max-w-[800px] rounded-xl bg-white p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-2xl font-semibold tracking-[-0.5px] text-[#171417]">What would you like to do to get started?</h2>
@@ -765,23 +775,32 @@ export default function AttributionPage() {
                 <X className="size-4" />
               </button>
             </div>
-            <div className="mt-8 grid grid-cols-2 gap-6">
-              <button onClick={() => { setNewCampaignOpen(false); router.push("/attribution/new"); }} className="group flex items-start gap-3 rounded-xl border border-border p-4 text-left transition-all hover:border-[#212be9] hover:shadow-md">
+            <div className="mt-8 grid grid-cols-3 gap-5">
+              <button onClick={() => { setNewCampaignOpen(false); router.push("/attribution/new"); }} className="group flex flex-col items-start gap-3 rounded-xl border border-border p-5 text-left transition-all hover:border-[#212be9] hover:shadow-md">
                 <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#f0f0f0] transition-colors group-hover:bg-[#eff0fd]">
-                  <Plus className="size-5 text-[#171417] group-hover:text-[#212be9]" />
+                  <Users className="size-5 text-[#171417] group-hover:text-[#212be9]" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#171417]">Create new campaign</p>
-                  <p className="mt-1 text-xs leading-4 text-[#646464]">Start fresh. We&apos;ll generate a new Salesforce opportunity on submission and will require all the details outlined.</p>
+                  <p className="text-sm font-semibold text-[#171417]">Create Multiple Partners Campaign</p>
+                  <p className="mt-1.5 text-xs leading-4 text-[#646464]">Set up a campaign with multiple media partners.</p>
                 </div>
               </button>
-              <button onClick={() => { setNewCampaignOpen(false); router.push("/attribution/edit"); }} className="group flex items-start gap-3 rounded-xl border border-border p-4 text-left transition-all hover:border-[#212be9] hover:shadow-md">
+              <button onClick={() => { setNewCampaignOpen(false); router.push("/attribution/new-single"); }} className="group flex flex-col items-start gap-3 rounded-xl border border-border p-5 text-left transition-all hover:border-[#212be9] hover:shadow-md">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#f0f0f0] transition-colors group-hover:bg-[#eff0fd]">
+                  <User className="size-5 text-[#171417] group-hover:text-[#212be9]" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#171417]">Create Single Partner Campaign</p>
+                  <p className="mt-1.5 text-xs leading-4 text-[#646464]">Streamlined setup for campaigns with a single media partner.</p>
+                </div>
+              </button>
+              <button onClick={() => { setNewCampaignOpen(false); router.push("/attribution/edit"); }} className="group flex flex-col items-start gap-3 rounded-xl border border-border p-5 text-left transition-all hover:border-[#212be9] hover:shadow-md">
                 <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#f0f0f0] transition-colors group-hover:bg-[#eff0fd]">
                   <GitBranchPlus className="size-5 text-[#171417] group-hover:text-[#212be9]" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#171417]">Edit an existing campaign</p>
-                  <p className="mt-1 text-xs leading-4 text-[#646464]">Link an existing Salesforce opportunity and add new line items.</p>
+                  <p className="mt-1.5 text-xs leading-4 text-[#646464]">Link an existing Salesforce opportunity and add new line items.</p>
                 </div>
               </button>
             </div>
