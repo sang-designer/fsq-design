@@ -556,9 +556,23 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
               />
             </div>
             {isOverridden("budget") && (
-              <div className="flex items-center gap-2">
-                <span className="rounded bg-[#fefce8] px-1.5 py-0.5 text-[10px] font-medium text-[#92400e]">This value differs from Salesforce data</span>
-                <button onClick={() => resetField("budget")} className="text-[10px] font-medium text-[#212be9] hover:underline">Reset</button>
+              <div className="flex flex-col gap-1">
+                <p className="text-[11px] leading-4 text-[#92400e]">
+                  This value differs from Salesforce data. If this value is correct, please update it in Salesforce.
+                </p>
+                <div className="flex items-center gap-3">
+                  {sfOpportunity.trim() && (
+                    <a
+                      href={sfOpportunity.startsWith("http") ? sfOpportunity : `https://salesforce.com/opp/${sfOpportunity}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-medium text-[#212be9] hover:underline"
+                    >
+                      Edit in Salesforce ↗
+                    </a>
+                  )}
+                  <button onClick={() => resetField("budget")} className="text-[11px] font-medium text-[#212be9] hover:underline">Reset value</button>
+                </div>
               </div>
             )}
           </div>
