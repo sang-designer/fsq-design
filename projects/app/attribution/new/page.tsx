@@ -673,9 +673,9 @@ function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValu
           </div>
         </div>
 
-        {/* Media Types & Funding */}
+        {/* Media Types */}
         <div className="flex flex-col gap-4">
-          <p className="text-xs font-semibold text-[#646464]">Media Types &amp; Funding</p>
+          <p className="text-xs font-semibold text-[#646464]">Media Types</p>
           {mediaTypes.map((mt) => (
             <div key={mt.id} className="rounded-md border border-[#e0e0e0] px-4 py-4">
               <button
@@ -696,22 +696,6 @@ function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValu
                   <div className="flex gap-8">
                     <InputField label="Estimated Ad Spend" placeholder="Ad Spend value..." value={formValues["Estimated Ad Spend"] ?? ""} onChange={(v) => updateField("Estimated Ad Spend", v)} />
                     <InputField label="Estimated Impressions" placeholder="Impressions value..." value={formValues["Estimated Impressions"] ?? ""} onChange={(v) => updateField("Estimated Impressions", v)} />
-                  </div>
-                  <div className="flex gap-8">
-                    <SelectField label="Pricing Method for Visits (Internal Only)" value={formValues["Pricing Method for Visits"] ?? ""} onChange={(v) => updateField("Pricing Method for Visits", v)} options={PRICING_METHOD_OPTIONS} />
-                    <SelectField label="Rate Card for Visits (Internal Only)" value={formValues["Rate Card for Visits"] ?? ""} onChange={(v) => updateField("Rate Card for Visits", v)} options={RATE_CARD_OPTIONS} />
-                  </div>
-                  <div className="flex gap-8">
-                    <SelectField label="Funding Name for Visits" value={formValues["Funding Name for Visits"] ?? ""} onChange={(v) => updateField("Funding Name for Visits", v)} error={hasError("Funding Name for Visits")} options={FUNDING_NAME_OPTIONS} />
-                    <InputField label="Funding Email for Visit" placeholder="Email..." value={formValues["Funding Email for Visit"] ?? ""} onChange={(v) => updateField("Funding Email for Visit", v)} error={hasError("Funding Email for Visit")} />
-                  </div>
-                  <div className="flex gap-8">
-                    <SelectField label="Pricing Method for Sales Impact (Internal Only)" value={formValues["Pricing Method for Sales Impact"] ?? ""} onChange={(v) => updateField("Pricing Method for Sales Impact", v)} options={PRICING_METHOD_OPTIONS} />
-                    <SelectField label="Rate Card for Sales Impact (Internal Only)" value={formValues["Rate Card for Sales Impact"] ?? ""} onChange={(v) => updateField("Rate Card for Sales Impact", v)} options={RATE_CARD_OPTIONS} />
-                  </div>
-                  <div className="flex gap-8">
-                    <SelectField label="Funding Name for Sales Impact" value={formValues["Funding Name for Sales Impact"] ?? ""} onChange={(v) => updateField("Funding Name for Sales Impact", v)} options={FUNDING_NAME_OPTIONS} />
-                    <InputField label="Funding Email for Sales Impact" placeholder="Email..." value={formValues["Funding Email for Sales Impact"] ?? ""} onChange={(v) => updateField("Funding Email for Sales Impact", v)} />
                   </div>
                 </div>
               )}
@@ -1026,10 +1010,12 @@ function FundingAllocationContent({ measurementBudget }: { measurementBudget: nu
       ...p,
       fundingVisits: "",
       fundingSalesImpact: "",
+      fundingNameVisits: "",
+      fundingNameSales: "",
     }))
   );
 
-  const updateAllocation = (index: number, field: "fundingVisits" | "fundingSalesImpact", value: string) => {
+  const updateAllocation = (index: number, field: "fundingVisits" | "fundingSalesImpact" | "fundingNameVisits" | "fundingNameSales", value: string) => {
     setAllocations((prev) =>
       prev.map((a, i) => (i === index ? { ...a, [field]: value } : a))
     );
@@ -1064,28 +1050,30 @@ function FundingAllocationContent({ measurementBudget }: { measurementBudget: nu
 
       {/* Allocation Table */}
       <div className="overflow-hidden rounded-xl border border-border">
-        <table className="w-full">
+        <table className="w-full table-fixed">
           <thead>
             <tr className="border-b border-border bg-[#f8fafc]">
-              <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Partner</th>
-              <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Media Type</th>
-              <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Who is funding visits</th>
-              <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Who is funding sales impact</th>
+              <th className="w-[14%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Partner</th>
+              <th className="w-[12%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Media Type</th>
+              <th className="w-[16%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Who is funding visits</th>
+              <th className="w-[20%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Funding name for visits</th>
+              <th className="w-[18%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Who is funding sales impact</th>
+              <th className="w-[20%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Funding name for sales impact</th>
             </tr>
           </thead>
           <tbody>
             {allocations.map((alloc, i) => {
               return (
                 <tr key={alloc.name} className="border-b border-border last:border-b-0">
-                  <td className="px-5 py-4">
+                  <td className="px-4 py-4">
                     <p className="text-sm font-medium text-[#1f2430]">{alloc.name}</p>
                   </td>
-                  <td className="px-5 py-4">
+                  <td className="px-4 py-4">
                     <span className="rounded-full bg-[#f1f5f9] px-2.5 py-1 text-xs font-medium text-[#475569]">{alloc.mediaType}</span>
                   </td>
-                  <td className="px-5 py-4">
+                  <td className="px-4 py-4">
                     <Select value={alloc.fundingVisits || undefined} onValueChange={(val) => updateAllocation(i, "fundingVisits", val)}>
-                      <SelectTrigger className={`w-[150px] ${alloc.fundingVisits ? "" : "border-[#f59e0b]"}`} size="sm">
+                      <SelectTrigger className={`w-full ${alloc.fundingVisits ? "" : "border-[#f59e0b]"}`} size="sm">
                         <SelectValue placeholder="Select..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -1094,9 +1082,18 @@ function FundingAllocationContent({ measurementBudget }: { measurementBudget: nu
                       </SelectContent>
                     </Select>
                   </td>
-                  <td className="px-5 py-4">
+                  <td className="px-4 py-4">
+                    <input
+                      type="text"
+                      value={alloc.fundingNameVisits}
+                      onChange={(e) => updateAllocation(i, "fundingNameVisits", e.target.value)}
+                      placeholder="Enter name..."
+                      className="w-full rounded-md border border-[#e2e8f0] bg-white px-3 py-1.5 text-sm text-[#020617] outline-none placeholder:text-[#9ca3af] focus:border-[#212be9]"
+                    />
+                  </td>
+                  <td className="px-4 py-4">
                     <Select value={alloc.fundingSalesImpact || undefined} onValueChange={(val) => updateAllocation(i, "fundingSalesImpact", val)}>
-                      <SelectTrigger className={`w-[150px] ${alloc.fundingSalesImpact ? "" : "border-[#f59e0b]"}`} size="sm">
+                      <SelectTrigger className={`w-full ${alloc.fundingSalesImpact ? "" : "border-[#f59e0b]"}`} size="sm">
                         <SelectValue placeholder="Select..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -1104,6 +1101,15 @@ function FundingAllocationContent({ measurementBudget }: { measurementBudget: nu
                         <SelectItem value="Partner">Partner</SelectItem>
                       </SelectContent>
                     </Select>
+                  </td>
+                  <td className="px-4 py-4">
+                    <input
+                      type="text"
+                      value={alloc.fundingNameSales}
+                      onChange={(e) => updateAllocation(i, "fundingNameSales", e.target.value)}
+                      placeholder="Enter name..."
+                      className="w-full rounded-md border border-[#e2e8f0] bg-white px-3 py-1.5 text-sm text-[#020617] outline-none placeholder:text-[#9ca3af] focus:border-[#212be9]"
+                    />
                   </td>
                 </tr>
               );
