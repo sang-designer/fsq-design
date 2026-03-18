@@ -243,7 +243,7 @@ function BrandSearchSelect({ value, onChange }: { value: string; onChange: (v: s
   );
 }
 
-function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaignNameChange, onUpload, hasUploadedFile, hasReuploaded, isUploading, measurementBudget, onMeasurementBudgetChange, metric, onMetricChange }: { showForm: boolean; onShowForm: () => void; campaignName: string; onCampaignNameChange: (v: string) => void; onUpload: () => void; hasUploadedFile: boolean; hasReuploaded?: boolean; isUploading: boolean; measurementBudget: string; onMeasurementBudgetChange: (v: string) => void; metric: string; onMetricChange: (v: string) => void }) {
+function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaignNameChange, onUpload, hasUploadedFile, hasReuploaded, isUploading, measurementBudget, onMeasurementBudgetChange, metric, onMetricChange, sfValidated, onSfValidatedChange }: { showForm: boolean; onShowForm: () => void; campaignName: string; onCampaignNameChange: (v: string) => void; onUpload: () => void; hasUploadedFile: boolean; hasReuploaded?: boolean; isUploading: boolean; measurementBudget: string; onMeasurementBudgetChange: (v: string) => void; metric: string; onMetricChange: (v: string) => void; sfValidated: boolean; onSfValidatedChange: (v: boolean) => void }) {
   const formRef = useRef<HTMLDivElement>(null);
 
   const [advertiser, setAdvertiser] = useState("");
@@ -251,6 +251,9 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
   const [endDate, setEndDate] = useState("");
   const [conversionWindow, setConversionWindow] = useState("");
   const [sfOpportunity, setSfOpportunity] = useState("");
+  const [sfValidating, setSfValidating] = useState(false);
+  const [sfError, setSfError] = useState("");
+  const [sfOriginal, setSfOriginal] = useState<{ brand: string; budget: string; metric: string } | null>(null);
   const [agencyName, setAgencyName] = useState("");
   const [ownerType, setOwnerType] = useState("");
   const [contactName, setContactName] = useState("");
@@ -264,6 +267,53 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
   const [geoLocations, setGeoLocations] = useState("");
   const [notes, setNotes] = useState("");
   const [brand, setBrand] = useState("");
+
+  const MOCK_SF_DATA: Record<string, { brand: string; budget: string; metric: string }> = {
+    "00341": { brand: "McDonalds", budget: "420,000", metric: "Visits and Sales" },
+    "00555": { brand: "Starbucks", budget: "250,000", metric: "Visits" },
+    "00789": { brand: "Target", budget: "310,000", metric: "Visits and Sales" },
+  };
+
+  const handleSfValidate = () => {
+    if (!sfOpportunity.trim()) {
+      setSfError("Salesforce Opportunity ID is required.");
+      return;
+    }
+    setSfValidating(true);
+    setSfError("");
+    setTimeout(() => {
+      setSfValidating(false);
+      const idMatch = sfOpportunity.match(/(\d{5})/);
+      const id = idMatch?.[1];
+      const data = id ? MOCK_SF_DATA[id] : undefined;
+      if (data) {
+        onSfValidatedChange(true);
+        setSfOriginal(data);
+        setBrand(data.brand);
+        onMeasurementBudgetChange(data.budget);
+        onMetricChange(data.metric);
+      } else if (sfOpportunity.includes("error")) {
+        setSfError("Unable to verify ID. Try again later.");
+      } else {
+        setSfError("Opportunity not found. Please check and try again.");
+      }
+    }, 1200);
+  };
+
+  const normalize = (v: string) => v.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+  const isOverridden = (field: "brand" | "budget" | "metric") => {
+    if (!sfOriginal) return false;
+    if (field === "brand") return normalize(brand) !== normalize(sfOriginal.brand);
+    if (field === "budget") return normalize(measurementBudget) !== normalize(sfOriginal.budget);
+    if (field === "metric") return normalize(metric) !== normalize(sfOriginal.metric);
+    return false;
+  };
+  const resetField = (field: "brand" | "budget" | "metric") => {
+    if (!sfOriginal) return;
+    if (field === "brand") setBrand(sfOriginal.brand);
+    if (field === "budget") onMeasurementBudgetChange(sfOriginal.budget);
+    if (field === "metric") onMetricChange(sfOriginal.metric);
+  };
 
   type PartnerRow = {
     name: string;
@@ -299,7 +349,6 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
       setStartDate("2025-01-15");
       setEndDate("2025-06-30");
       setConversionWindow("30 Days");
-      setSfOpportunity("https://salesforce.com/opp/00341");
       setAgencyName("Starcom Worldwide");
       setOwnerType("Agency");
       setContactName("Sarah Mitchell");
@@ -309,9 +358,15 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
       setGeoTargeting("National");
       setGeoLocations("All US Markets");
       setNotes("Q1-Q2 2025 brand awareness campaign across digital channels.");
-      setBrand("McDonalds");
-      onMeasurementBudgetChange(measurementBudget || "420,000");
-      onMetricChange(metric || "Visits and Sales");
+      if (!sfValidated) {
+        setSfOpportunity("https://salesforce.com/opp/00341");
+        onSfValidatedChange(true);
+        const sfData = { brand: "McDonalds", budget: measurementBudget || "420,000", metric: metric || "Visits and Sales" };
+        setSfOriginal(sfData);
+        setBrand(sfData.brand);
+        onMeasurementBudgetChange(sfData.budget);
+        onMetricChange(sfData.metric);
+      }
     }
   }, [hasUploadedFile]);
 
@@ -321,7 +376,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
         <h2 className="text-xl font-semibold text-[#020617]">Campaign Details</h2>
         <div className="mt-1 text-sm leading-5 text-[#646464]">
           <p>
-            Let&apos;s get started in setting up your new campaign. Upload a media plan or manually create a campaign.
+            Let&apos;s get started in setting up your new campaign. Enter a Salesforce Opportunity to pull in campaign data.
           </p>
           <p>
             <span className="cursor-pointer text-[#3333ff]">Learn more</span> about Attribution on Foursquare Documentation.
@@ -329,11 +384,80 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
         </div>
       </div>
 
+      {/* Salesforce Opportunity ID */}
+      <div className="mb-6">
+        <div className="flex max-w-[560px] flex-col gap-1.5">
+          <label className="text-sm font-medium text-[#1f2430]">
+            Salesforce Opportunity ID or URL <span className="text-[#dc2626]">*</span>
+          </label>
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={sfOpportunity}
+                onChange={(e) => {
+                  setSfOpportunity(e.target.value);
+                  if (sfError) setSfError("");
+                }}
+                placeholder="e.g. https://salesforce.com/opp/00341 or 00341"
+                disabled={sfValidating}
+                className={`h-9 w-full rounded-md border bg-transparent px-3 py-2 text-sm text-[#1f2430] shadow-xs outline-none placeholder:text-[#94a3b8] focus-visible:ring-[3px] ${
+                  sfError
+                    ? "border-[#dc2626] focus-visible:border-[#dc2626] focus-visible:ring-[#dc2626]/20"
+                    : sfValidated
+                    ? "border-[#16a34a] focus-visible:border-[#16a34a] focus-visible:ring-[#16a34a]/20"
+                    : "border-input focus-visible:border-ring focus-visible:ring-ring/50"
+                }`}
+              />
+              {sfValidated && !sfError && (
+                <Check className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#16a34a]" />
+              )}
+            </div>
+            <button
+              onClick={handleSfValidate}
+              disabled={sfValidating || !sfOpportunity.trim()}
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-[#212be9] bg-white px-4 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {sfValidating && <Loader2 className="size-4 animate-spin" />}
+              {sfValidating ? "Verifying..." : sfValidated ? "Re-verify" : "Verify"}
+            </button>
+          </div>
+          {sfError && (
+            <p className="flex items-center gap-1.5 text-xs text-[#dc2626]">
+              <CircleAlert className="size-3.5" />
+              {sfError}
+            </p>
+          )}
+          {sfValidated && !sfError && (
+            <p className="text-xs text-[#16a34a]">Salesforce Opportunity verified successfully.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Progressive disclosure: show rest only after SF validated */}
+      <div
+        className="overflow-hidden transition-all duration-500 ease-in-out"
+        style={{
+          maxHeight: sfValidated ? "9999px" : "0px",
+          opacity: sfValidated ? 1 : 0,
+        }}
+      >
+
       {/* Brand, Budget, Metric */}
       <div className="mb-6 flex gap-6">
-        <BrandSearchSelect value={brand} onChange={setBrand} />
+        <div className="relative flex flex-1 flex-col gap-1.5">
+          <BrandSearchSelect value={brand} onChange={setBrand} />
+          {isOverridden("brand") && (
+            <div className="flex items-center gap-2">
+              <span className="rounded bg-[#fefce8] px-1.5 py-0.5 text-[10px] font-medium text-[#92400e]">This value differs from Salesforce data</span>
+              <button onClick={() => resetField("brand")} className="text-[10px] font-medium text-[#212be9] hover:underline">Reset</button>
+            </div>
+          )}
+        </div>
         <div className="flex flex-1 flex-col gap-1.5">
-          <label className="text-sm font-medium text-[#1f2430]">Measurement Budget</label>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-[#1f2430]">Measurement Budget</label>
+          </div>
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#64748b]">$</span>
             <input
@@ -344,14 +468,22 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
                 onMeasurementBudgetChange(raw ? parseInt(raw).toLocaleString() : "");
               }}
               placeholder="0"
-              className="h-9 w-full rounded-md border border-input bg-transparent py-2 pl-7 pr-3 text-sm text-[#1f2430] shadow-xs outline-none placeholder:text-[#94a3b8] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              className={`h-9 w-full rounded-md border bg-transparent py-2 pl-7 pr-3 text-sm text-[#1f2430] shadow-xs outline-none placeholder:text-[#94a3b8] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 ${isOverridden("budget") ? "border-[#f59e0b] bg-[#fffbeb]" : "border-input"}`}
             />
           </div>
+          {isOverridden("budget") && (
+            <div className="flex items-center gap-2">
+              <span className="rounded bg-[#fefce8] px-1.5 py-0.5 text-[10px] font-medium text-[#92400e]">This value differs from Salesforce data</span>
+              <button onClick={() => resetField("budget")} className="text-[10px] font-medium text-[#212be9] hover:underline">Reset</button>
+            </div>
+          )}
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
-          <label className="text-sm font-medium text-[#1f2430]">Metric</label>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-[#1f2430]">Metric</label>
+          </div>
           <Select value={metric || undefined} onValueChange={onMetricChange}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className={`w-full ${isOverridden("metric") ? "border-[#f59e0b] bg-[#fffbeb]" : ""}`}>
               <SelectValue placeholder="Select metric" />
             </SelectTrigger>
             <SelectContent>
@@ -359,6 +491,12 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
               <SelectItem value="Visits and Sales">Visits and Sales</SelectItem>
             </SelectContent>
           </Select>
+          {isOverridden("metric") && (
+            <div className="flex items-center gap-2">
+              <span className="rounded bg-[#fefce8] px-1.5 py-0.5 text-[10px] font-medium text-[#92400e]">This value differs from Salesforce data</span>
+              <button onClick={() => resetField("metric")} className="text-[10px] font-medium text-[#212be9] hover:underline">Reset</button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -446,7 +584,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
                 </div>
                 <div className="flex gap-4">
                   <InputField label="Conversion Window" placeholder="# days to observe a visit after initial ad exposure" value={conversionWindow} onChange={setConversionWindow} />
-                  <InputField label="Salesforce Opportunity ID or URL" placeholder="Type URL" value={sfOpportunity} onChange={setSfOpportunity} />
+                  <div className="flex-1 min-w-[280px]" />
                 </div>
               </div>
             </div>
@@ -604,6 +742,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
             </div>
           </div>
         </div>
+      </div>
       </div>
     </>
   );
@@ -2116,6 +2255,7 @@ function NewCampaignContent() {
   const [uploadBannerDismissed, setUploadBannerDismissed] = useState(false);
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [hasReuploaded, setHasReuploaded] = useState(false);
+  const [sfValidated, setSfValidated] = useState(false);
 
   const progressPercent =
     currentStep === "campaign" ? 0 :
@@ -2256,7 +2396,7 @@ function NewCampaignContent() {
             </div>
           )}
           {currentStep === "campaign" && (
-            <CampaignDetailsContent showForm={showForm} onShowForm={() => setShowForm(true)} campaignName={campaignName} onCampaignNameChange={setCampaignName} onUpload={handleUpload} hasUploadedFile={hasUploadedFile} hasReuploaded={hasReuploaded} isUploading={isUploading} measurementBudget={measurementBudget} onMeasurementBudgetChange={setMeasurementBudget} metric={metric} onMetricChange={setMetric} />
+            <CampaignDetailsContent showForm={showForm} onShowForm={() => setShowForm(true)} campaignName={campaignName} onCampaignNameChange={setCampaignName} onUpload={handleUpload} hasUploadedFile={hasUploadedFile} hasReuploaded={hasReuploaded} isUploading={isUploading} measurementBudget={measurementBudget} onMeasurementBudgetChange={setMeasurementBudget} metric={metric} onMetricChange={setMetric} sfValidated={sfValidated} onSfValidatedChange={setSfValidated} />
           )}
           {currentStep === "partner" && <PartnerDetailsContent hasUploadedFile={hasUploadedFile} isEditingPartner={isEditingPartner} onEditingPartnerChange={setIsEditingPartner} />}
           {currentStep === "funding" && <FundingAllocationContent measurementBudget={parseInt(measurementBudget.replace(/,/g, "") || "0")} />}
@@ -2287,7 +2427,8 @@ function NewCampaignContent() {
               </Link>
               <button
                 onClick={() => goToStep("partner")}
-                className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]"
+                disabled={!sfValidated}
+                className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Continue to Partner Details
               </button>

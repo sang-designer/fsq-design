@@ -370,6 +370,59 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
   const [notes, setNotes] = useState("");
   const [brand, setBrand] = useState("");
 
+  const [sfValidated, setSfValidated] = useState(false);
+  const [sfValidating, setSfValidating] = useState(false);
+  const [sfError, setSfError] = useState("");
+  const [sfOriginal, setSfOriginal] = useState<{ brand: string; budget: string; metric: string } | null>(null);
+
+  const MOCK_SF_DATA: Record<string, { brand: string; budget: string; metric: string }> = {
+    "00341": { brand: "McDonalds", budget: "420,000", metric: "Visits and Sales" },
+    "00555": { brand: "Starbucks", budget: "250,000", metric: "Visits" },
+    "00789": { brand: "Target", budget: "310,000", metric: "Visits and Sales" },
+  };
+
+  const normalize = (v: string) => v.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+  const isOverridden = (field: "brand" | "budget" | "metric") => {
+    if (!sfOriginal) return false;
+    if (field === "brand") return normalize(brand) !== normalize(sfOriginal.brand);
+    if (field === "budget") return normalize(measurementBudget) !== normalize(sfOriginal.budget);
+    if (field === "metric") return normalize(metric) !== normalize(sfOriginal.metric);
+    return false;
+  };
+
+  const resetField = (field: "brand" | "budget" | "metric") => {
+    if (!sfOriginal) return;
+    if (field === "brand") setBrand(sfOriginal.brand);
+    if (field === "budget") onMeasurementBudgetChange(sfOriginal.budget);
+    if (field === "metric") onMetricChange(sfOriginal.metric);
+  };
+
+  const handleSfValidate = () => {
+    if (!sfOpportunity.trim()) {
+      setSfError("Salesforce Opportunity ID is required.");
+      return;
+    }
+    setSfValidating(true);
+    setSfError("");
+    setTimeout(() => {
+      setSfValidating(false);
+      const idMatch = sfOpportunity.match(/(\d{5})/);
+      const id = idMatch?.[1];
+      const data = id ? MOCK_SF_DATA[id] : undefined;
+      if (data) {
+        setSfValidated(true);
+        setSfOriginal(data);
+        setBrand(data.brand);
+        onMeasurementBudgetChange(data.budget);
+        onMetricChange(data.metric);
+      } else if (sfOpportunity.includes("error")) {
+        setSfError("Unable to verify ID. Try again later.");
+      } else {
+        setSfError("Opportunity not found. Please check and try again.");
+      }
+    }, 1200);
+  };
+
   useEffect(() => {
     if (partner) setAgencyName(partner);
   }, [partner]);
@@ -380,7 +433,6 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
       setStartDate("2025-01-15");
       setEndDate("2025-06-30");
       setConversionWindow("30 Days");
-      setSfOpportunity("https://salesforce.com/opp/00341");
       setAgencyName("Nexxen");
       setOwnerType("Agency");
       setContactName("Sarah Mitchell");
@@ -390,7 +442,15 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
       setGeoTargeting("National");
       setGeoLocations("All US Markets");
       setNotes("Q1-Q2 2025 brand awareness campaign across digital channels.");
-      setBrand("McDonalds");
+      if (!sfValidated) {
+        setSfOpportunity("https://salesforce.com/opp/00341");
+        setSfValidated(true);
+        const sfData = { brand: "McDonalds", budget: "420,000", metric: "Visits and Sales" };
+        setSfOriginal(sfData);
+        setBrand(sfData.brand);
+        onMeasurementBudgetChange(sfData.budget);
+        onMetricChange(sfData.metric);
+      }
     }
   }, [hasUploadedFile]);
 
@@ -400,7 +460,7 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
         <h2 className="text-xl font-semibold text-[#020617]">Campaign Details</h2>
         <div className="mt-1 text-sm leading-5 text-[#646464]">
           <p>
-            Let&apos;s get started in setting up your single partner campaign. Upload a media plan or manually create a campaign.
+            Let&apos;s get started in setting up your single partner campaign. Enter a Salesforce Opportunity to pull in campaign data.
           </p>
           <p>
             <span className="cursor-pointer text-[#3333ff]">Learn more</span> about Attribution on Foursquare Documentation.
@@ -408,127 +468,210 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
         </div>
       </div>
 
-      <div className="mb-6 flex gap-6">
-        <BrandSearchSelect value={brand} onChange={setBrand} />
-        <PartnerSearchSelect value={partner} onChange={onPartnerChange} />
-        <div className="flex flex-1 flex-col gap-1.5">
-          <label className="text-sm font-medium text-[#1f2430]">Measurement Budget</label>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#64748b]">$</span>
-            <input
-              type="text"
-              value={measurementBudget}
-              onChange={(e) => {
-                const raw = e.target.value.replace(/[^0-9]/g, "");
-                onMeasurementBudgetChange(raw ? parseInt(raw).toLocaleString() : "");
-              }}
-              placeholder="0"
-              className="h-9 w-full rounded-md border border-input bg-transparent py-2 pl-7 pr-3 text-sm text-[#1f2430] shadow-xs outline-none placeholder:text-[#94a3b8] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            />
-          </div>
-        </div>
-        <div className="flex flex-1 flex-col gap-1.5">
-          <label className="text-sm font-medium text-[#1f2430]">Metric</label>
-          <Select value={metric || undefined} onValueChange={onMetricChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select metric" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Visits">Visits</SelectItem>
-              <SelectItem value="Visits and Sales">Visits and Sales</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <Separator className="mb-6" />
-
-      <div className="mb-10">
-        <p className="mb-4 text-sm font-medium text-black">Upload a Media Plan</p>
-        {isUploading ? (
-          <div className="flex h-20 w-[528px] flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-[#212be9] bg-[#f8f9ff]">
-            <div className="flex items-center gap-3">
-              <Loader2 className="size-5 animate-spin text-[#212be9]" />
-              <span className="text-sm font-medium text-[#212be9]">Processing media plan...</span>
+      {/* Salesforce Opportunity ID */}
+      <div className="mb-6">
+        <div className="flex max-w-[560px] flex-col gap-1.5">
+          <label className="text-sm font-medium text-[#1f2430]">
+            Salesforce Opportunity ID or URL <span className="text-[#dc2626]">*</span>
+          </label>
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={sfOpportunity}
+                onChange={(e) => {
+                  setSfOpportunity(e.target.value);
+                  if (sfError) setSfError("");
+                }}
+                placeholder="e.g. https://salesforce.com/opp/00341 or 00341"
+                disabled={sfValidating}
+                className={`h-9 w-full rounded-md border bg-transparent px-3 py-2 text-sm text-[#1f2430] shadow-xs outline-none placeholder:text-[#94a3b8] focus-visible:ring-[3px] ${
+                  sfError
+                    ? "border-[#dc2626] focus-visible:border-[#dc2626] focus-visible:ring-[#dc2626]/20"
+                    : sfValidated
+                    ? "border-[#16a34a] focus-visible:border-[#16a34a] focus-visible:ring-[#16a34a]/20"
+                    : "border-input focus-visible:border-ring focus-visible:ring-ring/50"
+                }`}
+              />
+              {sfValidated && !sfError && (
+                <Check className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#16a34a]" />
+              )}
             </div>
-            <div className="h-1.5 w-48 overflow-hidden rounded-full bg-[#e2e8f0]">
-              <div className="h-full rounded-full bg-[#212be9]" style={{ animation: "progress 2.4s ease-in-out forwards" }} />
-            </div>
-            <style>{`@keyframes progress { 0% { width: 0% } 40% { width: 60% } 80% { width: 85% } 100% { width: 100% } }`}</style>
-          </div>
-        ) : hasUploadedFile ? (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between rounded-lg border border-[#e0e0e0] p-4">
-              <div>
-                <p className="text-sm font-medium text-black">{hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}</p>
-                <p className="text-xs text-[#8d8d8d]">Uploaded today by Eric...</p>
-              </div>
-              <button className="text-[#212be9]">
-                <Download className="size-4" />
-              </button>
-            </div>
-            <div className="flex flex-col gap-2">
-              <button onClick={onUpload} className="flex h-16 w-full items-center justify-center rounded-lg border-2 border-dashed border-[#e0e0e0] bg-[#f9f9f9] transition-colors hover:border-[#212be9] hover:bg-[#f8f9ff]">
-                <div className="flex items-center gap-2">
-                  <Upload className="size-4 text-[#212be9]" />
-                  <span className="text-xs text-[#212be9]">Replace Uploaded File</span>
-                </div>
-              </button>
-              <p className="text-xs text-[#8d8d8d]">Supported file types: .xls, .xlsx, .csv</p>
-            </div>
-          </div>
-        ) : (
-          <>
-            <button onClick={onUpload} className="flex h-20 w-[528px] items-center justify-center rounded-lg border-2 border-dashed border-[#e0e0e0] bg-[#f9f9f9] transition-colors hover:border-[#212be9] hover:bg-[#f8f9ff]">
-              <div className="flex items-center gap-2">
-                <Upload className="size-4 text-[#020617]" />
-                <span className="text-sm text-[#020617]">
-                  Drop here or <span className="cursor-pointer text-[#3333ff]">browse from your files</span>
-                </span>
-              </div>
+            <button
+              onClick={handleSfValidate}
+              disabled={sfValidating || !sfOpportunity.trim()}
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-[#212be9] bg-white px-4 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {sfValidating && <Loader2 className="size-4 animate-spin" />}
+              {sfValidating ? "Verifying..." : sfValidated ? "Re-verify" : "Verify"}
             </button>
-            <p className="mt-4 text-sm text-[#8d8d8d]">Supported file types: .xls, .xlsx, .csv</p>
-          </>
-        )}
+          </div>
+          {sfError && (
+            <p className="flex items-center gap-1.5 text-xs text-[#dc2626]">
+              <CircleAlert className="size-3.5" />
+              {sfError}
+            </p>
+          )}
+          {sfValidated && !sfError && (
+            <p className="text-xs text-[#16a34a]">Salesforce Opportunity verified successfully.</p>
+          )}
+        </div>
       </div>
 
-      <div>
-        <p className="mb-4 text-sm font-medium text-black">Or Manually Add Campaign Details</p>
+      {/* Progressive disclosure: show rest only after SF validated */}
+      <div
+        className="overflow-hidden transition-all duration-500 ease-in-out"
+        style={{
+          maxHeight: sfValidated ? "9999px" : "0px",
+          opacity: sfValidated ? 1 : 0,
+        }}
+      >
+        {/* Auto-populated fields with override warnings */}
+        <div className="mb-6 flex gap-6">
+          <div className="relative flex flex-1 flex-col gap-1.5">
+            <BrandSearchSelect value={brand} onChange={setBrand} />
+            {isOverridden("brand") && (
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-[#fefce8] px-1.5 py-0.5 text-[10px] font-medium text-[#92400e]">This value differs from Salesforce data</span>
+                <button onClick={() => resetField("brand")} className="text-[10px] font-medium text-[#212be9] hover:underline">Reset</button>
+              </div>
+            )}
+          </div>
+          <PartnerSearchSelect value={partner} onChange={onPartnerChange} />
+          <div className="flex flex-1 flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-[#1f2430]">Measurement Budget</label>
+            </div>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#64748b]">$</span>
+              <input
+                type="text"
+                value={measurementBudget}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^0-9]/g, "");
+                  onMeasurementBudgetChange(raw ? parseInt(raw).toLocaleString() : "");
+                }}
+                placeholder="0"
+                className={`h-9 w-full rounded-md border bg-transparent py-2 pl-7 pr-3 text-sm text-[#1f2430] shadow-xs outline-none placeholder:text-[#94a3b8] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 ${isOverridden("budget") ? "border-[#f59e0b] bg-[#fffbeb]" : "border-input"}`}
+              />
+            </div>
+            {isOverridden("budget") && (
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-[#fefce8] px-1.5 py-0.5 text-[10px] font-medium text-[#92400e]">This value differs from Salesforce data</span>
+                <button onClick={() => resetField("budget")} className="text-[10px] font-medium text-[#212be9] hover:underline">Reset</button>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-1 flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-[#1f2430]">Metric</label>
+            </div>
+            <Select value={metric || undefined} onValueChange={onMetricChange}>
+              <SelectTrigger className={`w-full ${isOverridden("metric") ? "border-[#f59e0b] bg-[#fffbeb]" : ""}`}>
+                <SelectValue placeholder="Select metric" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Visits">Visits</SelectItem>
+                <SelectItem value="Visits and Sales">Visits and Sales</SelectItem>
+              </SelectContent>
+            </Select>
+            {isOverridden("metric") && (
+              <div className="flex items-center gap-2">
+                <span className="rounded bg-[#fefce8] px-1.5 py-0.5 text-[10px] font-medium text-[#92400e]">This value differs from Salesforce data</span>
+                <button onClick={() => resetField("metric")} className="text-[10px] font-medium text-[#212be9] hover:underline">Reset</button>
+              </div>
+            )}
+          </div>
+        </div>
 
-        {!showForm && (
-          <button
-            onClick={onShowForm}
-            className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
-          >
-            Manually Add Campaign Details
-          </button>
-        )}
+        <Separator className="mb-6" />
 
-        <div
-          className="overflow-hidden transition-all duration-500 ease-in-out"
-          style={{
-            maxHeight: showForm ? "9999px" : "0px",
-            opacity: showForm ? 1 : 0,
-          }}
-        >
-          <div ref={formRef} className="flex flex-col gap-12 pt-2">
-            <div className="flex flex-col gap-2">
-              <p className="text-xs font-semibold text-[#646464]">Setup</p>
-              <div className="flex flex-col gap-4">
-                <div className="flex gap-4">
-                  <InputField label="Campaign Name" value={campaignName} onChange={onCampaignNameChange} />
-                  <SelectField label="Advertiser" value={advertiser} onChange={setAdvertiser} />
+        <div className="mb-10">
+          <p className="mb-4 text-sm font-medium text-black">Upload a Media Plan</p>
+          {isUploading ? (
+            <div className="flex h-20 w-[528px] flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-[#212be9] bg-[#f8f9ff]">
+              <div className="flex items-center gap-3">
+                <Loader2 className="size-5 animate-spin text-[#212be9]" />
+                <span className="text-sm font-medium text-[#212be9]">Processing media plan...</span>
+              </div>
+              <div className="h-1.5 w-48 overflow-hidden rounded-full bg-[#e2e8f0]">
+                <div className="h-full rounded-full bg-[#212be9]" style={{ animation: "progress 2.4s ease-in-out forwards" }} />
+              </div>
+              <style>{`@keyframes progress { 0% { width: 0% } 40% { width: 60% } 80% { width: 85% } 100% { width: 100% } }`}</style>
+            </div>
+          ) : hasUploadedFile ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between rounded-lg border border-[#e0e0e0] p-4">
+                <div>
+                  <p className="text-sm font-medium text-black">{hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}</p>
+                  <p className="text-xs text-[#8d8d8d]">Uploaded today by Eric...</p>
                 </div>
-                <div className="flex gap-4">
-                  <DateField label="Start Date" value={startDate} onChange={setStartDate} />
-                  <DateField label="End Date" value={endDate} onChange={setEndDate} min={startDate} />
-                </div>
-                <div className="flex gap-4">
-                  <InputField label="Conversion Window" placeholder="# days to observe a visit after initial ad exposure" value={conversionWindow} onChange={setConversionWindow} />
-                  <InputField label="Salesforce Opportunity ID or URL" placeholder="Type URL" value={sfOpportunity} onChange={setSfOpportunity} />
-                </div>
+                <button className="text-[#212be9]">
+                  <Download className="size-4" />
+                </button>
+              </div>
+              <div className="flex flex-col gap-2">
+                <button onClick={onUpload} className="flex h-16 w-full items-center justify-center rounded-lg border-2 border-dashed border-[#e0e0e0] bg-[#f9f9f9] transition-colors hover:border-[#212be9] hover:bg-[#f8f9ff]">
+                  <div className="flex items-center gap-2">
+                    <Upload className="size-4 text-[#212be9]" />
+                    <span className="text-xs text-[#212be9]">Replace Uploaded File</span>
+                  </div>
+                </button>
+                <p className="text-xs text-[#8d8d8d]">Supported file types: .xls, .xlsx, .csv</p>
               </div>
             </div>
+          ) : (
+            <>
+              <button onClick={onUpload} className="flex h-20 w-[528px] items-center justify-center rounded-lg border-2 border-dashed border-[#e0e0e0] bg-[#f9f9f9] transition-colors hover:border-[#212be9] hover:bg-[#f8f9ff]">
+                <div className="flex items-center gap-2">
+                  <Upload className="size-4 text-[#020617]" />
+                  <span className="text-sm text-[#020617]">
+                    Drop here or <span className="cursor-pointer text-[#3333ff]">browse from your files</span>
+                  </span>
+                </div>
+              </button>
+              <p className="mt-4 text-sm text-[#8d8d8d]">Supported file types: .xls, .xlsx, .csv</p>
+            </>
+          )}
+        </div>
+
+        <div>
+          <p className="mb-4 text-sm font-medium text-black">Or Manually Add Campaign Details</p>
+
+          {!showForm && (
+            <button
+              onClick={onShowForm}
+              className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
+            >
+              Manually Add Campaign Details
+            </button>
+          )}
+
+          <div
+            className="overflow-hidden transition-all duration-500 ease-in-out"
+            style={{
+              maxHeight: showForm ? "9999px" : "0px",
+              opacity: showForm ? 1 : 0,
+            }}
+          >
+            <div ref={formRef} className="flex flex-col gap-12 pt-2">
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-semibold text-[#646464]">Setup</p>
+                <div className="flex flex-col gap-4">
+                  <div className="flex gap-4">
+                    <InputField label="Campaign Name" value={campaignName} onChange={onCampaignNameChange} />
+                    <SelectField label="Advertiser" value={advertiser} onChange={setAdvertiser} />
+                  </div>
+                  <div className="flex gap-4">
+                    <DateField label="Start Date" value={startDate} onChange={setStartDate} />
+                    <DateField label="End Date" value={endDate} onChange={setEndDate} min={startDate} />
+                  </div>
+                  <div className="flex gap-4">
+                    <InputField label="Conversion Window" placeholder="# days to observe a visit after initial ad exposure" value={conversionWindow} onChange={setConversionWindow} />
+                    <div className="flex-1 min-w-[280px]" />
+                  </div>
+                </div>
+              </div>
 
             <div className="flex flex-col gap-2">
               <p className="text-xs font-semibold text-[#646464]">Ownership</p>
@@ -684,9 +827,14 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
           </div>
         </div>
       </div>
+      </div>
 
       <div className="mt-8 flex justify-end">
-        <button onClick={onContinue} className="rounded-md bg-[#212be9] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]">
+        <button
+          onClick={onContinue}
+          disabled={!sfValidated}
+          className="rounded-md bg-[#212be9] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
+        >
           Continue
         </button>
       </div>
