@@ -7,12 +7,13 @@ export type SidebarStep = {
   label: string;
 };
 
-export function CampaignSidebar({ steps, currentStep, completedSteps, warningSteps, errorSteps, onStepClick, hasUploadedFile, fileName, onUpload, isUploading, disabled }: {
+export function CampaignSidebar({ steps, currentStep, completedSteps, warningSteps, errorSteps, disabledSteps, onStepClick, hasUploadedFile, fileName, onUpload, isUploading, disabled }: {
   steps: SidebarStep[];
   currentStep: string;
   completedSteps: string[];
   warningSteps?: string[];
   errorSteps?: string[];
+  disabledSteps?: string[];
   onStepClick: (step: string) => void;
   hasUploadedFile?: boolean;
   fileName?: string;
@@ -28,14 +29,15 @@ export function CampaignSidebar({ steps, currentStep, completedSteps, warningSte
           const isDone = completedSteps.includes(step.key);
           const isWarning = warningSteps?.includes(step.key);
           const isError = errorSteps?.includes(step.key);
+          const isStepDisabled = disabled || disabledSteps?.includes(step.key);
           return (
             <button
               key={step.label}
-              onClick={() => onStepClick(step.key)}
-              disabled={disabled}
+              onClick={() => !isStepDisabled && onStepClick(step.key)}
+              disabled={isStepDisabled}
               className={`flex w-full items-center gap-2.5 rounded-md px-4 py-2 text-left text-sm font-medium transition-colors ${
                 isActive && !disabled ? "bg-[#ebf1ff] text-[#020617]" : "text-[#020617] hover:bg-gray-50"
-              } ${disabled ? "cursor-not-allowed" : ""}`}
+              } ${isStepDisabled ? "cursor-not-allowed opacity-50" : ""}`}
             >
               <span className="flex-1 pl-1">{step.label}</span>
               {isError && !isActive && <CircleAlert className="size-4 text-[#dc2626]" />}

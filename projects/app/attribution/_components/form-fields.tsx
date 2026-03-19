@@ -5,7 +5,7 @@ import { ChevronDown, Search, Check, Calendar as CalendarIcon } from "lucide-rea
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-export function SelectField({ label, placeholder = "Type or Select", helpText, value, onChange, error, options }: {
+export function SelectField({ label, placeholder = "Type or Select", helpText, value, onChange, error, options, required }: {
   label: string;
   placeholder?: string;
   helpText?: React.ReactNode;
@@ -13,10 +13,11 @@ export function SelectField({ label, placeholder = "Type or Select", helpText, v
   onChange?: (v: string) => void;
   error?: boolean;
   options?: string[];
+  required?: boolean;
 }) {
   return (
     <div className="flex flex-1 flex-col gap-2 min-w-[280px]">
-      <label className={`text-sm font-semibold ${error ? "text-[#dc2626]" : "text-black"}`}>{label}</label>
+      <label className={`text-sm font-semibold ${error ? "text-[#dc2626]" : "text-black"}`}>{label}{required && <span className="text-[#dc2626]"> *</span>}</label>
       <div className="relative flex items-center">
         {options ? (
           <select
@@ -46,7 +47,7 @@ export function SelectField({ label, placeholder = "Type or Select", helpText, v
   );
 }
 
-export function DateField({ label, value, onChange, error, min }: { label: string; value?: string; onChange?: (v: string) => void; error?: boolean; min?: string }) {
+export function DateField({ label, value, onChange, error, min, required }: { label: string; value?: string; onChange?: (v: string) => void; error?: boolean; min?: string; required?: boolean }) {
   const [open, setOpen] = useState(false);
 
   const selected = value ? new Date(value + "T00:00:00") : undefined;
@@ -58,7 +59,7 @@ export function DateField({ label, value, onChange, error, min }: { label: strin
 
   return (
     <div className="flex flex-1 flex-col gap-2">
-      <label className={`text-sm font-semibold ${error ? "text-[#dc2626]" : "text-[#000033]"}`}>{label}</label>
+      <label className={`text-sm font-semibold ${error ? "text-[#dc2626]" : "text-[#000033]"}`}>{label}{required && <span className="text-[#dc2626]"> *</span>}</label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
@@ -94,10 +95,10 @@ export function DateField({ label, value, onChange, error, min }: { label: strin
   );
 }
 
-export function InputField({ label, placeholder = "", value, onChange, error }: { label: string; placeholder?: string; value?: string; onChange?: (v: string) => void; error?: boolean }) {
+export function InputField({ label, placeholder = "", value, onChange, error, required }: { label: string; placeholder?: string; value?: string; onChange?: (v: string) => void; error?: boolean; required?: boolean }) {
   return (
     <div className="flex flex-1 flex-col gap-2 min-w-[280px]">
-      <label className={`text-sm font-semibold ${error ? "text-[#dc2626]" : "text-black"}`}>{label}</label>
+      <label className={`text-sm font-semibold ${error ? "text-[#dc2626]" : "text-black"}`}>{label}{required && <span className="text-[#dc2626]"> *</span>}</label>
       <input
         type="text"
         value={value ?? ""}
@@ -122,7 +123,7 @@ const PARTNER_OPTIONS = [
   "Adelphic", "Amobee", "Xandr", "PubMatic", "Index Exchange",
 ];
 
-export function BrandSearchSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function BrandSearchSelect({ value, onChange, required }: { value: string; onChange: (v: string) => void; required?: boolean }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -141,7 +142,7 @@ export function BrandSearchSelect({ value, onChange }: { value: string; onChange
 
   return (
     <div className="relative flex flex-1 flex-col gap-1.5" ref={ref}>
-      <label className="text-sm font-medium text-[#1f2430]">Brand</label>
+      <label className="text-sm font-medium text-[#1f2430]">Brand{required && <span className="text-[#dc2626]"> *</span>}</label>
       <button
         onClick={() => { setOpen(!open); setSearch(""); }}
         className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -184,7 +185,7 @@ export function BrandSearchSelect({ value, onChange }: { value: string; onChange
   );
 }
 
-export function PartnerSearchSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function PartnerSearchSelect({ value, onChange, required }: { value: string; onChange: (v: string) => void; required?: boolean }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -203,7 +204,7 @@ export function PartnerSearchSelect({ value, onChange }: { value: string; onChan
 
   return (
     <div className="relative flex flex-1 flex-col gap-1.5" ref={ref}>
-      <label className="text-sm font-medium text-[#1f2430]">Partner</label>
+      <label className="text-sm font-medium text-[#1f2430]">Partner{required && <span className="text-[#dc2626]"> *</span>}</label>
       <button
         onClick={() => { setOpen(!open); setSearch(""); }}
         className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"

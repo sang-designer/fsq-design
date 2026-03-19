@@ -66,6 +66,7 @@ function SinglePartnerCampaignContent() {
   const [campaignSubmitted, setCampaignSubmitted] = useState(false);
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [hasReuploaded, setHasReuploaded] = useState(false);
+  const [campaignStepValid, setCampaignStepValid] = useState(false);
 
   const completedSteps = (() => {
     if (campaignSubmitted) return ["campaign", "pixel", "placement", "review"];
@@ -153,6 +154,16 @@ function SinglePartnerCampaignContent() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const STEP_ORDER: Step[] = ["campaign", "pixel", "placement", "review"];
+  const currentIdx = STEP_ORDER.indexOf(currentStep);
+  const disabledSteps = (() => {
+    if (campaignSubmitted) return [];
+    if (currentStep === "campaign" && !campaignStepValid) {
+      return STEP_ORDER.filter((_, i) => i > currentIdx);
+    }
+    return [];
+  })();
+
   return (
     <div className="flex min-h-screen flex-col bg-white font-sans">
       <Header />
@@ -226,6 +237,7 @@ function SinglePartnerCampaignContent() {
           currentStep={currentStep}
           completedSteps={completedSteps}
           errorSteps={errorSteps}
+          disabledSteps={disabledSteps}
           onStepClick={(s) => !campaignSubmitted && goToStep(s as Step)}
           hasUploadedFile={hasUploadedFile}
           fileName={hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}
@@ -265,6 +277,7 @@ function SinglePartnerCampaignContent() {
               hasReuploaded={hasReuploaded}
               isUploading={isUploading}
               onContinue={() => goToStep("pixel")}
+              onValidChange={setCampaignStepValid}
             />
           )}
           {currentStep === "pixel" && (
@@ -341,7 +354,7 @@ function SinglePartnerCampaignContent() {
 
 // === STEP COMPONENTS ===
 
-function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBudget, onMeasurementBudgetChange, metric, onMetricChange, partner, onPartnerChange, showForm, onShowForm, onUpload, hasUploadedFile, hasReuploaded, isUploading, onContinue }: {
+function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBudget, onMeasurementBudgetChange, metric, onMetricChange, partner, onPartnerChange, showForm, onShowForm, onUpload, hasUploadedFile, hasReuploaded, isUploading, onContinue, onValidChange }: {
   campaignName: string; onCampaignNameChange: (v: string) => void;
   measurementBudget: string; onMeasurementBudgetChange: (v: string) => void;
   metric: string; onMetricChange: (v: string) => void;
@@ -349,6 +362,7 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
   showForm: boolean; onShowForm: () => void;
   onUpload: () => void; hasUploadedFile: boolean; hasReuploaded?: boolean; isUploading: boolean;
   onContinue: () => void;
+  onValidChange?: (valid: boolean) => void;
 }) {
   const formRef = useRef<HTMLDivElement>(null);
   const [advertiser, setAdvertiser] = useState("");
@@ -454,6 +468,12 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
     }
   }, [hasUploadedFile]);
 
+  const isStepValid = sfValidated && !!brand.trim() && !!partner.trim() && !!measurementBudget.trim() && !!metric.trim();
+
+  useEffect(() => {
+    onValidChange?.(isStepValid);
+  }, [isStepValid, onValidChange]);
+
   return (
     <>
       <div className="mb-6">
@@ -529,7 +549,7 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
         {/* Auto-populated fields with override warnings */}
         <div className="mb-6 flex gap-6">
           <div className="relative flex flex-1 flex-col gap-1.5">
-            <BrandSearchSelect value={brand} onChange={setBrand} />
+            <BrandSearchSelect value={brand} onChange={setBrand} required />
             {isOverridden("brand") && (
               <div className="flex items-center gap-2">
                 <span className="rounded bg-[#fefce8] px-1.5 py-0.5 text-[10px] font-medium text-[#92400e]">This value differs from Salesforce data</span>
@@ -537,10 +557,10 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
               </div>
             )}
           </div>
-          <PartnerSearchSelect value={partner} onChange={onPartnerChange} />
+          <PartnerSearchSelect value={partner} onChange={onPartnerChange} required />
           <div className="flex flex-1 flex-col gap-1.5">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-[#1f2430]">Measurement Budget</label>
+              <label className="text-sm font-medium text-[#1f2430]">Measurement Budget <span className="text-[#dc2626]">*</span></label>
             </div>
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#64748b]">$</span>
@@ -578,7 +598,7 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
           </div>
           <div className="flex flex-1 flex-col gap-1.5">
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-[#1f2430]">Metric</label>
+              <label className="text-sm font-medium text-[#1f2430]">Metric <span className="text-[#dc2626]">*</span></label>
             </div>
             <Select value={metric || undefined} onValueChange={onMetricChange}>
               <SelectTrigger className={`w-full ${isOverridden("metric") ? "border-[#f59e0b] bg-[#fffbeb]" : ""}`}>
@@ -673,12 +693,12 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
                 <p className="text-xs font-semibold text-[#646464]">Setup</p>
                 <div className="flex flex-col gap-4">
                   <div className="flex gap-4">
-                    <InputField label="Campaign Name" value={campaignName} onChange={onCampaignNameChange} />
-                    <SelectField label="Advertiser" value={advertiser} onChange={setAdvertiser} />
+                    <InputField label="Campaign Name" value={campaignName} onChange={onCampaignNameChange} required />
+                    <SelectField label="Advertiser" value={advertiser} onChange={setAdvertiser} required />
                   </div>
                   <div className="flex gap-4">
-                    <DateField label="Start Date" value={startDate} onChange={setStartDate} />
-                    <DateField label="End Date" value={endDate} onChange={setEndDate} min={startDate} />
+                    <DateField label="Start Date" value={startDate} onChange={setStartDate} required />
+                    <DateField label="End Date" value={endDate} onChange={setEndDate} min={startDate} required />
                   </div>
                   <div className="flex gap-4">
                     <InputField label="Conversion Window" placeholder="# days to observe a visit after initial ad exposure" value={conversionWindow} onChange={setConversionWindow} />
@@ -691,7 +711,7 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
               <p className="text-xs font-semibold text-[#646464]">Ownership</p>
               <div className="flex flex-col gap-4">
                 <div className="flex gap-4">
-                  <SelectField label="Agency/Partner Name" value={agencyName} onChange={setAgencyName} />
+                  <SelectField label="Agency/Partner Name" value={agencyName} onChange={setAgencyName} required />
                   <SelectField label="Owner Type (relationship)" value={ownerType} onChange={setOwnerType} />
                 </div>
                 <div className="flex gap-4">
@@ -705,9 +725,9 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
               <p className="text-xs font-semibold text-[#646464]">Conversions</p>
               <div className="flex flex-col gap-4">
                 <div className="flex gap-4">
-                  <SelectField label="Country" value={country} onChange={setCountry} />
+                  <SelectField label="Country" value={country} onChange={setCountry} required />
                   <div className="flex flex-1 flex-col gap-2 min-w-[280px]">
-                    <label className="text-sm font-semibold text-black">Store Chains to be measured</label>
+                    <label className="text-sm font-semibold text-black">Store Chains to be measured <span className="text-[#dc2626]">*</span></label>
                     <div className="relative flex items-center">
                       <select
                         value={storeChains}
@@ -846,7 +866,7 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
       <div className="mt-8 flex justify-end">
         <button
           onClick={onContinue}
-          disabled={!sfValidated}
+          disabled={!isStepValid}
           className="rounded-md bg-[#212be9] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
         >
           Continue
