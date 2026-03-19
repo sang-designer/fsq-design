@@ -1,9 +1,9 @@
 "use client";
 
-import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, GripVertical, Info, CircleAlert, CircleDashed, FileText, UserCircle, Grid3X3, LogOut, Download, Upload, MousePointerClick, ArrowRight, X, Search, SlidersHorizontal, Loader2, ArrowUpDown } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, GripVertical, Info, CircleAlert, CircleDashed, FileText, UserCircle, Grid3X3, LogOut, Download, Upload, MousePointerClick, ArrowRight, X, Search, SlidersHorizontal, Loader2, ArrowUpDown, SquarePen } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useRef, useCallback, DragEvent } from "react";
+import { useState, useRef, useCallback, useEffect, DragEvent } from "react";
 import { Badge } from "@/components/ui/badge";
 
 type Token = { id: string; name: string };
@@ -77,6 +77,8 @@ export default function TaxonomyPage() {
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragCounter = useRef<Record<string, number>>({});
   const dragGhostRef = useRef<HTMLDivElement>(null);
+  const [uploadBannerDismissed, setUploadBannerDismissed] = useState(false);
+  const [placementValid, setPlacementValid] = useState(false);
 
   const selectedCount = selected.size;
   const allSelected = unassigned.length > 0 && selectedCount === unassigned.length;
@@ -243,6 +245,48 @@ export default function TaxonomyPage() {
         <div className="h-[2px] w-full bg-[#ebf1ff]"><div className="h-full bg-[#212be9] transition-all duration-700 ease-out" style={{ width: `${completionPercent}%` }} /></div>
       </div>
 
+      {!uploadBannerDismissed && (
+        <div className="px-12 pt-6">
+          <div className="flex items-center gap-2 rounded-md border border-[#e0e0e0] bg-[#fcfcfc] p-4 shadow-sm">
+            <div className="flex min-w-[180px] flex-col gap-2">
+              <p className="text-base font-semibold text-black">Upload Results</p>
+              <div className="flex items-center gap-1">
+                <FileText className="size-4 text-[#8d8d8d]" />
+                <span className="text-xs text-black">Carta/Mcdonalds2024</span>
+              </div>
+            </div>
+            <div className="flex flex-1 items-stretch">
+              {[
+                { label: "Campaign Details", status: "success" as const },
+                { label: "Partner Details", status: "success" as const },
+                { label: "Funding Allocation", status: "success" as const },
+                { label: "Pixel Generation", status: "success" as const },
+                { label: "Placement Details", status: placementValid ? "success" as const : "warning" as const },
+              ].map((item, i) => (
+                <div key={item.label} className="flex flex-1 items-stretch">
+                  {i > 0 && <div className="mx-0 w-px self-stretch bg-[#e0e0e0]" />}
+                  <div className="flex flex-1 flex-col items-start gap-2 px-4">
+                    <p className="text-sm font-medium text-black">{item.label}</p>
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      item.status === "success" ? "bg-[#f0fdf4] text-[#166534]" :
+                      item.status === "warning" ? "bg-[#fefce8] text-[#713f12]" :
+                      "bg-[#fef2f2] text-[#dc2626]"
+                    }`}>
+                      {item.status === "success" ? "Successfully Processed" :
+                       item.status === "warning" ? "Missing Information" :
+                       "No Information Available"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setUploadBannerDismissed(true)} className="shrink-0 self-start pl-6 text-[#8d8d8d] hover:text-[#171417]">
+              <X className="size-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex w-full gap-6 px-12 py-6">
         {/* Left sidebar */}
         <aside className="w-[280px] shrink-0">
@@ -285,7 +329,20 @@ export default function TaxonomyPage() {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1">
+        <main className="relative min-w-0 flex-1">
+          {uploadBannerDismissed && (
+            <div className="group absolute right-0 top-0 z-10">
+              <button
+                onClick={() => setUploadBannerDismissed(false)}
+                className="flex size-8 items-center justify-center rounded-full border border-[#e0e0e0] bg-[#fcfcfc] text-[#8d8d8d] shadow-sm transition-colors hover:border-[#212be9] hover:bg-[#eff0fd] hover:text-[#212be9]"
+              >
+                <Info className="size-4" />
+              </button>
+              <div className="pointer-events-none absolute right-0 top-full z-50 mt-2 w-max rounded-md bg-[#171417] px-3 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                Show Upload Results
+              </div>
+            </div>
+          )}
           {viewMode === "taxonomy" ? (
             <>
               {/* Stage title */}
@@ -424,7 +481,7 @@ export default function TaxonomyPage() {
               </div>
             </>
           ) : (
-            <ApplyPlacementsContent onBack={() => { setViewMode("taxonomy"); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
+            <ApplyPlacementsContent onBack={() => { setViewMode("taxonomy"); window.scrollTo({ top: 0, behavior: "smooth" }); }} onValidChange={setPlacementValid} />
           )}
         </main>
       </div>
@@ -486,7 +543,80 @@ const applyPlacementsProgressSteps = [
   { label: "Apply Placements", done: false, active: true },
 ];
 
-function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
+function InlineComboCell({ value, options, onCommit, onCancel }: { value: string; options: string[]; onCommit: (v: string) => void; onCancel: () => void }) {
+  const [query, setQuery] = useState(value);
+  const [open, setOpen] = useState(true);
+  const [highlightIdx, setHighlightIdx] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filtered = options.filter((o) => o.toLowerCase().includes(query.toLowerCase()));
+
+  useEffect(() => { inputRef.current?.focus(); inputRef.current?.select(); }, []);
+
+  useEffect(() => {
+    if (highlightIdx >= 0 && listRef.current) {
+      const el = listRef.current.children[highlightIdx] as HTMLElement | undefined;
+      el?.scrollIntoView({ block: "nearest" });
+    }
+  }, [highlightIdx]);
+
+  const commit = (v: string) => { setOpen(false); onCommit(v); };
+
+  const handleBlur = (e: React.FocusEvent) => {
+    if (containerRef.current?.contains(e.relatedTarget as Node)) return;
+    commit(query);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setHighlightIdx((p) => Math.min(p + 1, filtered.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setHighlightIdx((p) => Math.max(p - 1, 0)); }
+    else if (e.key === "Enter") { e.preventDefault(); if (highlightIdx >= 0 && filtered[highlightIdx]) commit(filtered[highlightIdx]); else commit(query); }
+    else if (e.key === "Escape") { onCancel(); }
+    else if (e.key === "Tab") { if (highlightIdx >= 0 && filtered[highlightIdx]) commit(filtered[highlightIdx]); else commit(query); }
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className={`flex items-center rounded border bg-white focus-within:border-[#2d46f6] focus-within:ring-1 focus-within:ring-[#2d46f6] ${!query ? "border-[#dc2626]" : "border-border"}`}>
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); setHighlightIdx(-1); }}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          className="w-full bg-transparent py-1 pl-2 pr-1 text-sm text-[#1f2430] outline-none"
+          placeholder="Type or select..."
+        />
+        <button
+          tabIndex={-1}
+          onMouseDown={(e) => { e.preventDefault(); setOpen((p) => !p); }}
+          className="shrink-0 px-1 text-[#64748b]"
+        >
+          <ChevronDown className="size-3" />
+        </button>
+      </div>
+      {open && filtered.length > 0 && (
+        <div ref={listRef} className="absolute left-0 top-full z-50 mt-1 max-h-[180px] w-full overflow-y-auto rounded-md border border-border bg-white py-1 shadow-lg">
+          {filtered.map((opt, idx) => (
+            <button
+              key={opt}
+              onMouseDown={(e) => { e.preventDefault(); commit(opt); }}
+              className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm ${idx === highlightIdx ? "bg-[#eff0fd] text-[#2d46f6]" : "text-[#1f2430] hover:bg-[#f1f5f9]"}`}
+            >
+              {opt === value && <Check className="size-3 text-[#2d46f6]" />}
+              <span className={opt === value ? "font-medium" : ""}>{opt}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ApplyPlacementsContent({ onBack, onValidChange }: { onBack: () => void; onValidChange?: (valid: boolean) => void }) {
   const [rows, setRows] = useState<PlacementRow[]>(INITIAL_PLACEMENT_ROWS);
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<PlacementRow | null>(null);
@@ -495,11 +625,36 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [bulkForm, setBulkForm] = useState<Partial<PlacementRow>>({});
   const [panelOpen, setPanelOpen] = useState(false);
+  const [editingCell, setEditingCell] = useState<{ rowIdx: number; field: keyof PlacementRow } | null>(null);
 
   const isBulkMode = selectedRows.size > 0 && editingRow === null;
   const isEditMode = editingRow !== null && editForm !== null;
   const bulkFieldCount = Object.values(bulkForm).filter(Boolean).length;
   const selectedAreAllNeedsReview = isBulkMode && [...selectedRows].every((i) => rows[i].status === "parsed");
+
+  const errorCount = rows.filter((r) => r.status === "error").length;
+  const isValid = errorCount === 0;
+
+  useEffect(() => {
+    onValidChange?.(isValid);
+    if (typeof window !== "undefined") localStorage.setItem("placement-valid", isValid ? "1" : "0");
+  }, [isValid, onValidChange]);
+
+  const recomputeStatus = (row: PlacementRow): PlacementRow["status"] => {
+    const required: (keyof PlacementRow)[] = ["subPlacement", "channel", "publisher", "geography"];
+    const hasEmpty = required.some((f) => !row[f]);
+    if (hasEmpty) return "error";
+    return "resolved";
+  };
+
+  const updateCell = (origIdx: number, field: keyof PlacementRow, value: string) => {
+    setRows((prev) => prev.map((r, i) => {
+      if (i !== origIdx) return r;
+      const updated = { ...r, [field]: value };
+      updated.status = recomputeStatus(updated);
+      return updated;
+    }));
+  };
 
   const openEditPanel = (sortedIndex: number) => {
     const originalIndex = rows.indexOf(sortedRows[sortedIndex]);
@@ -516,8 +671,7 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
       prev.map((r, i) => {
         if (i !== editingRow) return r;
         const updated = { ...editForm };
-        if (updated.subPlacement && updated.channel && updated.status === "error") updated.status = "resolved";
-        if (updated.status === "parsed") updated.status = "resolved";
+        updated.status = recomputeStatus(updated);
         return updated;
       })
     );
@@ -538,8 +692,7 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
         if (bulkForm.creative) updated.creative = bulkForm.creative;
         if (bulkForm.language) updated.language = bulkForm.language;
         if (bulkForm.geography) updated.geography = bulkForm.geography;
-        if (updated.subPlacement && updated.channel && updated.status === "error") updated.status = "resolved";
-        if (updated.status === "parsed") updated.status = "resolved";
+        updated.status = recomputeStatus(updated);
         return updated;
       })
     );
@@ -711,6 +864,17 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
           <tbody>
             {sortedRows.map((row, i) => {
               const originalIndex = rows.indexOf(row);
+              const editable: { field: keyof PlacementRow; maxW?: string; options?: string[] }[] = [
+                { field: "subPlacement", maxW: "max-w-[160px]" },
+                { field: "partner", options: PARTNER_OPTIONS },
+                { field: "channel", options: CHANNEL_OPTIONS },
+                { field: "publisher", options: PUBLISHER_OPTIONS },
+                { field: "audience", options: AUDIENCE_OPTIONS },
+                { field: "adSize", options: AD_SIZE_OPTIONS },
+                { field: "creative", options: CREATIVE_OPTIONS },
+                { field: "language", options: LANGUAGE_OPTIONS },
+                { field: "geography", options: GEOGRAPHY_OPTIONS },
+              ];
               return (
               <tr key={i} className={`border-b border-border ${selectedRows.has(originalIndex) ? "bg-[#f8f9ff]" : ""}`}>
                 <td className="w-10 px-3 py-3">
@@ -723,22 +887,55 @@ function ApplyPlacementsContent({ onBack }: { onBack: () => void }) {
                 </td>
                 <td className="px-3 py-3">
                   {row.status === "error" ? (
-                    <Badge className="bg-red-50 text-[#dc2626] dark:bg-red-900/30">Error</Badge>
+                    <Badge className="bg-red-50 text-[#dc2626] dark:bg-red-900/30">Missing Field</Badge>
                   ) : row.status === "resolved" ? (
                     <Badge className="bg-green-50 text-[#389e45] dark:bg-green-900/30">Resolved</Badge>
                   ) : (
                     <Badge className="bg-orange-50 text-[#f59e0b] dark:bg-orange-900/30">Needs Review</Badge>
                   )}
                 </td>
-                <td className="max-w-[160px] truncate px-3 py-3 text-sm text-[#1f2430]">{row.subPlacement || <span className="text-[#dc2626]">—</span>}</td>
-                <td className="px-3 py-3 text-sm text-[#1f2430]">{row.partner}</td>
-                <td className="px-3 py-3 text-sm text-[#1f2430]">{row.channel || <span className="text-[#dc2626]">—</span>}</td>
-                <td className="px-3 py-3 text-sm text-[#1f2430]">{row.publisher || <span className="text-[#dc2626]">—</span>}</td>
-                <td className="px-3 py-3 text-sm text-[#1f2430]">{row.audience}</td>
-                <td className="px-3 py-3 text-sm text-[#1f2430]">{row.adSize}</td>
-                <td className="px-3 py-3 text-sm text-[#1f2430]">{row.creative}</td>
-                <td className="px-3 py-3 text-sm text-[#1f2430]">{row.language}</td>
-                <td className="px-3 py-3 text-sm text-[#1f2430]">{row.geography || <span className="text-[#dc2626]">—</span>}</td>
+                {editable.map(({ field, maxW, options }) => {
+                  const isEditing = editingCell?.rowIdx === originalIndex && editingCell?.field === field;
+                  const val = row[field];
+                  if (isEditing) {
+                    if (options) {
+                      return (
+                        <td key={field} className="px-3 py-1.5">
+                          <InlineComboCell
+                            value={val}
+                            options={options}
+                            onCommit={(v) => { updateCell(originalIndex, field, v); setEditingCell(null); }}
+                            onCancel={() => setEditingCell(null)}
+                          />
+                        </td>
+                      );
+                    }
+                    return (
+                      <td key={field} className="px-3 py-1.5">
+                        <input
+                          autoFocus
+                          type="text"
+                          defaultValue={val}
+                          onBlur={(e) => { updateCell(originalIndex, field, e.target.value); setEditingCell(null); }}
+                          onKeyDown={(e) => { if (e.key === "Enter") { updateCell(originalIndex, field, (e.target as HTMLInputElement).value); setEditingCell(null); } if (e.key === "Escape") setEditingCell(null); }}
+                          className={`w-full rounded border bg-white px-2 py-1 text-sm text-[#1f2430] outline-none focus:border-[#2d46f6] focus:ring-1 focus:ring-[#2d46f6] ${maxW || ""} ${!val ? "border-[#dc2626]" : "border-border"}`}
+                        />
+                      </td>
+                    );
+                  }
+                  return (
+                    <td
+                      key={field}
+                      onClick={() => setEditingCell({ rowIdx: originalIndex, field })}
+                      className={`group/cell cursor-pointer px-3 py-3 text-sm text-[#1f2430] transition-colors hover:bg-[#f1f5f9] ${maxW ? maxW + " truncate" : ""}`}
+                    >
+                      <span className="flex items-center gap-1">
+                        {val || <span className="text-[#dc2626]">—</span>}
+                        <SquarePen className="size-3 shrink-0 text-[#94a3b8] opacity-0 transition-opacity group-hover/cell:opacity-100" />
+                      </span>
+                    </td>
+                  );
+                })}
                 <td className="px-3 py-3">
                   <button onClick={() => openEditPanel(i)} className="text-sm font-medium text-[#2d46f6] hover:underline">edit</button>
                 </td>

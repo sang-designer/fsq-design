@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CircleDashed, Download, Upload, SquarePen, Info, X, Loader2 } from "lucide-react";
+import { Check, CircleDashed, Download, Upload, SquarePen, Info, X, Loader2, FileText } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -51,6 +51,11 @@ export default function ReviewPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [uploadBannerDismissed, setUploadBannerDismissed] = useState(false);
+  const [placementValid] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("placement-valid") === "1";
+    return false;
+  });
 
   const handleSubmit = () => {
     if (!agreed || submitting || submitted) return;
@@ -110,6 +115,48 @@ export default function ReviewPage() {
         </div>
         <div className="h-[2px] w-full bg-[#ebf1ff]"><div className="h-full bg-[#212be9] transition-all duration-700 ease-out" style={{ width: `${progressPercent}%` }} /></div>
       </div>
+
+      {!uploadBannerDismissed && (
+        <div className="px-12 pt-6">
+          <div className="flex items-center gap-2 rounded-md border border-[#e0e0e0] bg-[#fcfcfc] p-4 shadow-sm">
+            <div className="flex min-w-[180px] flex-col gap-2">
+              <p className="text-base font-semibold text-black">Upload Results</p>
+              <div className="flex items-center gap-1">
+                <FileText className="size-4 text-[#8d8d8d]" />
+                <span className="text-xs text-black">Carta/Mcdonalds2024</span>
+              </div>
+            </div>
+            <div className="flex flex-1 items-stretch">
+              {[
+                { label: "Campaign Details", status: "success" as const },
+                { label: "Partner Details", status: "success" as const },
+                { label: "Funding Allocation", status: "success" as const },
+                { label: "Pixel Generation", status: "success" as const },
+                { label: "Placement Details", status: placementValid ? "success" as const : "warning" as const },
+              ].map((item, i) => (
+                <div key={item.label} className="flex flex-1 items-stretch">
+                  {i > 0 && <div className="mx-0 w-px self-stretch bg-[#e0e0e0]" />}
+                  <div className="flex flex-1 flex-col items-start gap-2 px-4">
+                    <p className="text-sm font-medium text-black">{item.label}</p>
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      item.status === "success" ? "bg-[#f0fdf4] text-[#166534]" :
+                      item.status === "warning" ? "bg-[#fefce8] text-[#713f12]" :
+                      "bg-[#fef2f2] text-[#dc2626]"
+                    }`}>
+                      {item.status === "success" ? "Successfully Processed" :
+                       item.status === "warning" ? "Missing Information" :
+                       "No Information Available"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setUploadBannerDismissed(true)} className="shrink-0 self-start pl-6 text-[#8d8d8d] hover:text-[#171417]">
+              <X className="size-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {submitError && (
         <div className="mt-6 flex w-full items-center gap-3 rounded-lg border border-[#dc2626] bg-[#fef2f2] px-12 py-3">
@@ -179,7 +226,20 @@ export default function ReviewPage() {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1">
+        <main className="relative min-w-0 flex-1">
+          {uploadBannerDismissed && (
+            <div className="group absolute right-0 top-0 z-10">
+              <button
+                onClick={() => setUploadBannerDismissed(false)}
+                className="flex size-8 items-center justify-center rounded-full border border-[#e0e0e0] bg-[#fcfcfc] text-[#8d8d8d] shadow-sm transition-colors hover:border-[#212be9] hover:bg-[#eff0fd] hover:text-[#212be9]"
+              >
+                <Info className="size-4" />
+              </button>
+              <div className="pointer-events-none absolute right-0 top-full z-50 mt-2 w-max rounded-md bg-[#171417] px-3 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                Show Upload Results
+              </div>
+            </div>
+          )}
           <div className="mb-6">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-semibold text-[#020617]">Review and Submit</h2>

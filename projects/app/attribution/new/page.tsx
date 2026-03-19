@@ -371,7 +371,11 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
     }
   }, [hasUploadedFile]);
 
-  const isStepValid = sfValidated && !!brand.trim() && !!measurementBudget.trim() && !!metric.trim();
+  const isStepValid = sfValidated && !!brand.trim() && !!measurementBudget.trim() && !!metric.trim() && (
+    hasUploadedFile || (
+      !!campaignName.trim() && !!advertiser.trim() && !!startDate && !!endDate && !!agencyName.trim() && !!country.trim() && !!storeChains.trim()
+    )
+  );
 
   useEffect(() => {
     onValidChange?.(isStepValid);
@@ -913,7 +917,7 @@ function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValu
   );
 }
 
-function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPartnerChange }: { hasUploadedFile: boolean; isEditingPartner: boolean; onEditingPartnerChange: (v: boolean) => void }) {
+function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPartnerChange, onValidChange }: { hasUploadedFile: boolean; isEditingPartner: boolean; onEditingPartnerChange: (v: boolean) => void; onValidChange?: (valid: boolean) => void }) {
   const formatDate = (d: string | null) => {
     if (!d) return "—";
     const date = new Date(d + "T00:00:00");
@@ -927,6 +931,11 @@ function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPar
   const [editInitialValues, setEditInitialValues] = useState<Record<string, string>>({});
 
   const totalMissing = partners.reduce((sum, p) => sum + p.missingFields, 0);
+  const isValid = totalMissing === 0 && partners.length > 0;
+
+  useEffect(() => {
+    onValidChange?.(isValid);
+  }, [isValid, onValidChange]);
 
   const handleEdit = (partner: typeof partners[0], index: number) => {
     setEditingIndex(index);
@@ -1162,7 +1171,7 @@ const FUNDING_PARTNERS = [
   { name: "Nexxen", mediaType: "Video", estimatedSpend: 210000 },
 ];
 
-function FundingAllocationContent({ measurementBudget }: { measurementBudget: number }) {
+function FundingAllocationContent({ measurementBudget, onValidChange }: { measurementBudget: number; onValidChange?: (valid: boolean) => void }) {
   const totalOriginalSpend = FUNDING_PARTNERS.reduce((sum, p) => sum + p.estimatedSpend, 0);
 
   const [allocations, setAllocations] = useState(
@@ -1180,6 +1189,12 @@ function FundingAllocationContent({ measurementBudget }: { measurementBudget: nu
       prev.map((a, i) => (i === index ? { ...a, [field]: value } : a))
     );
   };
+
+  const isValid = allocations.every((a) => !!a.fundingVisits && !!a.fundingSalesImpact);
+
+  useEffect(() => {
+    onValidChange?.(isValid);
+  }, [isValid, onValidChange]);
 
   return (
     <>
@@ -1283,7 +1298,7 @@ function FundingAllocationContent({ measurementBudget }: { measurementBudget: nu
 
 type PixelState = "empty" | "empty-uploaded" | "populated";
 
-function PixelGenerationContent({ pixelState }: { pixelState: PixelState }) {
+function PixelGenerationContent({ pixelState, onValidChange }: { pixelState: PixelState; onValidChange?: (valid: boolean) => void }) {
   const [openActionRow, setOpenActionRow] = useState<number | null>(null);
   const [showUploadBanner, setShowUploadBanner] = useState(pixelState === "empty-uploaded");
   const [pixels, setPixels] = useState(PIXELS.map((p) => ({ ...p })));
@@ -1306,6 +1321,12 @@ function PixelGenerationContent({ pixelState }: { pixelState: PixelState }) {
   const updateTracking = (index: number, value: string) => {
     setPixels((prev) => prev.map((p, i) => (i === index ? { ...p, tracking: value } : p)));
   };
+
+  const isValid = pixelState !== "populated" || pixels.every((p) => !!p.tracking);
+
+  useEffect(() => {
+    onValidChange?.(isValid);
+  }, [isValid, onValidChange]);
 
   return (
     <>
@@ -2280,6 +2301,9 @@ function NewCampaignContent() {
   const [hasReuploaded, setHasReuploaded] = useState(false);
   const [sfValidated, setSfValidated] = useState(false);
   const [campaignStepValid, setCampaignStepValid] = useState(false);
+  const [partnerStepValid, setPartnerStepValid] = useState(false);
+  const [fundingStepValid, setFundingStepValid] = useState(false);
+  const [pixelStepValid, setPixelStepValid] = useState(false);
 
   const progressPercent =
     currentStep === "campaign" ? 0 :
@@ -2301,8 +2325,19 @@ function NewCampaignContent() {
 
   const STEP_ORDER: string[] = ["campaign", "partner", "funding", "pixel", "placement", "map-partners", "review"];
   const currentIdx = STEP_ORDER.indexOf(currentStep);
+
+  const stepValidityMap: Record<string, boolean> = {
+    campaign: campaignStepValid,
+    partner: partnerStepValid,
+    funding: fundingStepValid,
+    pixel: pixelStepValid,
+    placement: true,
+    "map-partners": true,
+    review: true,
+  };
+
   const disabledSteps = (() => {
-    if (currentStep === "campaign" && !campaignStepValid) {
+    if (!stepValidityMap[currentStep]) {
       return STEP_ORDER.filter((_, i) => i > currentIdx) as Step[];
     }
     return [];
@@ -2369,19 +2404,13 @@ function NewCampaignContent() {
               </div>
             </div>
             <div className="flex flex-1 items-stretch">
-              {(hasReuploaded ? [
-                { label: "Campaign Details", status: "warning" as const },
-                { label: "Partner Details", status: "error" as const },
-                { label: "Funding Allocation", status: "error" as const },
-                { label: "Pixel Generation", status: "warning" as const },
-                { label: "Placement Details", status: "error" as const },
-              ] : [
-                { label: "Campaign Details", status: "success" as const },
-                { label: "Partner Details", status: hasUploadedFile ? "warning" as const : "error" as const },
-                { label: "Funding Allocation", status: "warning" as const },
-                { label: "Pixel Generation", status: "warning" as const },
+              {[
+                { label: "Campaign Details", status: campaignStepValid ? "success" as const : "warning" as const },
+                { label: "Partner Details", status: partnerStepValid ? "success" as const : "warning" as const },
+                { label: "Funding Allocation", status: fundingStepValid ? "success" as const : "warning" as const },
+                { label: "Pixel Generation", status: pixelStepValid ? "success" as const : "warning" as const },
                 { label: "Placement Details", status: "warning" as const },
-              ]).map((item, i) => (
+              ].map((item, i) => (
                 <div key={item.label} className="flex flex-1 items-stretch">
                   {i > 0 && <div className="mx-0 w-px self-stretch bg-[#e0e0e0]" />}
                   <div className="flex flex-1 flex-col items-start gap-2 px-4">
@@ -2431,9 +2460,9 @@ function NewCampaignContent() {
           {currentStep === "campaign" && (
             <CampaignDetailsContent showForm={showForm} onShowForm={() => setShowForm(true)} campaignName={campaignName} onCampaignNameChange={setCampaignName} onUpload={handleUpload} hasUploadedFile={hasUploadedFile} hasReuploaded={hasReuploaded} isUploading={isUploading} measurementBudget={measurementBudget} onMeasurementBudgetChange={setMeasurementBudget} metric={metric} onMetricChange={setMetric} sfValidated={sfValidated} onSfValidatedChange={setSfValidated} onValidChange={setCampaignStepValid} />
           )}
-          {currentStep === "partner" && <PartnerDetailsContent hasUploadedFile={hasUploadedFile} isEditingPartner={isEditingPartner} onEditingPartnerChange={setIsEditingPartner} />}
-          {currentStep === "funding" && <FundingAllocationContent measurementBudget={parseInt(measurementBudget.replace(/,/g, "") || "0")} />}
-          {currentStep === "pixel" && <PixelGenerationContent pixelState={pixelState} />}
+          {currentStep === "partner" && <PartnerDetailsContent hasUploadedFile={hasUploadedFile} isEditingPartner={isEditingPartner} onEditingPartnerChange={setIsEditingPartner} onValidChange={setPartnerStepValid} />}
+          {currentStep === "funding" && <FundingAllocationContent measurementBudget={parseInt(measurementBudget.replace(/,/g, "") || "0")} onValidChange={setFundingStepValid} />}
+          {currentStep === "pixel" && <PixelGenerationContent pixelState={pixelState} onValidChange={setPixelStepValid} />}
           {currentStep === "placement" && (
             <PlacementDetailsContent
               placementState={placementState}
@@ -2478,7 +2507,8 @@ function NewCampaignContent() {
               </button>
               <button
                 onClick={() => goToStep("funding")}
-                className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]"
+                disabled={!partnerStepValid}
+                className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Continue to Funding Allocation
               </button>
@@ -2495,7 +2525,8 @@ function NewCampaignContent() {
               </button>
               <button
                 onClick={() => goToStep("pixel")}
-                className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]"
+                disabled={!fundingStepValid}
+                className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Continue to Pixel Generation
               </button>
@@ -2512,7 +2543,8 @@ function NewCampaignContent() {
               </button>
               <button
                 onClick={() => goToStep("placement")}
-                className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]"
+                disabled={!pixelStepValid}
+                className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Continue to Placement Details
               </button>

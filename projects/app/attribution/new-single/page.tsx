@@ -67,6 +67,7 @@ function SinglePartnerCampaignContent() {
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [hasReuploaded, setHasReuploaded] = useState(false);
   const [campaignStepValid, setCampaignStepValid] = useState(false);
+  const [placementStepValid, setPlacementStepValid] = useState(true);
 
   const completedSteps = (() => {
     if (campaignSubmitted) return ["campaign", "pixel", "placement", "review"];
@@ -156,12 +157,20 @@ function SinglePartnerCampaignContent() {
 
   const STEP_ORDER: Step[] = ["campaign", "pixel", "placement", "review"];
   const currentIdx = STEP_ORDER.indexOf(currentStep);
+
+  const stepValidityMap: Record<Step, boolean> = {
+    campaign: campaignStepValid,
+    pixel: true,
+    placement: placementStepValid,
+    review: true,
+  };
+
   const disabledSteps = (() => {
-    if (campaignSubmitted) return [];
-    if (currentStep === "campaign" && !campaignStepValid) {
+    if (campaignSubmitted) return [] as Step[];
+    if (!stepValidityMap[currentStep]) {
       return STEP_ORDER.filter((_, i) => i > currentIdx);
     }
-    return [];
+    return [] as Step[];
   })();
 
   return (
@@ -198,15 +207,11 @@ function SinglePartnerCampaignContent() {
               </div>
             </div>
             <div className="flex flex-1 items-stretch">
-              {(hasReuploaded ? [
-                { label: "Campaign Details", status: "warning" as const },
-                { label: "Data Ingestion", status: "warning" as const },
-                { label: "Placement Details", status: "error" as const },
-              ] : [
-                { label: "Campaign Details", status: "success" as const },
+              {[
+                { label: "Campaign Details", status: campaignStepValid ? "success" as const : "warning" as const },
                 { label: "Data Ingestion", status: "success" as const },
-                { label: "Placement Details", status: "warning" as const },
-              ]).map((item, i) => (
+                { label: "Placement Details", status: placementStepValid ? "success" as const : "warning" as const },
+              ].map((item, i) => (
                 <div key={item.label} className="flex flex-1 items-stretch">
                   {i > 0 && <div className="mx-0 w-px self-stretch bg-[#e0e0e0]" />}
                   <div className="flex flex-1 flex-col items-start gap-2 px-4">
@@ -296,6 +301,7 @@ function SinglePartnerCampaignContent() {
               onUpload={handleUpload}
               onBack={() => goToStep("pixel")}
               onContinue={() => goToStep("review")}
+              onValidChange={setPlacementStepValid}
             />
           )}
           {currentStep === "review" && (
@@ -468,7 +474,11 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
     }
   }, [hasUploadedFile]);
 
-  const isStepValid = sfValidated && !!brand.trim() && !!partner.trim() && !!measurementBudget.trim() && !!metric.trim();
+  const isStepValid = sfValidated && !!brand.trim() && !!partner.trim() && !!measurementBudget.trim() && !!metric.trim() && (
+    hasUploadedFile || (
+      !!campaignName.trim() && !!advertiser.trim() && !!startDate && !!endDate && !!agencyName.trim() && !!country.trim() && !!storeChains.trim()
+    )
+  );
 
   useEffect(() => {
     onValidChange?.(isStepValid);
@@ -1123,11 +1133,17 @@ function SinglePlacementSubSteps({ activeStep }: { activeStep: number }) {
   );
 }
 
-function PlacementDetailsStep({ partnerName, hasUploadedFile, hasReuploaded, isUploading, onUpload, onBack, onContinue }: {
+function PlacementDetailsStep({ partnerName, hasUploadedFile, hasReuploaded, isUploading, onUpload, onBack, onContinue, onValidChange }: {
   partnerName: string; hasUploadedFile: boolean; hasReuploaded?: boolean; isUploading: boolean; onUpload: () => void; onBack: () => void; onContinue: () => void;
+  onValidChange?: (valid: boolean) => void;
 }) {
   const [activeSubStep, setActiveSubStep] = useState(1);
   const [editingDelimiters, setEditingDelimiters] = useState(false);
+  const [applyValid, setApplyValid] = useState(false);
+
+  useEffect(() => {
+    onValidChange?.(activeSubStep < 3 || applyValid);
+  }, [activeSubStep, applyValid, onValidChange]);
 
   return (
     <>
@@ -1231,7 +1247,7 @@ function PlacementDetailsStep({ partnerName, hasUploadedFile, hasReuploaded, isU
       )}
 
       {activeSubStep === 3 && (
-        <ApplyPlacementsSubStep onBack={() => setActiveSubStep(2)} onContinue={onContinue} hasReuploaded={hasReuploaded} />
+        <ApplyPlacementsSubStep onBack={() => setActiveSubStep(2)} onContinue={onContinue} hasReuploaded={hasReuploaded} onValidChange={setApplyValid} />
       )}
     </>
   );
@@ -1460,7 +1476,80 @@ const AP_LANG_OPTS = ["English", "Spanish", "French"];
 const AP_GEO_OPTS = ["New_York", "Los_Angeles", "Chicago", "Houston", "San_Antonio", "San_Francisco"];
 const AP_SUBPL_OPTS = ["Pandora_2025_Display_Q1", "Soundwave_2025_Audio_Q2", "Streamline_2025_Video_Q1", "FitTrack_2025_Mobile_Q2", "TechSavvy_2025_Display_Q1"];
 
-function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean }) {
+function InlineComboCell({ value, options, onCommit, onCancel }: { value: string; options: string[]; onCommit: (v: string) => void; onCancel: () => void }) {
+  const [query, setQuery] = useState(value);
+  const [open, setOpen] = useState(true);
+  const [highlightIdx, setHighlightIdx] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filtered = options.filter((o) => o.toLowerCase().includes(query.toLowerCase()));
+
+  useEffect(() => { inputRef.current?.focus(); inputRef.current?.select(); }, []);
+
+  useEffect(() => {
+    if (highlightIdx >= 0 && listRef.current) {
+      const el = listRef.current.children[highlightIdx] as HTMLElement | undefined;
+      el?.scrollIntoView({ block: "nearest" });
+    }
+  }, [highlightIdx]);
+
+  const commit = (v: string) => { setOpen(false); onCommit(v); };
+
+  const handleBlur = (e: React.FocusEvent) => {
+    if (containerRef.current?.contains(e.relatedTarget as Node)) return;
+    commit(query);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setHighlightIdx((p) => Math.min(p + 1, filtered.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setHighlightIdx((p) => Math.max(p - 1, 0)); }
+    else if (e.key === "Enter") { e.preventDefault(); if (highlightIdx >= 0 && filtered[highlightIdx]) commit(filtered[highlightIdx]); else commit(query); }
+    else if (e.key === "Escape") { onCancel(); }
+    else if (e.key === "Tab") { if (highlightIdx >= 0 && filtered[highlightIdx]) commit(filtered[highlightIdx]); else commit(query); }
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className={`flex items-center rounded border bg-white focus-within:border-[#2d46f6] focus-within:ring-1 focus-within:ring-[#2d46f6] ${!query ? "border-[#dc2626]" : "border-border"}`}>
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); setHighlightIdx(-1); }}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          className="w-full bg-transparent py-1 pl-2 pr-1 text-sm text-[#1f2430] outline-none"
+          placeholder="Type or select..."
+        />
+        <button
+          tabIndex={-1}
+          onMouseDown={(e) => { e.preventDefault(); setOpen((p) => !p); }}
+          className="shrink-0 px-1 text-[#64748b]"
+        >
+          <ChevronDown className="size-3" />
+        </button>
+      </div>
+      {open && filtered.length > 0 && (
+        <div ref={listRef} className="absolute left-0 top-full z-50 mt-1 max-h-[180px] w-full overflow-y-auto rounded-md border border-border bg-white py-1 shadow-lg">
+          {filtered.map((opt, idx) => (
+            <button
+              key={opt}
+              onMouseDown={(e) => { e.preventDefault(); commit(opt); }}
+              className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm ${idx === highlightIdx ? "bg-[#eff0fd] text-[#2d46f6]" : "text-[#1f2430] hover:bg-[#f1f5f9]"}`}
+            >
+              {opt === value && <Check className="size-3 text-[#2d46f6]" />}
+              <span className={opt === value ? "font-medium" : ""}>{opt}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded, onValidChange }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean; onValidChange?: (valid: boolean) => void }) {
   const [rows, setRows] = useState<ApplyRow[]>(APPLY_ROWS);
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<ApplyRow | null>(null);
@@ -1470,6 +1559,13 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded }: { onBack:
   const [bulkForm, setBulkForm] = useState<Partial<ApplyRow>>({});
   const [panelOpen, setPanelOpen] = useState(false);
   const [editingCell, setEditingCell] = useState<{ rowIdx: number; field: keyof ApplyRow } | null>(null);
+
+  const errorCount = rows.filter((r) => r.status === "error").length;
+  const isValid = errorCount === 0;
+
+  useEffect(() => {
+    onValidChange?.(isValid);
+  }, [isValid, onValidChange]);
 
   const isBulkMode = selectedRows.size > 0 && editingRow === null;
   const isEditMode = editingRow !== null && editForm !== null;
@@ -1599,15 +1695,15 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded }: { onBack:
           <tbody>
             {sortedRows.map((row, i) => {
               const origIdx = rows.indexOf(row);
-              const editable: { field: keyof ApplyRow; maxW?: string }[] = [
+              const editable: { field: keyof ApplyRow; maxW?: string; options?: string[] }[] = [
                 { field: "subPlacement", maxW: "max-w-[160px]" },
-                { field: "channel" },
-                { field: "publisher" },
-                { field: "audience" },
-                { field: "adSize" },
-                { field: "creative" },
-                { field: "language" },
-                { field: "geography" },
+                { field: "channel", options: AP_CHANNEL_OPTS },
+                { field: "publisher", options: AP_PUBLISHER_OPTS },
+                { field: "audience", options: AP_AUDIENCE_OPTS },
+                { field: "adSize", options: AP_ADSIZE_OPTS },
+                { field: "creative", options: AP_CREATIVE_OPTS },
+                { field: "language", options: AP_LANG_OPTS },
+                { field: "geography", options: AP_GEO_OPTS },
               ];
               return (
                 <tr key={row.id} className={`border-b border-border ${selectedRows.has(origIdx) ? "bg-[#f8f9ff]" : ""}`}>
@@ -1615,10 +1711,22 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded }: { onBack:
                   <td className="px-3 py-3">
                     {row.status === "error" ? <Badge className="bg-red-50 text-[#dc2626]">Missing Field</Badge> : row.status === "resolved" ? <Badge className="bg-green-50 text-[#389e45]">Resolved</Badge> : <Badge className="bg-orange-50 text-[#f59e0b]">Needs Review</Badge>}
                   </td>
-                  {editable.map(({ field, maxW }) => {
+                  {editable.map(({ field, maxW, options }) => {
                     const isEditing = editingCell?.rowIdx === origIdx && editingCell?.field === field;
                     const val = row[field];
                     if (isEditing) {
+                      if (options) {
+                        return (
+                          <td key={field} className="px-3 py-1.5">
+                            <InlineComboCell
+                              value={val}
+                              options={options}
+                              onCommit={(v) => { updateCell(origIdx, field, v); setEditingCell(null); }}
+                              onCancel={() => setEditingCell(null)}
+                            />
+                          </td>
+                        );
+                      }
                       return (
                         <td key={field} className="px-3 py-1.5">
                           <input
@@ -1636,9 +1744,12 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded }: { onBack:
                       <td
                         key={field}
                         onClick={() => setEditingCell({ rowIdx: origIdx, field })}
-                        className={`cursor-pointer px-3 py-3 text-sm text-[#1f2430] transition-colors hover:bg-[#f1f5f9] ${maxW ? maxW + " truncate" : ""}`}
+                        className={`group/cell cursor-pointer px-3 py-3 text-sm text-[#1f2430] transition-colors hover:bg-[#f1f5f9] ${maxW ? maxW + " truncate" : ""}`}
                       >
-                        {val || <span className="text-[#dc2626]">—</span>}
+                        <span className="flex items-center gap-1">
+                          {val || <span className="text-[#dc2626]">—</span>}
+                          <SquarePen className="size-3 shrink-0 text-[#94a3b8] opacity-0 transition-opacity group-hover/cell:opacity-100" />
+                        </span>
                       </td>
                     );
                   })}
@@ -1728,7 +1839,7 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded }: { onBack:
 
       <div className="mt-8 flex items-center justify-between">
         <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-4 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back</button>
-        <button onClick={onContinue} className="rounded-md bg-[#212be9] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]">Continue to Review</button>
+        <button onClick={onContinue} disabled={!isValid} className="rounded-md bg-[#212be9] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50">Continue to Review</button>
       </div>
     </>
   );
