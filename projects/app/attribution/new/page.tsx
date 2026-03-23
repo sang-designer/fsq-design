@@ -27,9 +27,9 @@ const SIDEBAR_STEPS = [
 ];
 
 const INITIAL_PARTNERS = [
-  { name: "Viant", fundingSource: "Starcom" as string | null, mediaType: "Display", conversionType: "Visits and Sales Impact" as string | null, startDate: "2025-04-01" as string | null, endDate: "2025-06-30" as string | null, missingFields: 0, estimatedSpend: "$125,000" },
-  { name: "Adtheorent", fundingSource: "Zenith" as string | null, mediaType: "Mobile", conversionType: "Visits and Sales Impact" as string | null, startDate: "2025-04-01" as string | null, endDate: null as string | null, missingFields: 2, estimatedSpend: "$85,000" },
-  { name: "Nexxen", fundingSource: "Starcom" as string | null, mediaType: "Video", conversionType: "Sales Impact" as string | null, startDate: "2025-04-01" as string | null, endDate: "2025-06-30" as string | null, missingFields: 0, estimatedSpend: "$210,000" },
+  { name: "Viant", fundingSource: "Starcom" as string | null, mediaTypes: ["Display", "Mobile"], conversionType: "Visits and Sales Impact" as string | null, startDate: "2025-04-01" as string | null, endDate: "2025-06-30" as string | null, missingFields: 0, estimatedSpend: "$125,000" },
+  { name: "Adtheorent", fundingSource: "Zenith" as string | null, mediaTypes: ["Mobile"], conversionType: "Visits and Sales Impact" as string | null, startDate: "2025-04-01" as string | null, endDate: null as string | null, missingFields: 2, estimatedSpend: "$85,000" },
+  { name: "Nexxen", fundingSource: "Starcom" as string | null, mediaTypes: ["Video", "CTV"], conversionType: "Sales Impact" as string | null, startDate: "2025-04-01" as string | null, endDate: "2025-06-30" as string | null, missingFields: 0, estimatedSpend: "$210,000" },
 ];
 
 const ERROR_FIELDS = [
@@ -787,7 +787,17 @@ const AD_OPS_OPTIONS = ["James Lee", "Lisa Wang", "Robert Brown", "Jennifer Tayl
 
 function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValues = {} }: { mode: "add" | "edit"; onDiscard: () => void; onSave: (formData: Record<string, string>) => void; errorFields?: string[]; initialValues?: Record<string, string> }) {
   const [mediaTypeOpen, setMediaTypeOpen] = useState(true);
-  const [mediaTypes, setMediaTypes] = useState([{ id: 1 }]);
+
+  const initialMediaTypes = (() => {
+    const types: { id: number; value: string }[] = [];
+    let i = 0;
+    while (initialValues[`Media Type ${i}`]) {
+      types.push({ id: i + 1, value: initialValues[`Media Type ${i}`] });
+      i++;
+    }
+    return types.length > 0 ? types : [{ id: 1, value: "" }];
+  })();
+  const [mediaTypes, setMediaTypes] = useState(initialMediaTypes);
 
   const [formValues, setFormValues] = useState<Record<string, string>>(initialValues);
   const [clearedErrors, setClearedErrors] = useState<Set<string>>(new Set());
@@ -840,33 +850,33 @@ function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValu
         {/* Media Types */}
         <div className="flex flex-col gap-4">
           <p className="text-xs font-semibold text-[#646464]">Media Types</p>
-          {mediaTypes.map((mt) => (
+          {mediaTypes.map((mt, idx) => (
             <div key={mt.id} className="rounded-md border border-[#e0e0e0] px-4 py-4">
               <button
                 onClick={() => setMediaTypeOpen(!mediaTypeOpen)}
                 className="flex w-full items-center gap-4"
               >
                 <div className="flex flex-1 flex-col gap-1">
-                  <p className="text-xs font-semibold text-[#646464]">Media Type Details</p>
+                  <p className="text-xs font-semibold text-[#646464]">Media Type {mediaTypes.length > 1 ? idx + 1 : ""} Details</p>
                 </div>
                 {mediaTypeOpen ? <ChevronUp className="size-4 text-[#8d8d8d]" /> : <ChevronDown className="size-4 text-[#8d8d8d]" />}
               </button>
               {mediaTypeOpen && (
                 <div className="mt-4 flex flex-col gap-4">
                   <div className="flex gap-8">
-                    <SelectField label="Media Type" value={formValues["Media Type"] ?? ""} onChange={(v) => updateField("Media Type", v)} options={MEDIA_TYPE_OPTIONS} />
-                    <SelectField label="Conversion Funding Report Type" value={formValues["Conversion Funding Report Type"] ?? ""} onChange={(v) => updateField("Conversion Funding Report Type", v)} error={hasError("Conversion Funding Report Type")} options={CONVERSION_TYPE_OPTIONS} />
+                    <SelectField label="Media Type" value={formValues[`Media Type ${idx}`] ?? ""} onChange={(v) => updateField(`Media Type ${idx}`, v)} options={MEDIA_TYPE_OPTIONS} />
+                    <SelectField label="Conversion Funding Report Type" value={formValues[`Conversion Report ${idx}`] ?? formValues["Conversion Funding Report Type"] ?? ""} onChange={(v) => updateField(`Conversion Report ${idx}`, v)} error={hasError("Conversion Funding Report Type")} options={CONVERSION_TYPE_OPTIONS} />
                   </div>
                   <div className="flex gap-8">
-                    <InputField label="Estimated Ad Spend" placeholder="Ad Spend value..." value={formValues["Estimated Ad Spend"] ?? ""} onChange={(v) => updateField("Estimated Ad Spend", v)} />
-                    <InputField label="Estimated Impressions" placeholder="Impressions value..." value={formValues["Estimated Impressions"] ?? ""} onChange={(v) => updateField("Estimated Impressions", v)} />
+                    <InputField label="Estimated Ad Spend" placeholder="Ad Spend value..." value={formValues[`Estimated Ad Spend ${idx}`] ?? formValues["Estimated Ad Spend"] ?? ""} onChange={(v) => updateField(`Estimated Ad Spend ${idx}`, v)} />
+                    <InputField label="Estimated Impressions" placeholder="Impressions value..." value={formValues[`Estimated Impressions ${idx}`] ?? formValues["Estimated Impressions"] ?? ""} onChange={(v) => updateField(`Estimated Impressions ${idx}`, v)} />
                   </div>
                 </div>
               )}
             </div>
           ))}
           <button
-            onClick={() => setMediaTypes((prev) => [...prev, { id: prev.length + 1 }])}
+            onClick={() => setMediaTypes((prev) => [...prev, { id: prev.length + 1, value: "" }])}
             className="flex items-center gap-1 self-start text-sm font-medium text-[#212be9]"
           >
             <Plus className="size-4" />
@@ -941,7 +951,7 @@ function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPar
     setEditingIndex(index);
     setEditInitialValues({
       "Partner/Platform Name": partner.name,
-      "Media Type": partner.mediaType,
+      ...Object.fromEntries(partner.mediaTypes.map((mt, i) => [`Media Type ${i}`, mt])),
       "Estimated Total Ad Spend": partner.estimatedSpend,
       ...(partner.fundingSource ? { "Agency or Site Served": partner.fundingSource } : {}),
       ...(partner.conversionType ? { "Conversion Funding Report Type": partner.conversionType } : {}),
@@ -967,6 +977,13 @@ function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPar
   };
 
   const handleSave = (formData: Record<string, string>) => {
+    const mediaTypes: string[] = [];
+    let i = 0;
+    while (formData[`Media Type ${i}`]) {
+      mediaTypes.push(formData[`Media Type ${i}`]);
+      i++;
+    }
+
     if (editMode === "edit" && editingIndex !== null) {
       setPartners((prev) =>
         prev.map((p, i) => {
@@ -974,8 +991,8 @@ function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPar
           return {
             ...p,
             fundingSource: formData["Agency or Site Served"] || p.fundingSource,
-            mediaType: formData["Media Type"] || p.mediaType,
-            conversionType: formData["Conversion Funding Report Type"] || p.conversionType,
+            mediaTypes: mediaTypes.length > 0 ? mediaTypes : p.mediaTypes,
+            conversionType: formData["Conversion Funding Report Type"] || formData["Conversion Report 0"] || p.conversionType,
             startDate: formData["Ad Run Start Date"] || p.startDate,
             endDate: formData["Ad Run End Date"] || p.endDate,
             missingFields: 0,
@@ -986,8 +1003,8 @@ function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPar
       const newPartner = {
         name: formData["Partner/Platform Name"] || "New Partner",
         fundingSource: formData["Agency or Site Served"] || null,
-        mediaType: formData["Media Type"] || "Display",
-        conversionType: formData["Conversion Funding Report Type"] || null,
+        mediaTypes: mediaTypes.length > 0 ? mediaTypes : ["Display"],
+        conversionType: formData["Conversion Funding Report Type"] || formData["Conversion Report 0"] || null,
         startDate: formData["Ad Run Start Date"] || null,
         endDate: formData["Ad Run End Date"] || null,
         missingFields: 0,
@@ -1105,7 +1122,13 @@ function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPar
                       </div>
                     </td>
                     <td className="px-4 py-4 text-sm text-black">{partner.fundingSource ?? "—"}</td>
-                    <td className="px-4 py-4 text-sm text-black">{partner.mediaType}</td>
+                    <td className="px-4 py-4 text-sm text-black">
+                      <div className="flex flex-wrap gap-1">
+                        {partner.mediaTypes.map((mt) => (
+                          <span key={mt} className="rounded-full bg-[#f1f5f9] px-2 py-0.5 text-xs font-medium text-[#475569]">{mt}</span>
+                        ))}
+                      </div>
+                    </td>
                     <td className="px-4 py-4 text-sm text-black">{partner.conversionType ?? "—"}</td>
                     <td className="px-4 py-4 text-sm text-black">{formatDate(partner.startDate)}</td>
                     <td className="px-4 py-4 text-sm text-black">{formatDate(partner.endDate)}</td>
@@ -1229,7 +1252,6 @@ function FundingAllocationContent({ measurementBudget, onValidChange }: { measur
           <thead>
             <tr className="border-b border-border bg-[#f8fafc]">
               <th className="w-[14%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Partner</th>
-              <th className="w-[12%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Media Type</th>
               <th className="w-[16%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Who is funding visits</th>
               <th className="w-[20%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Funding name for visits</th>
               <th className="w-[18%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Who is funding sales impact</th>
@@ -1242,9 +1264,6 @@ function FundingAllocationContent({ measurementBudget, onValidChange }: { measur
                 <tr key={alloc.name} className="border-b border-border last:border-b-0">
                   <td className="px-4 py-4">
                     <p className="text-sm font-medium text-[#1f2430]">{alloc.name}</p>
-                  </td>
-                  <td className="px-4 py-4">
-                    <span className="rounded-full bg-[#f1f5f9] px-2.5 py-1 text-xs font-medium text-[#475569]">{alloc.mediaType}</span>
                   </td>
                   <td className="px-4 py-4">
                     <Select value={alloc.fundingVisits || undefined} onValueChange={(val) => updateAllocation(i, "fundingVisits", val)}>

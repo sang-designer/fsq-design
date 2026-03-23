@@ -1008,8 +1008,8 @@ function PartnerDetailsStep({ partnerData, onPartnerDataChange, onBack, onContin
   );
 }
 
-function FundingAllocationStep({ partnerName, mediaType, measurementBudget, metric, fundingVisits, onFundingVisitsChange, fundingSalesImpact, onFundingSalesImpactChange, onBack, onContinue }: {
-  partnerName: string; mediaType: string; measurementBudget: number; metric: string;
+function FundingAllocationStep({ partnerName, measurementBudget, metric, fundingVisits, onFundingVisitsChange, fundingSalesImpact, onFundingSalesImpactChange, onBack, onContinue }: {
+  partnerName: string; measurementBudget: number; metric: string;
   fundingVisits: string; onFundingVisitsChange: (v: string) => void;
   fundingSalesImpact: string; onFundingSalesImpactChange: (v: string) => void;
   onBack: () => void; onContinue: () => void;
@@ -1040,7 +1040,6 @@ function FundingAllocationStep({ partnerName, mediaType, measurementBudget, metr
           <thead>
             <tr className="border-b border-border bg-[#f8fafc]">
               <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Partner</th>
-              <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Media Type</th>
               <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Who is funding visits</th>
               <th className="px-5 py-3.5 text-left text-sm font-medium text-[#64748b]">Who is funding sales impact</th>
             </tr>
@@ -1049,9 +1048,6 @@ function FundingAllocationStep({ partnerName, mediaType, measurementBudget, metr
             <tr className="border-b border-border last:border-b-0">
               <td className="px-5 py-4">
                 <p className="text-sm font-medium text-[#1f2430]">{partnerName || "No partner selected"}</p>
-              </td>
-              <td className="px-5 py-4">
-                <span className="rounded-full bg-[#f1f5f9] px-2.5 py-1 text-xs font-medium text-[#475569]">{mediaType || "—"}</span>
               </td>
               <td className="px-5 py-4">
                 <Select value={fundingVisits || undefined} onValueChange={onFundingVisitsChange}>
