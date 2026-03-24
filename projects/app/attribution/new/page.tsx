@@ -1,9 +1,9 @@
 "use client";
 
-import { Upload, ChevronDown, ChevronUp, Calendar as CalendarIcon, CircleDashed, Check, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Search, Download, Copy, Mail, X, Loader2, GripVertical, MousePointerClick, ArrowRight, OctagonAlert, SquarePen, Trash2, FileText, Info, CircleAlert } from "lucide-react";
+import { Upload, ChevronDown, ChevronUp, Calendar as CalendarIcon, CircleDashed, Check, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Search, Download, Copy, Mail, X, Loader2, GripVertical, MousePointerClick, ArrowRight, OctagonAlert, SquarePen, Trash2, FileText, Info, CircleAlert, ArrowUpDown, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState, useRef, useCallback, useEffect, DragEvent, Suspense } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo, DragEvent, Suspense } from "react";
 import {
   Select,
   SelectContent,
@@ -14,15 +14,15 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 
-type Step = "campaign" | "partner" | "funding" | "pixel" | "placement" | "map-partners";
+type Step = "campaign" | "placement" | "map-partners" | "map-taxonomies" | "map-creatives" | "apply-placements" | "funding" | "pixel" | "review";
 
 const SIDEBAR_STEPS = [
   { key: "campaign" as Step, label: "Campaign Details" },
-  { key: "partner" as Step, label: "Partner Details" },
+  { key: "placement" as Step, label: "Placement Details" },
   { key: "funding" as Step, label: "Funding Allocation" },
   { key: "pixel" as Step, label: "Pixel Generation" },
-  { key: "placement" as Step, label: "Placement Details" },
   { key: "review" as Step, label: "Review and Submit" },
 ];
 
@@ -927,267 +927,6 @@ function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValu
   );
 }
 
-function PartnerDetailsContent({ hasUploadedFile, isEditingPartner, onEditingPartnerChange, onValidChange }: { hasUploadedFile: boolean; isEditingPartner: boolean; onEditingPartnerChange: (v: boolean) => void; onValidChange?: (valid: boolean) => void }) {
-  const formatDate = (d: string | null) => {
-    if (!d) return "—";
-    const date = new Date(d + "T00:00:00");
-    if (isNaN(date.getTime())) return d;
-    return `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}/${date.getFullYear()}`;
-  };
-  const [partners, setPartners] = useState(INITIAL_PARTNERS.map((p) => ({ ...p })));
-  const [editMode, setEditMode] = useState<"add" | "edit">("add");
-  const [editErrorFields, setEditErrorFields] = useState<string[]>([]);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editInitialValues, setEditInitialValues] = useState<Record<string, string>>({});
-
-  const totalMissing = partners.reduce((sum, p) => sum + p.missingFields, 0);
-  const isValid = totalMissing === 0 && partners.length > 0;
-
-  useEffect(() => {
-    onValidChange?.(isValid);
-  }, [isValid, onValidChange]);
-
-  const handleEdit = (partner: typeof partners[0], index: number) => {
-    setEditingIndex(index);
-    setEditInitialValues({
-      "Partner/Platform Name": partner.name,
-      ...Object.fromEntries(partner.mediaTypes.map((mt, i) => [`Media Type ${i}`, mt])),
-      "Estimated Total Ad Spend": partner.estimatedSpend,
-      ...(partner.fundingSource ? { "Agency or Site Served": partner.fundingSource } : {}),
-      ...(partner.conversionType ? { "Conversion Funding Report Type": partner.conversionType } : {}),
-      ...(partner.startDate ? { "Ad Run Start Date": partner.startDate } : {}),
-      ...(partner.endDate ? { "Ad Run End Date": partner.endDate } : {}),
-    });
-    if (partner.missingFields > 0) {
-      setEditMode("edit");
-      setEditErrorFields(ERROR_FIELDS);
-    } else {
-      setEditMode("edit");
-      setEditErrorFields([]);
-    }
-    onEditingPartnerChange(true);
-  };
-
-  const handleAdd = () => {
-    setEditingIndex(null);
-    setEditMode("add");
-    setEditErrorFields([]);
-    setEditInitialValues({});
-    onEditingPartnerChange(true);
-  };
-
-  const handleSave = (formData: Record<string, string>) => {
-    const mediaTypes: string[] = [];
-    let i = 0;
-    while (formData[`Media Type ${i}`]) {
-      mediaTypes.push(formData[`Media Type ${i}`]);
-      i++;
-    }
-
-    if (editMode === "edit" && editingIndex !== null) {
-      setPartners((prev) =>
-        prev.map((p, i) => {
-          if (i !== editingIndex) return p;
-          return {
-            ...p,
-            fundingSource: formData["Agency or Site Served"] || p.fundingSource,
-            mediaTypes: mediaTypes.length > 0 ? mediaTypes : p.mediaTypes,
-            conversionType: formData["Conversion Funding Report Type"] || formData["Conversion Report 0"] || p.conversionType,
-            startDate: formData["Ad Run Start Date"] || p.startDate,
-            endDate: formData["Ad Run End Date"] || p.endDate,
-            missingFields: 0,
-          };
-        })
-      );
-    } else if (editMode === "add") {
-      const newPartner = {
-        name: formData["Partner/Platform Name"] || "New Partner",
-        fundingSource: formData["Agency or Site Served"] || null,
-        mediaTypes: mediaTypes.length > 0 ? mediaTypes : ["Display"],
-        conversionType: formData["Conversion Funding Report Type"] || formData["Conversion Report 0"] || null,
-        startDate: formData["Ad Run Start Date"] || null,
-        endDate: formData["Ad Run End Date"] || null,
-        missingFields: 0,
-        estimatedSpend: formData["Estimated Total Ad Spend"] || "$0",
-      };
-      setPartners((prev) => [...prev, newPartner]);
-    }
-    onEditingPartnerChange(false);
-  };
-
-  if (isEditingPartner) {
-    return (
-      <>
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-[#020617]">Media Partner Details</h2>
-          <div className="mt-1 text-sm leading-5 text-[#646464]">
-            <p>
-              Media partners are responsible for delivering digital media for this campaign, including programmatic teams.
-            </p>
-            <p>
-              <span className="cursor-pointer text-[#212be9]">Learn more</span> about Partners in Attribution.
-            </p>
-          </div>
-        </div>
-
-        <div className="mb-6 h-px w-full bg-[#e2e8f0]" />
-
-        <AddPartnerForm
-          mode={editMode}
-          errorFields={editErrorFields}
-          initialValues={editInitialValues}
-          onDiscard={() => onEditingPartnerChange(false)}
-          onSave={handleSave}
-        />
-      </>
-    );
-  }
-
-  return (
-    <>
-      <div className="mb-6">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold text-[#020617]">Media Partner Details</h2>
-          {hasUploadedFile && totalMissing > 0 && (
-            <span className="rounded-full bg-[#fefce8] px-2 py-0.5 text-xs font-semibold text-[#713f12]">
-              Missing Information - {totalMissing} fields missing
-            </span>
-          )}
-        </div>
-        <div className="mt-1 text-sm leading-5 text-[#646464]">
-          <p>
-            Media partners are responsible for delivering digital media for this campaign, including programmatic teams.
-          </p>
-          <p>
-            <span className="cursor-pointer text-[#212be9]">Learn more</span> about Partners in Attribution.
-          </p>
-        </div>
-      </div>
-
-      <div className="mb-4 h-px w-full bg-[#e2e8f0]" />
-
-      {hasUploadedFile ? (
-        <>
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm text-[#171417]">
-              <span className="text-[#757575]">Showing </span>
-              <span className="font-medium">{partners.length}</span>
-              <span className="text-[#757575]"> of </span>
-              <span className="font-medium">{partners.length}</span>
-              <span className="text-[#757575]"> results</span>
-            </p>
-            <div className="flex items-center gap-2">
-              <div className="flex w-[263px] items-center rounded-md border border-[#e2e8f0] bg-white px-3 py-2">
-                <Search className="mr-2 size-4 text-[#64748b]" />
-                <span className="text-sm text-[#64748b]">Search</span>
-              </div>
-              <button
-                onClick={handleAdd}
-                className="flex items-center gap-1 rounded-md border border-[#212be9] bg-[#fcfcfc] px-2 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
-              >
-                <Plus className="size-4" />
-                <span className="px-1">Add Partner</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="w-full">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#e2e8f0]">
-                  <th className="w-[150px] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner Name</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Funding Source</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Media Type</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Conversion Type</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">Start Date</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[#64748b]">End Date</th>
-                  <th className="w-[80px] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {partners.map((partner, index) => (
-                  <tr key={partner.name + index} className="border-b border-[#e2e8f0]">
-                    <td className="w-[150px] px-4 py-4">
-                      <div className="flex items-center gap-1">
-                        {partner.missingFields > 0 && (
-                          <div className="group relative">
-                            <OctagonAlert className="size-4 shrink-0 text-[#f59e0b]" />
-                            <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#0f172a] px-3 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                              This partner is missing {partner.missingFields} required fields.
-                              <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#0f172a]" />
-                            </div>
-                          </div>
-                        )}
-                        <span className="text-sm font-medium text-black">{partner.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-black">{partner.fundingSource ?? "—"}</td>
-                    <td className="px-4 py-4 text-sm text-black">
-                      <div className="flex flex-wrap gap-1">
-                        {partner.mediaTypes.map((mt) => (
-                          <span key={mt} className="rounded-full bg-[#f1f5f9] px-2 py-0.5 text-xs font-medium text-[#475569]">{mt}</span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-black">{partner.conversionType ?? "—"}</td>
-                    <td className="px-4 py-4 text-sm text-black">{formatDate(partner.startDate)}</td>
-                    <td className="px-4 py-4 text-sm text-black">{formatDate(partner.endDate)}</td>
-                    <td className="w-[80px] px-4 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => handleEdit(partner, index)}
-                          className="rounded-md p-1 hover:bg-gray-100"
-                        >
-                          <SquarePen className="size-4 text-[#64748b]" />
-                        </button>
-                        <button className="rounded-md p-1 hover:bg-gray-100">
-                          <Trash2 className="size-4 text-[#64748b]" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {partners.length > 10 && (
-          <div className="mt-6 flex items-center justify-end gap-1">
-            <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-[#64748b] hover:bg-gray-50">
-              <ChevronLeft className="size-4" />
-              Previous
-            </button>
-            <div className="flex size-10 items-center justify-center rounded-lg border border-[#e2e8f0] bg-white text-sm font-medium text-[#0f172a]">
-              1
-            </div>
-            <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-[#64748b] hover:bg-gray-50">
-              Next
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
-          )}
-        </>
-      ) : (
-        <div className="flex items-center justify-between rounded-lg border border-[#e2e8f0] bg-[#fcfcfc] px-6 py-5">
-          <div>
-            <p className="text-sm font-semibold text-[#020617]">Missing Partner Details</p>
-            <p className="mt-1 text-sm text-[#646464]">
-              No partner information is available. <span className="cursor-pointer text-[#212be9]">Upload a media plan</span>, or <span className="cursor-pointer text-[#212be9]">add a media partner</span> manually.
-            </p>
-          </div>
-          <button
-            onClick={handleAdd}
-            className="flex shrink-0 items-center gap-1 rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
-          >
-            <Plus className="size-4" />
-            Add Partner
-          </button>
-        </div>
-      )}
-    </>
-  );
-}
-
 const FUNDING_PARTNERS = [
   { name: "Viant", mediaType: "Display", estimatedSpend: 125000 },
   { name: "Adtheorent", mediaType: "Mobile", estimatedSpend: 85000 },
@@ -1559,7 +1298,8 @@ const PLACEMENT_SUB_STEPS = [
   { num: 1, label: "Media Plan" },
   { num: 2, label: "Map Partners" },
   { num: 3, label: "Map Taxonomies" },
-  { num: 4, label: "Apply Placements" },
+  { num: 4, label: "Map Creatives" },
+  { num: 5, label: "Apply Placements" },
 ];
 
 type PlacementState = "empty" | "uploaded" | "new-upload";
@@ -1571,7 +1311,7 @@ function PlacementSubSteps({ activeStep, hasReuploaded }: { activeStep: number; 
         {PLACEMENT_SUB_STEPS.map((s) => (
           <div
             key={s.num}
-            className={`h-1 flex-1 ${s.num <= activeStep ? "bg-[#020617]" : "bg-[#e2e8f0]"} ${s.num === 1 ? "rounded-l-full" : ""} ${s.num === 4 ? "rounded-r-full" : ""}`}
+            className={`h-1 flex-1 ${s.num <= activeStep ? "bg-[#020617]" : "bg-[#e2e8f0]"} ${s.num === 1 ? "rounded-l-full" : ""} ${s.num === PLACEMENT_SUB_STEPS.length ? "rounded-r-full" : ""}`}
           />
         ))}
       </div>
@@ -1653,8 +1393,7 @@ function PlacementDetailsContent({ placementState, onContinueToMapPartners, onUp
       {hasResults ? (
         <>
           <div className="mb-6 text-sm leading-5 text-[#646464]">
-            <p>Your uploaded media plan has been parsed using the placement delimiters shown below.</p>
-            <p>Next you&apos;ll map partners found in the placement data to your provided Media Partners.</p>
+            <p>Your uploaded media plan has been parsed using the placement delimiters shown below. Next you&apos;ll map partners found in the placement data to your provided Media Partners.</p>
           </div>
 
           <div className="mb-4">
@@ -1768,6 +1507,37 @@ const INITIAL_ASSIGNED_PARTNERS: AssignedPartner[] = [
     { id: "t4", name: "Adtheorent Mobile" },
   ] },
   { id: "ap3", name: "Ignored Partners", count: 0, tokens: [] },
+];
+
+const SALESFORCE_PARTNERS: PartnerToken[] = [
+  { id: "sf-1", name: "Viant Technologies" },
+  { id: "sf-2", name: "Adtheorent" },
+  { id: "sf-3", name: "Nexxen" },
+  { id: "sf-4", name: "TradeDesk" },
+  { id: "sf-5", name: "LiveRamp" },
+  { id: "sf-6", name: "Taboola" },
+  { id: "sf-7", name: "StackAdapt" },
+  { id: "sf-8", name: "Basis Technologies" },
+  { id: "sf-9", name: "MediaMath" },
+  { id: "sf-10", name: "Simpli.fi" },
+  { id: "sf-11", name: "Adelphic" },
+  { id: "sf-12", name: "Amobee" },
+  { id: "sf-13", name: "Xandr" },
+  { id: "sf-14", name: "PubMatic" },
+  { id: "sf-15", name: "Index Exchange" },
+  { id: "sf-16", name: "Lotame" },
+  { id: "sf-17", name: "Oracle Advertising" },
+  { id: "sf-18", name: "Criteo" },
+  { id: "sf-19", name: "DoubleVerify" },
+  { id: "sf-20", name: "Integral Ad Science" },
+  { id: "sf-21", name: "Magnite" },
+  { id: "sf-22", name: "OpenX" },
+  { id: "sf-23", name: "Kargo" },
+  { id: "sf-24", name: "Undertone" },
+  { id: "sf-25", name: "AdColony" },
+  { id: "sf-26", name: "InMobi" },
+  { id: "sf-27", name: "Samba TV" },
+  { id: "sf-28", name: "Digital Turbine" },
 ];
 
 const partnerOnboardingSteps = [
@@ -1959,6 +1729,73 @@ function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy, hasReuplo
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragCounter = useRef<Record<string, number>>({});
 
+  const [addPartnerOpen, setAddPartnerOpen] = useState(false);
+  const [addPartnerSearch, setAddPartnerSearch] = useState("");
+  const [addPartnerSelected, setAddPartnerSelected] = useState<Set<string>>(new Set());
+  const [addPartnerLoading, setAddPartnerLoading] = useState(false);
+  const [addPartnerError, setAddPartnerError] = useState(false);
+  const [addPartnerShowAll, setAddPartnerShowAll] = useState(false);
+  const addPartnerRef = useRef<HTMLDivElement>(null);
+
+  const existingNames = useMemo(() => {
+    const names = new Set<string>();
+    unassigned.forEach((t) => names.add(t.name.toLowerCase()));
+    assigned.forEach((cat) => cat.tokens.forEach((t) => names.add(t.name.toLowerCase())));
+    return names;
+  }, [unassigned, assigned]);
+
+  const availableSfPartners = useMemo(() =>
+    SALESFORCE_PARTNERS.filter((p) => !existingNames.has(p.name.toLowerCase())),
+    [existingNames]
+  );
+
+  const filteredSfPartners = useMemo(() =>
+    availableSfPartners.filter((p) =>
+      p.name.toLowerCase().includes(addPartnerSearch.toLowerCase())
+    ),
+    [availableSfPartners, addPartnerSearch]
+  );
+
+  const VISIBLE_LIMIT = 20;
+  const visibleSfPartners = addPartnerShowAll ? filteredSfPartners : filteredSfPartners.slice(0, VISIBLE_LIMIT);
+  const hasMorePartners = filteredSfPartners.length > VISIBLE_LIMIT && !addPartnerShowAll;
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (addPartnerRef.current && !addPartnerRef.current.contains(e.target as Node)) {
+        setAddPartnerOpen(false);
+        setAddPartnerSearch("");
+        setAddPartnerSelected(new Set());
+        setAddPartnerShowAll(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const openAddPartner = useCallback(() => {
+    setAddPartnerOpen(true);
+    setAddPartnerSearch("");
+    setAddPartnerSelected(new Set());
+    setAddPartnerShowAll(false);
+    setAddPartnerError(false);
+    setAddPartnerLoading(true);
+    const timer = setTimeout(() => setAddPartnerLoading(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const confirmAddPartners = useCallback(() => {
+    const newPartners: PartnerToken[] = SALESFORCE_PARTNERS
+      .filter((p) => addPartnerSelected.has(p.id))
+      .map((p) => ({ id: `partner-sf-${p.id}-${Date.now()}`, name: p.name }));
+    if (!newPartners.length) return;
+    setUnassigned((prev) => [...prev, ...newPartners]);
+    setAddPartnerOpen(false);
+    setAddPartnerSearch("");
+    setAddPartnerSelected(new Set());
+    setAddPartnerShowAll(false);
+  }, [addPartnerSelected]);
+
   const selectedCount = selected.size;
   const allSelected = unassigned.length > 0 && selectedCount === unassigned.length;
 
@@ -2121,6 +1958,115 @@ function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy, hasReuplo
               )}
             </div>
           </div>
+          <div className="relative" ref={addPartnerRef}>
+            {!addPartnerOpen ? (
+              <button
+                onClick={openAddPartner}
+                className="mt-3 flex items-center gap-1 text-sm font-medium text-[#212be9] transition-colors hover:text-[#1a22c4]"
+              >
+                <Plus className="size-4" />
+                Add Partner
+              </button>
+            ) : (
+              <div className="mt-3 w-full rounded-lg border border-[#212be9] bg-white shadow-lg">
+                {addPartnerSelected.size > 0 && (
+                  <div className="flex flex-wrap gap-1.5 border-b border-[#e2e8f0] px-3 py-2">
+                    {SALESFORCE_PARTNERS.filter((p) => addPartnerSelected.has(p.id)).map((p) => (
+                      <span key={p.id} className="flex items-center gap-1 rounded-full bg-[#f3f4f6] py-0.5 pl-2.5 pr-1 text-xs text-[#020617]">
+                        {p.name}
+                        <button
+                          onClick={() => setAddPartnerSelected((prev) => { const next = new Set(prev); next.delete(p.id); return next; })}
+                          className="rounded-full p-0.5 text-[#9ca3af] hover:bg-[#e5e7eb] hover:text-[#374151]"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-center border-b border-[#e2e8f0] px-3 py-2">
+                  <Search className="mr-2 size-4 shrink-0 text-[#64748b]" />
+                  <input
+                    type="text"
+                    value={addPartnerSearch}
+                    onChange={(e) => { setAddPartnerSearch(e.target.value); setAddPartnerShowAll(false); }}
+                    placeholder="Search partners..."
+                    autoFocus
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-[#9ca3af]"
+                  />
+                </div>
+                <div className="max-h-[240px] overflow-y-auto">
+                  {addPartnerLoading ? (
+                    <div className="flex items-center justify-center gap-2 px-3 py-6">
+                      <Loader2 className="size-4 animate-spin text-[#212be9]" />
+                      <span className="text-sm text-[#6b7280]">Loading partners...</span>
+                    </div>
+                  ) : addPartnerError ? (
+                    <div className="flex flex-col items-center gap-2 px-3 py-6">
+                      <CircleAlert className="size-5 text-[#dc2626]" />
+                      <span className="text-sm text-[#dc2626]">Failed to load partners</span>
+                      <button
+                        onClick={() => { setAddPartnerError(false); setAddPartnerLoading(true); setTimeout(() => setAddPartnerLoading(false), 600); }}
+                        className="text-sm font-medium text-[#212be9] hover:underline"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : visibleSfPartners.length === 0 ? (
+                    <div className="px-3 py-6 text-center text-sm text-[#6b7280]">No matching partners found.</div>
+                  ) : (
+                    <>
+                      {visibleSfPartners.map((p) => {
+                        const isChecked = addPartnerSelected.has(p.id);
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => setAddPartnerSelected((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(p.id)) next.delete(p.id); else next.add(p.id);
+                              return next;
+                            })}
+                            className={`flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors ${isChecked ? "bg-[#eef2ff]" : "hover:bg-gray-50"}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              readOnly
+                              className="size-4 shrink-0 rounded border-gray-300 accent-[#212be9] pointer-events-none"
+                            />
+                            <span className="text-[#020617]">{p.name}</span>
+                          </button>
+                        );
+                      })}
+                      {hasMorePartners && (
+                        <button
+                          onClick={() => setAddPartnerShowAll(true)}
+                          className="w-full border-t border-[#e2e8f0] px-3 py-2 text-center text-xs font-medium text-[#212be9] hover:bg-gray-50"
+                        >
+                          Show all {filteredSfPartners.length} results
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 border-t border-[#e2e8f0] px-3 py-2">
+                  <button
+                    onClick={() => { setAddPartnerOpen(false); setAddPartnerSearch(""); setAddPartnerSelected(new Set()); setAddPartnerShowAll(false); }}
+                    className="rounded-md border border-[#e2e8f0] bg-white px-3 py-1.5 text-sm font-medium text-[#020617] transition-colors hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmAddPartners}
+                    disabled={addPartnerSelected.size === 0}
+                    className="rounded-md bg-[#212be9] px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Add{addPartnerSelected.size > 0 ? ` (${addPartnerSelected.size})` : ""}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Assigned Partners */}
@@ -2198,18 +2144,1116 @@ function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy, hasReuplo
   );
 }
 
+/* ───── MapTaxonomiesContent ───── */
+
+type TaxToken = { id: string; name: string };
+type TaxCategory = { id: string; name: string; count: number; tokens: TaxToken[] };
+
+const INITIAL_TAX_TOKENS: TaxToken[] = [
+  { id: "tx1", name: "Brand_Awareness" }, { id: "tx2", name: "Prospecting" }, { id: "tx3", name: "Retargeting" },
+  { id: "tx4", name: "Consideration" }, { id: "tx5", name: "Conversion" }, { id: "tx6", name: "Loyalty" },
+  { id: "tx7", name: "Upper_Funnel" }, { id: "tx8", name: "Mid_Funnel" }, { id: "tx9", name: "Lower_Funnel" },
+  { id: "tx10", name: "Awareness_Video" }, { id: "tx11", name: "Direct_Response" }, { id: "tx12", name: "Engagement" },
+  { id: "tx13", name: "Reach_Extension" }, { id: "tx14", name: "Sequential_Messaging" }, { id: "tx15", name: "Contextual" },
+  { id: "tx16", name: "Behavioral" }, { id: "tx17", name: "Lookalike" }, { id: "tx18", name: "CRM_Match" },
+  { id: "tx19", name: "Geo_Targeted" }, { id: "tx20", name: "Daypart_Optimized" },
+];
+
+const INITIAL_TAX_CATEGORIES: TaxCategory[] = [
+  { id: "tc1", name: "Campaign Objective", count: 0, tokens: [] },
+  { id: "tc2", name: "Funnel Stage", count: 0, tokens: [] },
+  { id: "tc3", name: "Targeting Strategy", count: 0, tokens: [] },
+  { id: "tc4", name: "Audience Segment", count: 0, tokens: [] },
+  { id: "tc5", name: "Creative Format", count: 0, tokens: [] },
+  { id: "tc6", name: "Optimization Goal", count: 0, tokens: [] },
+  { id: "tc7", name: "Measurement Type", count: 0, tokens: [] },
+  { id: "tc8", name: "Ignored", count: 0, tokens: [] },
+];
+
+function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean }) {
+  const [unassigned, setUnassigned] = useState<TaxToken[]>(INITIAL_TAX_TOKENS);
+  const [categories, setCategories] = useState<TaxCategory[]>(INITIAL_TAX_CATEGORIES);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [dragTokenIds, setDragTokenIds] = useState<string[]>([]);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const dragCounter = useRef<Record<string, number>>({});
+  const dragGhostRef = useRef<HTMLDivElement>(null);
+
+  const allSelected = unassigned.length > 0 && selected.size === unassigned.length;
+
+  const toggleSelect = (id: string) => setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const toggleSelectAll = () => { if (allSelected) setSelected(new Set()); else setSelected(new Set(unassigned.map((t) => t.id))); };
+  const toggleExpand = (id: string) => setExpanded((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+
+  const handleDragStart = useCallback((e: DragEvent, tokenId: string) => {
+    const ids = selected.has(tokenId) && selected.size > 1 ? Array.from(selected) : [tokenId];
+    setDragTokenIds(ids);
+    e.dataTransfer.setData("text/plain", JSON.stringify(ids));
+    e.dataTransfer.effectAllowed = "move";
+    if (ids.length > 1 && dragGhostRef.current) {
+      dragGhostRef.current.textContent = `${ids.length} items`;
+      dragGhostRef.current.style.display = "flex";
+      e.dataTransfer.setDragImage(dragGhostRef.current, 40, 20);
+      requestAnimationFrame(() => { if (dragGhostRef.current) dragGhostRef.current.style.display = "none"; });
+    }
+  }, [selected]);
+
+  const handleDragOver = useCallback((e: DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }, []);
+  const handleDragEnter = useCallback((e: DragEvent, catId: string) => { e.preventDefault(); dragCounter.current[catId] = (dragCounter.current[catId] || 0) + 1; setDragOverId(catId); }, []);
+  const handleDragLeave = useCallback((catId: string) => { dragCounter.current[catId] = (dragCounter.current[catId] || 0) - 1; if (dragCounter.current[catId] <= 0) { dragCounter.current[catId] = 0; setDragOverId((p) => (p === catId ? null : p)); } }, []);
+
+  const handleDrop = useCallback((e: DragEvent, catId: string) => {
+    e.preventDefault();
+    dragCounter.current[catId] = 0;
+    setDragOverId(null);
+    let ids: string[];
+    try { ids = JSON.parse(e.dataTransfer.getData("text/plain")); } catch { ids = dragTokenIds; }
+    if (!ids.length) return;
+    const dropped = unassigned.filter((t) => ids.includes(t.id));
+    if (!dropped.length) return;
+    setUnassigned((prev) => prev.filter((t) => !ids.includes(t.id)));
+    setCategories((prev) => prev.map((c) => c.id === catId ? { ...c, count: c.count + dropped.length, tokens: [...c.tokens, ...dropped] } : c));
+    setSelected((prev) => { const n = new Set(prev); ids.forEach((id) => n.delete(id)); return n; });
+    setDragTokenIds([]);
+  }, [unassigned, dragTokenIds]);
+
+  const handleDragEnd = useCallback(() => { setDragTokenIds([]); setDragOverId(null); dragCounter.current = {}; }, []);
+
+  const removeToken = useCallback((catId: string, token: TaxToken) => {
+    setCategories((prev) => prev.map((c) => c.id === catId ? { ...c, count: c.count - 1, tokens: c.tokens.filter((t) => t.id !== token.id) } : c));
+    setUnassigned((prev) => [...prev, token]);
+  }, []);
+
+  return (
+    <>
+      <div ref={dragGhostRef} className="pointer-events-none fixed left-[-9999px] top-[-9999px] z-[9999] hidden items-center gap-1.5 rounded-lg bg-[#1f2937] px-3 py-1.5 text-xs font-medium text-white shadow-lg" />
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-[#020617]">Placement Details</h2>
+        <div className="mt-1 text-sm leading-5 text-[#646464]">
+          <p>Map taxonomy values found in your media plan to standard categories.</p>
+        </div>
+      </div>
+
+      <PlacementSubSteps activeStep={3} hasReuploaded={hasReuploaded} />
+
+      <p className="mb-6 text-sm text-[#646464]">Drag unassigned taxonomy values on the left to the appropriate category on the right.</p>
+
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <h3 className="mb-2 text-base font-semibold text-[#020617]">Unassigned Values</h3>
+          <div className="rounded-lg border border-[#e2e8f0]">
+            <div className="flex items-center gap-4 border-b border-[#e2e8f0] px-4 py-2">
+              <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="size-4 rounded border-gray-300 accent-[#212be9]" />
+              <span className="text-xs text-[#6b7280]">select all ({selected.size} selected)</span>
+            </div>
+            <div className="max-h-[400px] overflow-y-auto">
+              {unassigned.map((token) => (
+                <div
+                  key={token.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, token.id)}
+                  onDragEnd={handleDragEnd}
+                  className={`group flex cursor-grab items-center gap-3 border-b border-[#e2e8f0]/50 px-4 py-2 text-sm transition-colors active:cursor-grabbing ${selected.has(token.id) ? "bg-[#eef2ff]" : "hover:bg-gray-50"} ${dragTokenIds.includes(token.id) ? "opacity-40" : ""}`}
+                >
+                  <GripVertical className="size-4 shrink-0 text-[#9ca3af] opacity-0 transition-opacity group-hover:opacity-100" />
+                  <input type="checkbox" checked={selected.has(token.id)} onChange={() => toggleSelect(token.id)} className="size-4 shrink-0 rounded border-gray-300 accent-[#212be9]" />
+                  <span className="text-[#020617]">{token.name}</span>
+                </div>
+              ))}
+              {unassigned.length === 0 && <div className="px-4 py-8 text-center text-sm text-[#6b7280]">All values have been assigned.</div>}
+            </div>
+          </div>
+        </div>
+
+        <div className="w-[420px] shrink-0">
+          <h3 className="mb-2 text-base font-semibold text-[#020617]">Assigned Taxonomy Values</h3>
+          <div className="rounded-lg border border-[#e2e8f0]">
+            <div className="max-h-[400px] space-y-1.5 overflow-y-auto p-2">
+              {categories.map((cat) => {
+                const isOver = dragOverId === cat.id;
+                const isExp = expanded.has(cat.id);
+                return (
+                  <div
+                    key={cat.id}
+                    onDragOver={handleDragOver}
+                    onDragEnter={(e) => handleDragEnter(e, cat.id)}
+                    onDragLeave={() => handleDragLeave(cat.id)}
+                    onDrop={(e) => handleDrop(e, cat.id)}
+                    className={`rounded-lg border transition-all ${isOver ? "border-[#212be9] bg-[#eef2ff] shadow-sm" : "border-[#e2e8f0] bg-white"}`}
+                  >
+                    <button onClick={() => toggleExpand(cat.id)} className="flex w-full items-center gap-2 px-3 py-3 text-left">
+                      <span className="flex-1 text-sm font-medium text-[#020617]">{cat.name}</span>
+                      <span className="min-w-[24px] text-right text-sm tabular-nums text-[#6b7280]">{cat.count}</span>
+                      {isExp ? <ChevronUp className="size-4 text-[#6b7280]" /> : <ChevronDown className="size-4 text-[#6b7280]" />}
+                    </button>
+                    {isExp && cat.tokens.length > 0 && (
+                      <div className="border-t border-[#e2e8f0] px-3 pb-3 pt-2">
+                        <div className="flex flex-wrap gap-1.5">
+                          {cat.tokens.map((t) => (
+                            <span key={t.id} className="flex items-center gap-1 rounded-full bg-[#f3f4f6] py-0.5 pl-2.5 pr-1 text-xs text-[#020617]">
+                              {t.name}
+                              <button onClick={(e) => { e.stopPropagation(); removeToken(cat.id, t); }} className="rounded-full p-0.5 text-[#9ca3af] hover:bg-[#e5e7eb] hover:text-[#374151]"><X className="size-3" /></button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {isExp && cat.tokens.length === 0 && (
+                      <div className="border-t border-[#e2e8f0] px-3 py-3 text-xs text-[#6b7280]">Drop values here to assign them.</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 flex items-center justify-between py-4">
+        <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back to Partner Mappings</button>
+        <button onClick={onContinue} className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]">Continue to Creative Mappings</button>
+      </div>
+    </>
+  );
+}
+
+/* ───── MapCreativesContent ───── */
+
+type CreativeToken = { id: string; name: string };
+type MediaTypeCategory = { id: string; name: string; count: number; tokens: CreativeToken[] };
+
+const INITIAL_CREATIVE_TOKENS: CreativeToken[] = [
+  { id: "cr6", name: "Rich_Media_Expandable" },
+  { id: "cr10", name: "Social_Carousel_Feed" },
+  { id: "cr14", name: "Programmatic_Guaranteed_Unit" },
+  { id: "cr17", name: "Dynamic_Retargeting_300x600" },
+];
+
+const INITIAL_MEDIA_TYPE_CATEGORIES: MediaTypeCategory[] = [
+  { id: "mt1", name: "Display", count: 3, tokens: [{ id: "cr1", name: "Standard_Banner_300x250" }, { id: "cr2", name: "Interactive_Unit_728x90" }, { id: "cr3", name: "Native_Content_Feed" }] },
+  { id: "mt2", name: "Online Video", count: 2, tokens: [{ id: "cr4", name: "Video_Pre_Roll_15s" }, { id: "cr5", name: "Mid_Roll_30s" }] },
+  { id: "mt3", name: "Audio", count: 2, tokens: [{ id: "cr7", name: "Audio_Spot_30s" }, { id: "cr8", name: "Podcast_Sponsorship_60s" }] },
+  { id: "mt4", name: "Search", count: 1, tokens: [{ id: "cr9", name: "Paid_Search_Text_Ad" }] },
+  { id: "mt5", name: "Out-of-Home (Multi-Market)", count: 2, tokens: [{ id: "cr11", name: "Digital_Billboard_National" }, { id: "cr12", name: "Transit_Shelter_Multi" }] },
+  { id: "mt6", name: "Out-of-Home (Individual Market)", count: 1, tokens: [{ id: "cr13", name: "Street_Furniture_NYC" }] },
+  { id: "mt7", name: "Connected TV (CTV)", count: 2, tokens: [{ id: "cr15", name: "CTV_Spot_30s_Hulu" }, { id: "cr16", name: "CTV_Pre_Roll_15s_Peacock" }] },
+  { id: "mt8", name: "Linear TV with Custom As-Run Logs", count: 0, tokens: [] },
+  { id: "mt9", name: "Linear TV Identity Resolution", count: 0, tokens: [] },
+  { id: "mt10", name: "Linear TV Kantar Run Logs", count: 0, tokens: [] },
+];
+
+function MapCreativesContent({ onBack, onContinue, hasReuploaded }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean }) {
+  const [unassigned, setUnassigned] = useState<CreativeToken[]>(INITIAL_CREATIVE_TOKENS);
+  const [categories, setCategories] = useState<MediaTypeCategory[]>(INITIAL_MEDIA_TYPE_CATEGORIES);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [dragTokenIds, setDragTokenIds] = useState<string[]>([]);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const dragCounter = useRef<Record<string, number>>({});
+  const dragGhostRef = useRef<HTMLDivElement>(null);
+
+  const allSelected = unassigned.length > 0 && selected.size === unassigned.length;
+
+  const toggleSelect = (id: string) => setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const toggleSelectAll = () => { if (allSelected) setSelected(new Set()); else setSelected(new Set(unassigned.map((t) => t.id))); };
+  const toggleExpand = (id: string) => setExpanded((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+
+  const handleDragStart = useCallback((e: DragEvent, tokenId: string) => {
+    const ids = selected.has(tokenId) && selected.size > 1 ? Array.from(selected) : [tokenId];
+    setDragTokenIds(ids);
+    e.dataTransfer.setData("text/plain", JSON.stringify(ids));
+    e.dataTransfer.effectAllowed = "move";
+    if (ids.length > 1 && dragGhostRef.current) {
+      dragGhostRef.current.textContent = `${ids.length} items`;
+      dragGhostRef.current.style.display = "flex";
+      e.dataTransfer.setDragImage(dragGhostRef.current, 40, 20);
+      requestAnimationFrame(() => { if (dragGhostRef.current) dragGhostRef.current.style.display = "none"; });
+    }
+  }, [selected]);
+
+  const handleDragOver = useCallback((e: DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }, []);
+  const handleDragEnter = useCallback((e: DragEvent, catId: string) => { e.preventDefault(); dragCounter.current[catId] = (dragCounter.current[catId] || 0) + 1; setDragOverId(catId); }, []);
+  const handleDragLeave = useCallback((catId: string) => { dragCounter.current[catId] = (dragCounter.current[catId] || 0) - 1; if (dragCounter.current[catId] <= 0) { dragCounter.current[catId] = 0; setDragOverId((p) => (p === catId ? null : p)); } }, []);
+
+  const handleDrop = useCallback((e: DragEvent, catId: string) => {
+    e.preventDefault();
+    dragCounter.current[catId] = 0;
+    setDragOverId(null);
+    let ids: string[];
+    try { ids = JSON.parse(e.dataTransfer.getData("text/plain")); } catch { ids = dragTokenIds; }
+    if (!ids.length) return;
+    const dropped = unassigned.filter((t) => ids.includes(t.id));
+    if (!dropped.length) return;
+    setUnassigned((prev) => prev.filter((t) => !ids.includes(t.id)));
+    setCategories((prev) => prev.map((c) => c.id === catId ? { ...c, count: c.count + dropped.length, tokens: [...c.tokens, ...dropped] } : c));
+    setSelected((prev) => { const n = new Set(prev); ids.forEach((id) => n.delete(id)); return n; });
+    setDragTokenIds([]);
+  }, [unassigned, dragTokenIds]);
+
+  const handleDragEnd = useCallback(() => { setDragTokenIds([]); setDragOverId(null); dragCounter.current = {}; }, []);
+
+  const removeToken = useCallback((catId: string, token: CreativeToken) => {
+    setCategories((prev) => prev.map((c) => c.id === catId ? { ...c, count: c.count - 1, tokens: c.tokens.filter((t) => t.id !== token.id) } : c));
+    setUnassigned((prev) => [...prev, token]);
+  }, []);
+
+  return (
+    <>
+      <div ref={dragGhostRef} className="pointer-events-none fixed left-[-9999px] top-[-9999px] z-[9999] hidden items-center gap-1.5 rounded-lg bg-[#1f2937] px-3 py-1.5 text-xs font-medium text-white shadow-lg" />
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-[#020617]">Placement Details</h2>
+        <div className="mt-1 text-sm leading-5 text-[#646464]">
+          <p>Map creative values found in your media plan to standard media types.</p>
+        </div>
+      </div>
+
+      <PlacementSubSteps activeStep={4} hasReuploaded={hasReuploaded} />
+
+      <p className="mb-6 text-sm text-[#646464]">Drag unassigned creatives on the left to the appropriate media type on the right.</p>
+
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <h3 className="mb-2 text-base font-semibold text-[#020617]">Unassigned Creatives</h3>
+          <div className="rounded-lg border border-[#e2e8f0]">
+            <div className="flex items-center gap-4 border-b border-[#e2e8f0] px-4 py-2">
+              <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="size-4 rounded border-gray-300 accent-[#212be9]" />
+              <span className="text-xs text-[#6b7280]">select all ({selected.size} selected)</span>
+            </div>
+            <div className="max-h-[400px] overflow-y-auto">
+              {unassigned.map((token) => (
+                <div
+                  key={token.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, token.id)}
+                  onDragEnd={handleDragEnd}
+                  className={`group flex cursor-grab items-center gap-3 border-b border-[#e2e8f0]/50 px-4 py-2 text-sm transition-colors active:cursor-grabbing ${selected.has(token.id) ? "bg-[#eef2ff]" : "hover:bg-gray-50"} ${dragTokenIds.includes(token.id) ? "opacity-40" : ""}`}
+                >
+                  <GripVertical className="size-4 shrink-0 text-[#9ca3af] opacity-0 transition-opacity group-hover:opacity-100" />
+                  <input type="checkbox" checked={selected.has(token.id)} onChange={() => toggleSelect(token.id)} className="size-4 shrink-0 rounded border-gray-300 accent-[#212be9]" />
+                  <span className="text-[#020617]">{token.name}</span>
+                </div>
+              ))}
+              {unassigned.length === 0 && <div className="px-4 py-8 text-center text-sm text-[#6b7280]">All creatives have been assigned.</div>}
+            </div>
+          </div>
+        </div>
+
+        <div className="w-[420px] shrink-0">
+          <h3 className="mb-2 text-base font-semibold text-[#020617]">Assigned Media Types</h3>
+          <div className="rounded-lg border border-[#e2e8f0]">
+            <div className="space-y-1.5 p-2">
+              {categories.map((cat) => {
+                const isOver = dragOverId === cat.id;
+                const isExp = expanded.has(cat.id);
+                return (
+                  <div
+                    key={cat.id}
+                    onDragOver={handleDragOver}
+                    onDragEnter={(e) => handleDragEnter(e, cat.id)}
+                    onDragLeave={() => handleDragLeave(cat.id)}
+                    onDrop={(e) => handleDrop(e, cat.id)}
+                    className={`rounded-lg border transition-all ${isOver ? "border-[#212be9] bg-[#eef2ff] shadow-sm" : "border-[#e2e8f0] bg-white"}`}
+                  >
+                    <button onClick={() => toggleExpand(cat.id)} className="flex w-full items-center gap-2 px-3 py-3 text-left">
+                      <span className="flex-1 text-sm font-medium text-[#020617]">{cat.name}</span>
+                      <span className="min-w-[24px] text-right text-sm tabular-nums text-[#6b7280]">{cat.count}</span>
+                      {isExp ? <ChevronUp className="size-4 text-[#6b7280]" /> : <ChevronDown className="size-4 text-[#6b7280]" />}
+                    </button>
+                    {isExp && cat.tokens.length > 0 && (
+                      <div className="border-t border-[#e2e8f0] px-3 pb-3 pt-2">
+                        <div className="flex flex-wrap gap-1.5">
+                          {cat.tokens.map((t) => (
+                            <span key={t.id} className="flex items-center gap-1 rounded-full bg-[#f3f4f6] py-0.5 pl-2.5 pr-1 text-xs text-[#020617]">
+                              {t.name}
+                              <button onClick={(ev) => { ev.stopPropagation(); removeToken(cat.id, t); }} className="rounded-full p-0.5 text-[#9ca3af] hover:bg-[#e5e7eb] hover:text-[#374151]"><X className="size-3" /></button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {isExp && cat.tokens.length === 0 && (
+                      <div className="border-t border-[#e2e8f0] px-3 py-3 text-xs text-[#6b7280]">Drop creatives here to assign them.</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 flex items-center justify-between py-4">
+        <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back to Taxonomy Mappings</button>
+        <button onClick={onContinue} className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]">Continue to Apply Placements</button>
+      </div>
+    </>
+  );
+}
+
+/* ───── ApplyPlacementsContent ───── */
+
+const INITIAL_PLACEMENT_ROWS_AP = [
+  { id: "HKE239J", status: "error" as const, subPlacement: "Pandora_2025_Display_Q1", partner: "Viant", channel: "", publisher: "Google_DV360", audience: "Audience_Seg_01", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "New_York" },
+  { id: "HKE239K", status: "resolved" as const, subPlacement: "Pandora_2025_Mobile_Q1", partner: "Viant", channel: "Display", publisher: "Google_DV360", audience: "Audience_Seg_02", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "Los_Angeles" },
+  { id: "HKE240J", status: "parsed" as const, subPlacement: "Soundwave_2025_Audio_Q2", partner: "Adtheorent", channel: "Audio", publisher: "Amazon_DSP", audience: "Audience_Seg_05", adSize: "320x50", creative: "Rich_Media", language: "English", geography: "Chicago" },
+  { id: "HKE241J", status: "resolved" as const, subPlacement: "Streamline_2025_Video_Q1", partner: "Nexxen", channel: "Video", publisher: "TradeDesk", audience: "Audience_Seg_08", adSize: "728x90", creative: "Video_Pre_Roll", language: "English", geography: "Houston" },
+  { id: "HKE242J", status: "parsed" as const, subPlacement: "FitTrack_2025_Mobile_Q2", partner: "Adtheorent", channel: "Mobile", publisher: "Meta_Ads", audience: "Audience_Seg_12", adSize: "300x600", creative: "Interactive", language: "Spanish", geography: "San_Antonio" },
+  { id: "HKE243J", status: "error" as const, subPlacement: "", partner: "Viant", channel: "Display", publisher: "", audience: "Audience_Seg_03", adSize: "300x250", creative: "Standard_Banner", language: "English", geography: "" },
+  { id: "HKE244J", status: "parsed" as const, subPlacement: "TechSavvy_2025_Display_Q1", partner: "Nexxen", channel: "Display", publisher: "Google_DV360", audience: "Audience_Seg_15", adSize: "300x600", creative: "Native_Content", language: "English", geography: "San_Francisco" },
+  { id: "HKE245J", status: "resolved" as const, subPlacement: "TravelQuest_2025_CTV_Q2", partner: "Viant", channel: "CTV", publisher: "TradeDesk", audience: "Audience_Seg_20", adSize: "970x250", creative: "Rich_Media", language: "English", geography: "Seattle" },
+  { id: "HKE246J", status: "parsed" as const, subPlacement: "CulinaryDelight_2025_Social", partner: "Adtheorent", channel: "Social", publisher: "Meta_Ads", audience: "Audience_Seg_22", adSize: "300x250", creative: "Standard_Banner", language: "English", geography: "Denver" },
+];
+
+type PlacementRow = {
+  id: string;
+  status: "error" | "resolved" | "parsed";
+  subPlacement: string;
+  partner: string;
+  channel: string;
+  publisher: string;
+  audience: string;
+  adSize: string;
+  creative: string;
+  language: string;
+  geography: string;
+};
+
+const CHANNEL_OPTIONS_AP = ["Display", "Mobile", "Video", "Audio", "CTV", "Social", "Native"];
+const SUB_PLACEMENT_OPTIONS_AP = ["Pandora_2025_Display_Q1", "Soundwave_2025_Audio_Q2", "Streamline_2025_Video_Q1", "FitTrack_2025_Mobile_Q2", "TechSavvy_2025_Display_Q1", "TravelQuest_2025_CTV_Q2", "CulinaryDelight_2025_Social"];
+const PARTNER_OPTIONS_AP = ["Viant", "Adtheorent", "Nexxen"];
+const PUBLISHER_OPTIONS_AP = ["Google_DV360", "Meta_Ads", "Amazon_DSP", "TradeDesk"];
+const AUDIENCE_OPTIONS_AP = ["Audience_Seg_01", "Audience_Seg_02", "Audience_Seg_03", "Audience_Seg_05", "Audience_Seg_08", "Audience_Seg_12", "Audience_Seg_15", "Audience_Seg_20", "Audience_Seg_22"];
+const AD_SIZE_OPTIONS_AP = ["300x50", "300x250", "300x600", "320x50", "728x90", "970x250", "160x600"];
+const CREATIVE_OPTIONS_AP = ["Standard_Banner", "Rich_Media", "Video_Pre_Roll", "Interactive", "Native_Content"];
+const LANGUAGE_OPTIONS_AP = ["English", "Spanish", "French", "German", "Portuguese"];
+const GEOGRAPHY_OPTIONS_AP = ["New_York", "Los_Angeles", "Chicago", "Houston", "San_Antonio", "San_Francisco", "Seattle", "Denver"];
+
+function InlineComboCellAP({ value, options, onCommit, onCancel }: { value: string; options: string[]; onCommit: (v: string) => void; onCancel: () => void }) {
+  const [query, setQuery] = useState(value);
+  const [open, setOpen] = useState(true);
+  const [highlightIdx, setHighlightIdx] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filtered = options.filter((o) => o.toLowerCase().includes(query.toLowerCase()));
+
+  useEffect(() => { inputRef.current?.focus(); inputRef.current?.select(); }, []);
+
+  useEffect(() => {
+    if (highlightIdx >= 0 && listRef.current) {
+      const el = listRef.current.children[highlightIdx] as HTMLElement | undefined;
+      el?.scrollIntoView({ block: "nearest" });
+    }
+  }, [highlightIdx]);
+
+  const commit = (v: string) => { setOpen(false); onCommit(v); };
+
+  const handleBlur = (e: React.FocusEvent) => {
+    if (containerRef.current?.contains(e.relatedTarget as Node)) return;
+    commit(query);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setHighlightIdx((p) => Math.min(p + 1, filtered.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setHighlightIdx((p) => Math.max(p - 1, 0)); }
+    else if (e.key === "Enter") { e.preventDefault(); if (highlightIdx >= 0 && filtered[highlightIdx]) commit(filtered[highlightIdx]); else commit(query); }
+    else if (e.key === "Escape") { onCancel(); }
+    else if (e.key === "Tab") { if (highlightIdx >= 0 && filtered[highlightIdx]) commit(filtered[highlightIdx]); else commit(query); }
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className={`flex items-center rounded border bg-white focus-within:border-[#2d46f6] focus-within:ring-1 focus-within:ring-[#2d46f6] ${!query ? "border-[#dc2626]" : "border-border"}`}>
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); setHighlightIdx(-1); }}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          className="w-full bg-transparent py-1 pl-2 pr-1 text-sm text-[#1f2430] outline-none"
+          placeholder="Type or select..."
+        />
+        <button
+          tabIndex={-1}
+          onMouseDown={(e) => { e.preventDefault(); setOpen((p) => !p); }}
+          className="shrink-0 px-1 text-[#64748b]"
+        >
+          <ChevronDown className="size-3" />
+        </button>
+      </div>
+      {open && filtered.length > 0 && (
+        <div ref={listRef} className="absolute left-0 top-full z-50 mt-1 max-h-[180px] w-full overflow-y-auto rounded-md border border-border bg-white py-1 shadow-lg">
+          {filtered.map((opt, idx) => (
+            <button
+              key={opt}
+              onMouseDown={(e) => { e.preventDefault(); commit(opt); }}
+              className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm ${idx === highlightIdx ? "bg-[#eff0fd] text-[#2d46f6]" : "text-[#1f2430] hover:bg-[#f1f5f9]"}`}
+            >
+              {opt === value && <Check className="size-3 text-[#2d46f6]" />}
+              <span className={opt === value ? "font-medium" : ""}>{opt}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; onContinue: () => void }) {
+  const [rows, setRows] = useState<PlacementRow[]>(INITIAL_PLACEMENT_ROWS_AP);
+  const [editingRow, setEditingRow] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<PlacementRow | null>(null);
+  const [sortField, setSortField] = useState<keyof PlacementRow | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  const [bulkForm, setBulkForm] = useState<Partial<PlacementRow>>({});
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [editingCell, setEditingCell] = useState<{ rowIdx: number; field: keyof PlacementRow } | null>(null);
+
+  const isBulkMode = selectedRows.size > 0 && editingRow === null;
+  const isEditMode = editingRow !== null && editForm !== null;
+  const bulkFieldCount = Object.values(bulkForm).filter(Boolean).length;
+  const selectedAreAllNeedsReview = isBulkMode && [...selectedRows].every((i) => rows[i].status === "parsed");
+
+  const recomputeStatus = (row: PlacementRow): PlacementRow["status"] => {
+    const required: (keyof PlacementRow)[] = ["subPlacement", "channel", "publisher", "geography"];
+    const hasEmpty = required.some((f) => !row[f]);
+    if (hasEmpty) return "error";
+    return "resolved";
+  };
+
+  const updateCell = (origIdx: number, field: keyof PlacementRow, value: string) => {
+    setRows((prev) => prev.map((r, i) => {
+      if (i !== origIdx) return r;
+      const updated = { ...r, [field]: value };
+      updated.status = recomputeStatus(updated);
+      return updated;
+    }));
+  };
+
+  const openEditPanel = (sortedIndex: number) => {
+    const originalIndex = rows.indexOf(sortedRows[sortedIndex]);
+    setEditingRow(originalIndex);
+    setEditForm({ ...rows[originalIndex] });
+    setSelectedRows(new Set());
+    setBulkForm({});
+    setPanelOpen(true);
+  };
+
+  const saveEdit = () => {
+    if (editingRow === null || !editForm) return;
+    setRows((prev) =>
+      prev.map((r, i) => {
+        if (i !== editingRow) return r;
+        const updated = { ...editForm };
+        updated.status = recomputeStatus(updated);
+        return updated;
+      })
+    );
+    closePanel();
+  };
+
+  const applyBulkChanges = () => {
+    if (bulkFieldCount === 0) return;
+    setRows((prev) =>
+      prev.map((r, i) => {
+        if (!selectedRows.has(i)) return r;
+        const updated = { ...r };
+        if (bulkForm.partner) updated.partner = bulkForm.partner;
+        if (bulkForm.channel) updated.channel = bulkForm.channel;
+        if (bulkForm.publisher) updated.publisher = bulkForm.publisher;
+        if (bulkForm.audience) updated.audience = bulkForm.audience;
+        if (bulkForm.adSize) updated.adSize = bulkForm.adSize;
+        if (bulkForm.creative) updated.creative = bulkForm.creative;
+        if (bulkForm.language) updated.language = bulkForm.language;
+        if (bulkForm.geography) updated.geography = bulkForm.geography;
+        updated.status = recomputeStatus(updated);
+        return updated;
+      })
+    );
+    closePanel();
+  };
+
+  const closePanel = () => {
+    setPanelOpen(false);
+    setEditingRow(null);
+    setEditForm(null);
+    setSelectedRows(new Set());
+    setBulkForm({});
+  };
+
+  const toggleSort = (field: keyof PlacementRow) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  };
+
+  const sortedRows = [...rows].sort((a, b) => {
+    if (!sortField) return 0;
+    const av = a[sortField].toLowerCase();
+    const bv = b[sortField].toLowerCase();
+    return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+
+  const allRowsSelected = rows.length > 0 && selectedRows.size === rows.length;
+  const someRowsSelected = selectedRows.size > 0 && selectedRows.size < rows.length;
+
+  const toggleSelectAll = () => {
+    if (allRowsSelected) {
+      setSelectedRows(new Set());
+      setPanelOpen(false);
+    } else {
+      setSelectedRows(new Set(rows.map((_, i) => i)));
+      setEditingRow(null);
+      setEditForm(null);
+      setPanelOpen(true);
+    }
+  };
+
+  const toggleRowSelect = (originalIndex: number) => {
+    const next = new Set(selectedRows);
+    if (next.has(originalIndex)) next.delete(originalIndex);
+    else next.add(originalIndex);
+    setSelectedRows(next);
+    setEditingRow(null);
+    setEditForm(null);
+    setPanelOpen(next.size > 0);
+  };
+
+  const SortHeader = ({ field, label }: { field: keyof PlacementRow; label: string }) => (
+    <th className="cursor-pointer select-none whitespace-nowrap px-3 py-3 text-left text-sm font-medium text-[#64748b]" onClick={() => toggleSort(field)}>
+      <span className="inline-flex items-center gap-1">{label} <ArrowUpDown className={`size-3 ${sortField === field ? "text-[#1f2430]" : ""}`} /></span>
+    </th>
+  );
+
+  return (
+    <>
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-[#1f2430]">Placement Details</h2>
+        <p className="mt-1 text-sm text-[#6b7280]">Instructions for this stage (Placement Details) go here, and shouldn&apos;t be too long, and certainly not more than two lines worth.</p>
+      </div>
+
+      <PlacementSubSteps activeStep={5} />
+
+      <p className="mb-6 text-sm text-[#6b7280]">Instructions for the current active step go here below the step name and above the active content area</p>
+
+      {/* File summary banner */}
+      <div className="mb-6 flex items-center justify-between rounded-lg border border-border bg-white px-5 py-3.5">
+        <div>
+          <p className="text-sm font-semibold text-[#1f2430]">Carta/Mcdonalds2024</p>
+          <p className="text-xs text-[#6b7280]">Uploaded by Sang Yeo</p>
+        </div>
+        <div className="flex items-center gap-5">
+          <span className="flex items-center gap-1 text-sm">
+            <Check className="size-4 text-[#16a34a]" />
+            <span className="font-medium text-[#16a34a]">{rows.filter((r) => r.status === "resolved").length + 103} Mapped</span>
+          </span>
+          <span className="flex items-center gap-1 text-sm">
+            <CircleAlert className="size-4 text-[#f59e0b]" />
+            <span className="font-medium text-[#f59e0b]">{rows.filter((r) => r.status === "parsed").length} Needs Review</span>
+          </span>
+          <span className="flex items-center gap-1 text-sm">
+            <CircleAlert className="size-4 text-[#dc2626]" />
+            <span className="font-medium text-[#dc2626]">{rows.filter((r) => r.status === "error").length} Errors</span>
+          </span>
+          <span className="text-sm text-[#6b7280]">{rows.length > 0 ? Math.round(((rows.length - rows.filter((r) => r.status === "error").length) / rows.length) * 100) : 0}% Parsing Accuracy</span>
+          <span className="text-sm font-semibold text-[#1f2430]">{rows.length + 106} Total Placements</span>
+        </div>
+      </div>
+
+      {/* Results count + search + filters */}
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-[#1f2430]">
+            <span className="text-[#6b7280]">Showing </span>
+            <span className="font-medium">{rows.length}</span>
+            <span className="text-[#6b7280]"> of </span>
+            <span className="font-medium">{rows.length}</span>
+            <span className="text-[#6b7280]"> results</span>
+            {selectedRows.size > 0 && (
+              <span className="ml-2 text-[#2d46f6]">({selectedRows.size} selected)</span>
+            )}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex w-[200px] items-center rounded-md border border-border bg-white px-3 py-2">
+            <Search className="mr-2 size-4 text-[#64748b]" />
+            <input type="text" placeholder="Search" className="w-full bg-transparent text-sm text-[#1f2430] outline-none placeholder:text-[#64748b]" />
+          </div>
+          <button className="flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-sm text-[#1f2430] hover:bg-gray-50">
+            <SlidersHorizontal className="size-4 text-[#64748b]" />
+            Filters
+          </button>
+        </div>
+      </div>
+
+      {/* Placements table */}
+      <div className="w-full overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border">
+              <th className="w-10 px-3 py-3">
+                <input
+                  type="checkbox"
+                  checked={allRowsSelected}
+                  ref={(el) => { if (el) el.indeterminate = someRowsSelected; }}
+                  onChange={toggleSelectAll}
+                  className="size-4 rounded border-gray-300 accent-[#2d46f6]"
+                />
+              </th>
+              <SortHeader field="status" label="Status" />
+              <SortHeader field="subPlacement" label="Sub Placement" />
+              <SortHeader field="partner" label="Partner" />
+              <SortHeader field="channel" label="Channel" />
+              <SortHeader field="publisher" label="Publisher" />
+              <SortHeader field="audience" label="Audience" />
+              <SortHeader field="adSize" label="Ad Size" />
+              <SortHeader field="creative" label="Creative" />
+              <SortHeader field="language" label="Language" />
+              <SortHeader field="geography" label="Geography" />
+              <th className="px-3 py-3 text-left text-sm font-medium text-[#64748b]">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedRows.map((row, i) => {
+              const originalIndex = rows.indexOf(row);
+              const editable: { field: keyof PlacementRow; maxW?: string; options?: string[] }[] = [
+                { field: "subPlacement", maxW: "max-w-[160px]" },
+                { field: "partner", options: PARTNER_OPTIONS_AP },
+                { field: "channel", options: CHANNEL_OPTIONS_AP },
+                { field: "publisher", options: PUBLISHER_OPTIONS_AP },
+                { field: "audience", options: AUDIENCE_OPTIONS_AP },
+                { field: "adSize", options: AD_SIZE_OPTIONS_AP },
+                { field: "creative", options: CREATIVE_OPTIONS_AP },
+                { field: "language", options: LANGUAGE_OPTIONS_AP },
+                { field: "geography", options: GEOGRAPHY_OPTIONS_AP },
+              ];
+              return (
+              <tr key={i} className={`border-b border-border ${selectedRows.has(originalIndex) ? "bg-[#f8f9ff]" : ""}`}>
+                <td className="w-10 px-3 py-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedRows.has(originalIndex)}
+                    onChange={() => toggleRowSelect(originalIndex)}
+                    className="size-4 rounded border-gray-300 accent-[#2d46f6]"
+                  />
+                </td>
+                <td className="px-3 py-3">
+                  {row.status === "error" ? (
+                    <Badge className="bg-red-50 text-[#dc2626] dark:bg-red-900/30">Missing Field</Badge>
+                  ) : row.status === "resolved" ? (
+                    <Badge className="bg-green-50 text-[#389e45] dark:bg-green-900/30">Resolved</Badge>
+                  ) : (
+                    <Badge className="bg-orange-50 text-[#f59e0b] dark:bg-orange-900/30">Needs Review</Badge>
+                  )}
+                </td>
+                {editable.map(({ field, maxW, options }) => {
+                  const isEditing = editingCell?.rowIdx === originalIndex && editingCell?.field === field;
+                  const val = row[field];
+                  if (isEditing) {
+                    if (options) {
+                      return (
+                        <td key={field} className="px-3 py-1.5">
+                          <InlineComboCellAP
+                            value={val}
+                            options={options}
+                            onCommit={(v) => { updateCell(originalIndex, field, v); setEditingCell(null); }}
+                            onCancel={() => setEditingCell(null)}
+                          />
+                        </td>
+                      );
+                    }
+                    return (
+                      <td key={field} className="px-3 py-1.5">
+                        <input
+                          autoFocus
+                          type="text"
+                          defaultValue={val}
+                          onBlur={(e) => { updateCell(originalIndex, field, e.target.value); setEditingCell(null); }}
+                          onKeyDown={(e) => { if (e.key === "Enter") { updateCell(originalIndex, field, (e.target as HTMLInputElement).value); setEditingCell(null); } if (e.key === "Escape") setEditingCell(null); }}
+                          className={`w-full rounded border bg-white px-2 py-1 text-sm text-[#1f2430] outline-none focus:border-[#2d46f6] focus:ring-1 focus:ring-[#2d46f6] ${maxW || ""} ${!val ? "border-[#dc2626]" : "border-border"}`}
+                        />
+                      </td>
+                    );
+                  }
+                  return (
+                    <td
+                      key={field}
+                      onClick={() => setEditingCell({ rowIdx: originalIndex, field })}
+                      className={`group/cell cursor-pointer px-3 py-3 text-sm text-[#1f2430] transition-colors hover:bg-[#f1f5f9] ${maxW ? maxW + " truncate" : ""}`}
+                    >
+                      <span className="flex items-center gap-1">
+                        {val || <span className="text-[#dc2626]">—</span>}
+                        <SquarePen className="size-3 shrink-0 text-[#94a3b8] opacity-0 transition-opacity group-hover/cell:opacity-100" />
+                      </span>
+                    </td>
+                  );
+                })}
+                <td className="px-3 py-3">
+                  <button onClick={() => openEditPanel(i)} className="text-sm font-medium text-[#2d46f6] hover:underline">edit</button>
+                </td>
+              </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {rows.length > 10 && (
+      <div className="mt-6 flex items-center justify-end gap-1">
+        <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-[#64748b] hover:bg-gray-50">
+          <ChevronLeft className="size-4" />
+          Previous
+        </button>
+        {[1, 2, 3, 4, 5, 6].map((n) => (
+          <div
+            key={n}
+            className={`flex size-10 items-center justify-center rounded-lg text-sm font-medium ${
+              n === 1 ? "border border-border bg-white text-[#0f172a]" : "text-[#64748b] hover:bg-gray-50"
+            }`}
+          >
+            {n}
+          </div>
+        ))}
+        <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-[#64748b] hover:bg-gray-50">
+          Next
+          <ChevronRight className="size-4" />
+        </button>
+      </div>
+      )}
+
+      {/* Right Side Panel */}
+      <div
+        className={`fixed inset-y-0 right-0 z-40 w-[400px] transform border-l border-border bg-white shadow-[-4px_0_20px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-in-out ${panelOpen && (isEditMode || isBulkMode) ? "translate-x-0" : "translate-x-full"}`}
+      >
+        <div className="flex h-full flex-col">
+          {/* Panel Header */}
+          <div className="flex items-center justify-between border-b border-border px-5 py-4">
+            {isEditMode && editForm && (
+              <div className="flex items-center gap-2.5">
+                <h3 className="text-base font-semibold text-[#1f2430]">Edit Placement</h3>
+                {editForm.status === "error" ? (
+                  <Badge className="bg-red-50 text-[#dc2626] dark:bg-red-900/30">Error</Badge>
+                ) : editForm.status === "resolved" ? (
+                  <Badge className="bg-green-50 text-[#389e45] dark:bg-green-900/30">Resolved</Badge>
+                ) : (
+                  <Badge className="bg-orange-50 text-[#f59e0b] dark:bg-orange-900/30">Needs Review</Badge>
+                )}
+              </div>
+            )}
+            {isBulkMode && (
+              <div className="flex items-center gap-2.5">
+                <h3 className="text-base font-semibold text-[#1f2430]">
+                  Bulk Edit ({selectedRows.size})
+                </h3>
+              </div>
+            )}
+            <button onClick={closePanel} className="rounded-full p-1.5 text-[#6b7280] transition-colors hover:bg-gray-100 hover:text-[#1f2430]">
+              <X className="size-4" />
+            </button>
+          </div>
+
+          {/* Panel Body */}
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            {isBulkMode && (
+              <p className="mb-4 text-sm text-[#6b7280]">
+                Set values below to apply to all {selectedRows.size} selected placement{selectedRows.size > 1 ? "s" : ""}. Only fields you change will be updated.
+              </p>
+            )}
+
+            <div className="flex flex-col gap-4">
+              {([
+                { label: "Sub Placement", field: "subPlacement" as const, options: SUB_PLACEMENT_OPTIONS_AP, editOnly: true },
+                { label: "Partner", field: "partner" as const, options: PARTNER_OPTIONS_AP, editOnly: false },
+                { label: "Channel", field: "channel" as const, options: CHANNEL_OPTIONS_AP, editOnly: false },
+                { label: "Publisher", field: "publisher" as const, options: PUBLISHER_OPTIONS_AP, editOnly: false },
+                { label: "Audience", field: "audience" as const, options: AUDIENCE_OPTIONS_AP, editOnly: false },
+                { label: "Ad Size", field: "adSize" as const, options: AD_SIZE_OPTIONS_AP, editOnly: false },
+                { label: "Creative", field: "creative" as const, options: CREATIVE_OPTIONS_AP, editOnly: false },
+                { label: "Language", field: "language" as const, options: LANGUAGE_OPTIONS_AP, editOnly: false },
+                { label: "Geography", field: "geography" as const, options: GEOGRAPHY_OPTIONS_AP, editOnly: false },
+              ] as const).map(({ label, field, options, editOnly }) => {
+                if (isBulkMode && editOnly) return null;
+
+                if (isEditMode && editForm) {
+                  return (
+                    <div key={field} className="flex flex-col gap-1.5">
+                      <label className="text-sm font-medium text-[#1f2430]">{label}</label>
+                      <div className="relative">
+                        <select
+                          value={editForm[field]}
+                          onChange={(e) => setEditForm({ ...editForm, [field]: e.target.value })}
+                          className={`w-full appearance-none rounded-md border bg-white py-2 pl-3 pr-9 text-sm text-[#1f2430] outline-none focus:border-[#2d46f6] ${!editForm[field] ? "border-[#dc2626]" : "border-border"}`}
+                        >
+                          <option value="">Select...</option>
+                          {options.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#64748b]" />
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (isBulkMode) {
+                  const selectedRowValues = [...selectedRows].map((i) => rows[i][field]);
+                  const uniqueValues = new Set(selectedRowValues.filter(Boolean));
+                  const isMixed = uniqueValues.size > 1;
+                  const commonValue = uniqueValues.size === 1 ? [...uniqueValues][0] : "";
+                  const validOptions = options.filter((opt) =>
+                    [...selectedRows].every((i) => {
+                      const rowVal = rows[i][field];
+                      return !rowVal || rowVal === opt;
+                    })
+                  );
+                  const isDisabled = isMixed && validOptions.length === 0;
+
+                  return (
+                    <div key={field} className="flex flex-col gap-1.5">
+                      <label className="text-sm font-medium text-[#1f2430]">{label}</label>
+                      <div className="relative">
+                        <select
+                          value={bulkForm[field] ?? ""}
+                          onChange={(e) => setBulkForm({ ...bulkForm, [field]: e.target.value || undefined })}
+                          disabled={isDisabled}
+                          className={`w-full appearance-none rounded-md border bg-white py-2 pl-3 pr-9 text-sm outline-none transition-colors focus:border-[#2d46f6] ${isDisabled ? "cursor-not-allowed bg-[#f8fafc] text-[#94a3b8]" : bulkForm[field] ? "border-[#2d46f6] text-[#1f2430]" : "border-border text-[#64748b]"}`}
+                        >
+                          <option value="">{isMixed ? `Mixed (${uniqueValues.size} values)` : commonValue ? commonValue : "— No change —"}</option>
+                          {validOptions.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#64748b]" />
+                      </div>
+                      {isMixed && !isDisabled && (
+                        <p className="text-xs text-[#f59e0b]">Values differ across selected rows</p>
+                      )}
+                      {isDisabled && (
+                        <p className="text-xs text-[#94a3b8]">No common values available</p>
+                      )}
+                    </div>
+                  );
+                }
+
+                return null;
+              })}
+            </div>
+          </div>
+
+          {/* Panel Footer */}
+          <div className="border-t border-border px-5 py-4">
+            {isEditMode && (
+              <div className="flex items-center justify-end gap-3">
+                <button onClick={closePanel} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-[#1f2430] transition-colors hover:bg-gray-50">Cancel</button>
+                <button onClick={saveEdit} className="rounded-lg bg-[#2d46f6] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2438d4]">Save Changes</button>
+              </div>
+            )}
+            {isBulkMode && (
+              <div className="flex flex-col gap-3">
+                {!selectedAreAllNeedsReview && bulkFieldCount > 0 && (
+                  <p className="text-center text-xs text-[#6b7280]">
+                    {bulkFieldCount} field{bulkFieldCount > 1 ? "s" : ""} will be updated across {selectedRows.size} row{selectedRows.size > 1 ? "s" : ""}
+                  </p>
+                )}
+                <div className="flex items-center justify-end gap-3">
+                  <button onClick={closePanel} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-[#1f2430] transition-colors hover:bg-gray-50">Cancel</button>
+                  {selectedAreAllNeedsReview ? (
+                    <button
+                      onClick={() => {
+                        setRows((prev) =>
+                          prev.map((r, i) => {
+                            if (!selectedRows.has(i)) return r;
+                            const updated = { ...r, ...Object.fromEntries(Object.entries(bulkForm).filter(([, v]) => v)) };
+                            updated.status = "resolved";
+                            return updated;
+                          })
+                        );
+                        closePanel();
+                      }}
+                      className="rounded-lg bg-[#2d46f6] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2438d4]"
+                    >
+                      Resolve {selectedRows.size} Item{selectedRows.size > 1 ? "s" : ""}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={applyBulkChanges}
+                      disabled={bulkFieldCount === 0}
+                      className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${bulkFieldCount > 0 ? "bg-[#2d46f6] hover:bg-[#2438d4]" : "cursor-not-allowed bg-[#a0aec0]"}`}
+                    >
+                      Apply to {selectedRows.size} Row{selectedRows.size > 1 ? "s" : ""}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="mt-8 flex items-center justify-between">
+        <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back to Creative Mappings</button>
+        <button onClick={onContinue} className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]">Continue to Funding Allocation</button>
+      </div>
+    </>
+  );
+}
+
+/* ───── ReviewContent ───── */
+
+function ReviewContent({ onBack, onSubmitted, campaignSubmitted }: { onBack: () => void; onSubmitted: () => void; campaignSubmitted: boolean }) {
+  const [authorized, setAuthorized] = useState(false);
+  const [comments, setComments] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = () => {
+    setIsSubmitting(true);
+    setTimeout(() => { setIsSubmitting(false); onSubmitted(); }, 2000);
+  };
+
+  if (campaignSubmitted) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-[#f0fdf4]">
+          <Check className="size-8 text-[#16a34a]" />
+        </div>
+        <h2 className="text-2xl font-semibold text-[#020617]">Campaign Submitted</h2>
+        <p className="mt-2 text-sm text-[#646464]">Your campaign has been successfully submitted for review.</p>
+        <Link href="/attribution" className="mt-6 rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a22c4]">Back to Dashboard</Link>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-[#020617]">Review and Submit</h2>
+        <div className="mt-1 text-sm leading-5 text-[#646464]">
+          <p>Review your campaign details before submitting.</p>
+        </div>
+      </div>
+
+      <div className="mb-6 rounded-lg border border-[#e2e8f0]">
+        <div className="border-b border-[#e2e8f0] px-4 py-3">
+          <h3 className="text-sm font-semibold text-[#020617]">Campaign Details</h3>
+        </div>
+        <div className="divide-y divide-[#e2e8f0]">
+          {[
+            { label: "Campaign Name", value: "McDonalds Q1-Q2 2025" },
+            { label: "Advertiser", value: "McDonald's Corporation" },
+            { label: "Campaign Period", value: "Apr 1, 2025 – Jun 30, 2025" },
+            { label: "Measurement Budget", value: "$450,000" },
+            { label: "Conversion Type", value: "Visits and Sales Impact" },
+            { label: "Salesforce Opportunity", value: "OPP-2025-MCD-Q1Q2" },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center px-4 py-3">
+              <span className="w-[200px] text-sm text-[#64748b]">{item.label}</span>
+              <span className="text-sm font-medium text-[#020617]">{item.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-6 rounded-lg border border-[#e2e8f0]">
+        <div className="border-b border-[#e2e8f0] px-4 py-3">
+          <h3 className="text-sm font-semibold text-[#020617]">Media Partners</h3>
+        </div>
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
+              <th className="px-4 py-2 text-xs font-semibold text-[#64748b]">Partner</th>
+              <th className="px-4 py-2 text-xs font-semibold text-[#64748b]">Media Types</th>
+              <th className="px-4 py-2 text-xs font-semibold text-[#64748b]">Est. Spend</th>
+              <th className="px-4 py-2 text-xs font-semibold text-[#64748b]">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              { name: "Viant", types: "Display, Mobile, CTV", spend: "$125,000", status: "complete" },
+              { name: "Adtheorent", types: "Mobile, Social", spend: "$85,000", status: "complete" },
+              { name: "The Trade Desk", types: "Display, Video", spend: "$140,000", status: "complete" },
+              { name: "Amazon DSP", types: "Audio", spend: "$50,000", status: "complete" },
+              { name: "DV360", types: "Display", spend: "$50,000", status: "complete" },
+            ].map((p) => (
+              <tr key={p.name} className="border-b border-[#e2e8f0]/50">
+                <td className="px-4 py-3 font-medium text-[#020617]">{p.name}</td>
+                <td className="px-4 py-3 text-[#020617]">{p.types}</td>
+                <td className="px-4 py-3 text-[#020617]">{p.spend}</td>
+                <td className="px-4 py-3">
+                  <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${p.status === "complete" ? "bg-[#f0fdf4] text-[#166534]" : "bg-[#fefce8] text-[#713f12]"}`}>
+                    {p.status === "complete" ? "Complete" : "Incomplete"}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mb-6">
+        <label className="mb-2 block text-sm font-semibold text-[#020617]">Comments</label>
+        <textarea
+          value={comments}
+          onChange={(e) => setComments(e.target.value)}
+          rows={4}
+          placeholder="Add any additional notes or comments for the review team..."
+          className="w-full rounded-lg border border-[#e2e8f0] bg-white px-4 py-3 text-sm text-[#020617] placeholder:text-[#9ca3af] focus:border-[#212be9] focus:outline-none focus:ring-1 focus:ring-[#212be9]"
+        />
+      </div>
+
+      <div className="mb-6 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-4">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={authorized}
+            onChange={(e) => setAuthorized(e.target.checked)}
+            className="mt-0.5 size-4 rounded border-gray-300 accent-[#212be9]"
+          />
+          <span className="text-sm leading-relaxed text-[#020617]">
+            I confirm that the campaign information provided is accurate and authorize Foursquare to generate measurement pixels and begin campaign tracking upon approval. I understand that any changes after submission may require re-processing of placement data.
+          </span>
+        </label>
+      </div>
+
+      <div className="flex items-center justify-between py-4">
+        <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back</button>
+        <button
+          onClick={handleSubmit}
+          disabled={!authorized || isSubmitting}
+          className="flex items-center gap-2 rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isSubmitting && <Loader2 className="size-4 animate-spin" />}
+          {isSubmitting ? "Submitting..." : "Submit Campaign"}
+        </button>
+      </div>
+    </>
+  );
+}
+
 function Sidebar({ currentStep, hasUploadedFile, hasReuploaded, onUpload, isUploading, onStepClick, disabledSteps }: { currentStep: Step; hasUploadedFile: boolean; hasReuploaded?: boolean; onUpload: () => void; isUploading: boolean; onStepClick: (step: Step) => void; disabledSteps?: string[] }) {
   const completedSteps: Step[] = hasReuploaded ? [] :
-    currentStep === "partner" ? ["campaign"] :
-    currentStep === "funding" ? ["campaign", "partner"] :
-    currentStep === "pixel" ? ["campaign", "partner", "funding"] :
-    currentStep === "placement" ? ["campaign", "partner", "funding", "pixel"] :
-    currentStep === "map-partners" ? ["campaign", "partner", "funding", "pixel"] : [];
+    currentStep === "placement" ? ["campaign"] :
+    currentStep === "map-partners" ? ["campaign"] :
+    currentStep === "map-taxonomies" ? ["campaign"] :
+    currentStep === "map-creatives" ? ["campaign"] :
+    currentStep === "apply-placements" ? ["campaign"] :
+    currentStep === "funding" ? ["campaign", "placement"] :
+    currentStep === "pixel" ? ["campaign", "placement", "funding"] :
+    currentStep === "review" ? ["campaign", "placement", "funding", "pixel"] : [];
 
   const errorSteps: Step[] = (() => {
     if (!hasReuploaded) return [];
-    const order: Step[] = ["campaign", "partner", "funding", "pixel", "placement"];
-    const sIdx = currentStep === "map-partners" ? order.indexOf("placement") : order.indexOf(currentStep);
+    const order: Step[] = ["campaign", "placement", "funding", "pixel"];
+    const placementSubSteps: Step[] = ["placement", "map-partners", "map-taxonomies", "map-creatives", "apply-placements"];
+    const sIdx = placementSubSteps.includes(currentStep) ? order.indexOf("placement") : order.indexOf(currentStep);
     const steps: Step[] = [];
     for (let i = 0; i < sIdx; i++) steps.push(order[i]);
     return steps;
@@ -2218,7 +3262,8 @@ function Sidebar({ currentStep, hasUploadedFile, hasReuploaded, onUpload, isUplo
   const fileName = hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024";
 
 
-  const sidebarCurrentStep: Step = currentStep === "map-partners" ? "placement" : currentStep;
+  const placementSubSteps: Step[] = ["map-partners", "map-taxonomies", "map-creatives", "apply-placements"];
+  const sidebarCurrentStep: Step = placementSubSteps.includes(currentStep) ? "placement" : currentStep;
 
   return (
     <aside className="w-[280px] shrink-0">
@@ -2309,28 +3354,33 @@ function NewCampaignContent() {
   const initialStep = (searchParams.get("step") as Step) || "campaign";
   const [currentStep, setCurrentStep] = useState<Step>(initialStep);
   const [showForm, setShowForm] = useState(false);
-  const [hasUploadedFile, setHasUploadedFile] = useState(initialStep === "map-partners" || initialStep === "placement");
+  const [hasUploadedFile, setHasUploadedFile] = useState(initialStep === "map-partners" || initialStep === "placement" || initialStep === "map-taxonomies" || initialStep === "map-creatives" || initialStep === "apply-placements");
   const [campaignName, setCampaignName] = useState("");
   const [measurementBudget, setMeasurementBudget] = useState("");
   const [metric, setMetric] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [isEditingPartner, setIsEditingPartner] = useState(false);
   const [uploadBannerDismissed, setUploadBannerDismissed] = useState(false);
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [hasReuploaded, setHasReuploaded] = useState(false);
   const [sfValidated, setSfValidated] = useState(false);
   const [campaignStepValid, setCampaignStepValid] = useState(false);
-  const [partnerStepValid, setPartnerStepValid] = useState(false);
   const [fundingStepValid, setFundingStepValid] = useState(false);
   const [pixelStepValid, setPixelStepValid] = useState(false);
+  const [campaignSubmitted, setCampaignSubmitted] = useState(false);
+  const [visitedSteps, setVisitedSteps] = useState<Set<string>>(new Set([initialStep]));
+
+  const placementStepValid = visitedSteps.has("funding") || visitedSteps.has("pixel") || visitedSteps.has("review");
 
   const progressPercent =
     currentStep === "campaign" ? 0 :
-    currentStep === "partner" ? 16 :
-    currentStep === "funding" ? 32 :
-    currentStep === "pixel" ? 48 :
-    currentStep === "placement" ? 64 :
-    currentStep === "map-partners" ? 64 : 64;
+    currentStep === "placement" ? 12 :
+    currentStep === "map-partners" ? 24 :
+    currentStep === "map-taxonomies" ? 32 :
+    currentStep === "map-creatives" ? 40 :
+    currentStep === "apply-placements" ? 48 :
+    currentStep === "funding" ? 60 :
+    currentStep === "pixel" ? 72 :
+    currentStep === "review" ? (campaignSubmitted ? 100 : 84) : 0;
 
   const displayName = campaignName.trim() || "Draft";
 
@@ -2339,19 +3389,22 @@ function NewCampaignContent() {
 
   const goToStep = (step: Step) => {
     setCurrentStep(step);
+    setVisitedSteps((prev) => new Set(prev).add(step));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const STEP_ORDER: string[] = ["campaign", "partner", "funding", "pixel", "placement", "map-partners", "review"];
+  const STEP_ORDER: string[] = ["campaign", "placement", "map-partners", "map-taxonomies", "map-creatives", "apply-placements", "funding", "pixel", "review"];
   const currentIdx = STEP_ORDER.indexOf(currentStep);
 
   const stepValidityMap: Record<string, boolean> = {
     campaign: campaignStepValid,
-    partner: partnerStepValid,
-    funding: fundingStepValid,
-    pixel: pixelStepValid,
     placement: true,
     "map-partners": true,
+    "map-taxonomies": true,
+    "map-creatives": true,
+    "apply-placements": true,
+    funding: fundingStepValid,
+    pixel: pixelStepValid,
     review: true,
   };
 
@@ -2425,10 +3478,9 @@ function NewCampaignContent() {
             <div className="flex flex-1 items-stretch">
               {[
                 { label: "Campaign Details", status: campaignStepValid ? "success" as const : "warning" as const },
-                { label: "Partner Details", status: partnerStepValid ? "success" as const : "warning" as const },
+                { label: "Placement Details", status: placementStepValid ? "success" as const : "warning" as const },
                 { label: "Funding Allocation", status: fundingStepValid ? "success" as const : "warning" as const },
                 { label: "Pixel Generation", status: pixelStepValid ? "success" as const : "warning" as const },
-                { label: "Placement Details", status: "warning" as const },
               ].map((item, i) => (
                 <div key={item.label} className="flex flex-1 items-stretch">
                   {i > 0 && <div className="mx-0 w-px self-stretch bg-[#e0e0e0]" />}
@@ -2455,11 +3507,7 @@ function NewCampaignContent() {
       )}
       <div className="flex w-full gap-6 px-12 py-6">
         <Sidebar currentStep={currentStep} hasUploadedFile={hasUploadedFile} hasReuploaded={hasReuploaded} onUpload={handleUpload} isUploading={isUploading} disabledSteps={disabledSteps} onStepClick={(step) => {
-          if (step === ("review" as Step)) {
-            window.location.href = "/attribution/taxonomy/review";
-          } else {
-            goToStep(step);
-          }
+          goToStep(step);
         }} />
 
         <main className="relative flex-1">
@@ -2479,9 +3527,6 @@ function NewCampaignContent() {
           {currentStep === "campaign" && (
             <CampaignDetailsContent showForm={showForm} onShowForm={() => setShowForm(true)} campaignName={campaignName} onCampaignNameChange={setCampaignName} onUpload={handleUpload} hasUploadedFile={hasUploadedFile} hasReuploaded={hasReuploaded} isUploading={isUploading} measurementBudget={measurementBudget} onMeasurementBudgetChange={setMeasurementBudget} metric={metric} onMetricChange={setMetric} sfValidated={sfValidated} onSfValidatedChange={setSfValidated} onValidChange={setCampaignStepValid} />
           )}
-          {currentStep === "partner" && <PartnerDetailsContent hasUploadedFile={hasUploadedFile} isEditingPartner={isEditingPartner} onEditingPartnerChange={setIsEditingPartner} onValidChange={setPartnerStepValid} />}
-          {currentStep === "funding" && <FundingAllocationContent measurementBudget={parseInt(measurementBudget.replace(/,/g, "") || "0")} onValidChange={setFundingStepValid} />}
-          {currentStep === "pixel" && <PixelGenerationContent pixelState={pixelState} onValidChange={setPixelStepValid} />}
           {currentStep === "placement" && (
             <PlacementDetailsContent
               placementState={placementState}
@@ -2493,8 +3538,37 @@ function NewCampaignContent() {
           {currentStep === "map-partners" && (
             <MapPartnersContent
               onBackToMediaPlan={() => goToStep("placement")}
-              onContinueToTaxonomy={() => window.location.href = "/attribution/taxonomy"}
+              onContinueToTaxonomy={() => goToStep("map-taxonomies")}
               hasReuploaded={hasReuploaded}
+            />
+          )}
+          {currentStep === "map-taxonomies" && (
+            <MapTaxonomiesContent
+              onBack={() => goToStep("map-partners")}
+              onContinue={() => goToStep("map-creatives")}
+              hasReuploaded={hasReuploaded}
+            />
+          )}
+          {currentStep === "map-creatives" && (
+            <MapCreativesContent
+              onBack={() => goToStep("map-taxonomies")}
+              onContinue={() => goToStep("apply-placements")}
+              hasReuploaded={hasReuploaded}
+            />
+          )}
+          {currentStep === "apply-placements" && (
+            <ApplyPlacementsContent
+              onBack={() => goToStep("map-creatives")}
+              onContinue={() => goToStep("funding")}
+            />
+          )}
+          {currentStep === "funding" && <FundingAllocationContent measurementBudget={parseInt(measurementBudget.replace(/,/g, "") || "0")} onValidChange={setFundingStepValid} />}
+          {currentStep === "pixel" && <PixelGenerationContent pixelState={pixelState} onValidChange={setPixelStepValid} />}
+          {currentStep === "review" && (
+            <ReviewContent
+              onBack={() => goToStep("pixel")}
+              onSubmitted={() => setCampaignSubmitted(true)}
+              campaignSubmitted={campaignSubmitted}
             />
           )}
 
@@ -2507,29 +3581,11 @@ function NewCampaignContent() {
                 Back
               </Link>
               <button
-                onClick={() => goToStep("partner")}
+                onClick={() => goToStep("placement")}
                 disabled={!campaignStepValid}
                 className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Continue to Partner Details
-              </button>
-            </div>
-          )}
-
-          {currentStep === "partner" && !isEditingPartner && (
-            <div className="mt-8 flex items-center justify-between py-4">
-              <button
-                onClick={() => goToStep("campaign")}
-                className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
-              >
-                Back to Campaign Details
-              </button>
-              <button
-                onClick={() => goToStep("funding")}
-                disabled={!partnerStepValid}
-                className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Continue to Funding Allocation
+                Continue to Placement Details
               </button>
             </div>
           )}
@@ -2537,10 +3593,10 @@ function NewCampaignContent() {
           {currentStep === "funding" && (
             <div className="mt-8 flex items-center justify-between py-4">
               <button
-                onClick={() => goToStep("partner")}
+                onClick={() => goToStep("apply-placements")}
                 className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
               >
-                Back to Partner Details
+                Back to Apply Placements
               </button>
               <button
                 onClick={() => goToStep("pixel")}
@@ -2561,11 +3617,11 @@ function NewCampaignContent() {
                 Back to Funding Allocation
               </button>
               <button
-                onClick={() => goToStep("placement")}
+                onClick={() => goToStep("review")}
                 disabled={!pixelStepValid}
                 className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Continue to Placement Details
+                Continue to Review
               </button>
             </div>
           )}
@@ -2573,10 +3629,10 @@ function NewCampaignContent() {
           {currentStep === "placement" && (
             <div className="mt-8 flex items-center justify-between py-4">
               <button
-                onClick={() => goToStep("pixel")}
+                onClick={() => goToStep("campaign")}
                 className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
               >
-                Back to Pixel Generation
+                Back to Campaign Details
               </button>
               <button
                 onClick={() => goToStep("map-partners")}
