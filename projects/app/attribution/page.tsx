@@ -28,7 +28,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 
-type CampaignStatus = "Pending" | "Completed" | "Action Required";
+type CampaignStatus = "Pending" | "Completed" | "Action Required" | "In Progress";
 
 type Campaign = {
   id: number;
@@ -45,7 +45,7 @@ type Campaign = {
 const INITIAL_CAMPAIGNS: Campaign[] = [
   { id: 0, name: "McDonalds Q1-Q2 2025", slug: "mcdonalds-q1-q2-2025", logo: "M", logoColor: "#FFC72C", advertiser: "Google 360", status: "Pending", startDate: "1/6/2025", endDate: "6/30/2025" },
   { id: 1, name: "Circle K Campaign Q1-Q4 etc", slug: "circle-k-q1-q4", logo: "CK", logoColor: "#ee2e24", advertiser: "Google 360", status: "Pending", startDate: "1/20/2025", endDate: "1/20/2025" },
-  { id: 2, name: "McDonald's Q3 Fall Campaign", slug: "mcdonalds-q3-fall", logo: "M", logoColor: "#FFC72C", advertiser: "Google 360", status: "Completed", startDate: "1/20/2025", endDate: "1/20/2025" },
+  { id: 2, name: "McDonald's Q3 Fall Campaign", slug: "mcdonalds-q3-fall", logo: "M", logoColor: "#FFC72C", advertiser: "Google 360", status: "In Progress", startDate: "7/1/2025", endDate: "9/25/2025" },
   { id: 3, name: "Mcdonald's Summer Campaign", slug: "mcdonalds-summer", logo: "M", logoColor: "#FFC72C", advertiser: "Google 360", status: "Completed", startDate: "1/20/2025", endDate: "1/20/2025" },
   { id: 4, name: "Chick Fil A Summer...", slug: "chick-fil-a-summer", logo: "CF", logoColor: "#E51636", advertiser: "Google 360", status: "Pending", startDate: "1/20/2025", endDate: "1/20/2025" },
   { id: 5, name: "Circle K Campaign Q1-Q4 etc", slug: "circle-k-q1-q4-2", logo: "CK", logoColor: "#ee2e24", advertiser: "Google 360", status: "Action Required", startDate: "1/20/2025", endDate: "1/20/2025" },
@@ -56,7 +56,7 @@ const INITIAL_CAMPAIGNS: Campaign[] = [
   { id: 10, name: "Wendy's Spring Promo", slug: "wendys-spring", logo: "WD", logoColor: "#e2203d", advertiser: "Google 360", status: "Pending", startDate: "1/20/2025", endDate: "1/20/2025" },
 ];
 
-const ALL_STATUSES: CampaignStatus[] = ["Pending", "Completed", "Action Required"];
+const ALL_STATUSES: CampaignStatus[] = ["Pending", "In Progress", "Completed", "Action Required"];
 
 const ITEMS_PER_PAGE = 10;
 
@@ -65,6 +65,7 @@ function StatusBadge({ status }: { status: CampaignStatus }) {
     Pending: { dot: "bg-orange-400", text: "text-foreground" },
     Completed: { dot: "bg-emerald-500", text: "text-foreground" },
     "Action Required": { dot: "bg-red-500", text: "text-foreground" },
+    "In Progress": { dot: "bg-blue-500", text: "text-foreground" },
   };
   const c = config[status];
   return (

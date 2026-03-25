@@ -7,17 +7,17 @@ import { useState } from "react";
 
 const SIDEBAR_STEPS = [
   { label: "Campaign Details", done: true },
-  { label: "Partner Details", done: true },
-  { label: "Pixel Generation", done: true },
   { label: "Placement Details", done: true },
+  { label: "Funding Allocation", done: true },
+  { label: "Pixel Generation", done: true },
   { label: "Review and Submit", done: false, active: true },
 ];
 
 const STEP_ROUTES = [
   "/attribution/new?step=campaign",
-  "/attribution/new?step=partner",
+  "/attribution/new?step=placement",
+  "/attribution/new?step=funding",
   "/attribution/new?step=pixel",
-  "/attribution/taxonomy",
   null, // current page
 ];
 

@@ -45,9 +45,9 @@ const INITIAL_TAXONOMIES: TaxonomyCategory[] = [
 
 const SIDEBAR_STEP_LABELS = [
   "Campaign Details",
-  "Partner Details",
-  "Pixel Generation",
   "Placement Details",
+  "Funding Allocation",
+  "Pixel Generation",
   "Review and Submit",
 ] as const;
 
@@ -55,6 +55,7 @@ const progressSteps = [
   { label: "Media Plan", done: true },
   { label: "Map Partners", done: true },
   { label: "Map Taxonomies", done: false, active: true },
+  { label: "Map Creatives", done: false },
   { label: "Apply Placements", done: false },
 ];
 
@@ -66,8 +67,8 @@ export default function TaxonomyPage() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
-  const [activeSidebarStep, setActiveSidebarStep] = useState(3);
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set([0, 1, 2]));
+  const [activeSidebarStep, setActiveSidebarStep] = useState(1);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set([0]));
   const [unassigned, setUnassigned] = useState<Token[]>(INITIAL_TOKENS);
   const [taxonomies, setTaxonomies] = useState<TaxonomyCategory[]>(INITIAL_TAXONOMIES);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -209,9 +210,9 @@ export default function TaxonomyPage() {
   const handleSidebarStepClick = (index: number) => {
     const stepRoutes = [
       "/attribution/new?step=campaign",
-      "/attribution/new?step=partner",
-      "/attribution/new?step=pixel",
       null, // Placement Details — current page
+      "/attribution/new?step=funding",
+      "/attribution/new?step=pixel",
       "/attribution/taxonomy/review",
     ];
     const route = stepRoutes[index];
@@ -540,6 +541,7 @@ const applyPlacementsProgressSteps = [
   { label: "Media Plan", done: true },
   { label: "Map Partners", done: true },
   { label: "Map Taxonomies", done: true },
+  { label: "Map Creatives", done: true },
   { label: "Apply Placements", done: false, active: true },
 ];
 

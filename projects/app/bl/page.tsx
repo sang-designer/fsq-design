@@ -495,7 +495,7 @@ export default function BusinessListings() {
                 Placemaker Tools
                 <ExternalLink className="size-4" />
               </a>
-              <a href="#" className="text-sm font-medium text-[#212be9] hover:underline">
+              <a href="/bl/search" className="text-sm font-medium text-[#212be9] hover:underline">
                 Search businesses on FSQ
               </a>
             </div>

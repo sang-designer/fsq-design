@@ -22,7 +22,7 @@ export function CampaignSidebar({ steps, currentStep, completedSteps, warningSte
   disabled?: boolean;
 }) {
   return (
-    <aside className={`w-[280px] shrink-0 ${disabled ? "pointer-events-none opacity-50" : ""}`}>
+    <aside className={`w-[280px] shrink-0 transition-opacity ${disabled ? "pointer-events-none opacity-40" : ""}`}>
       <nav className="space-y-2">
         {steps.map((step) => {
           const isActive = step.key === currentStep;
