@@ -28,7 +28,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 
-type CampaignStatus = "Pending" | "Completed" | "Action Required" | "In Progress";
+type CampaignStatus = "Pending" | "Completed" | "Action Required" | "In Progress" | "Draft";
 
 type Campaign = {
   id: number;
@@ -66,6 +66,7 @@ function StatusBadge({ status }: { status: CampaignStatus }) {
     Completed: { dot: "bg-emerald-500", text: "text-foreground" },
     "Action Required": { dot: "bg-red-500", text: "text-foreground" },
     "In Progress": { dot: "bg-blue-500", text: "text-foreground" },
+    Draft: { dot: "bg-gray-400", text: "text-foreground" },
   };
   const c = config[status];
   return (
@@ -311,7 +312,7 @@ export default function AttributionPage() {
 }
 
 function AttributionPageContent() {
-  const [activeTab, setActiveTab] = useState<"all" | "watchlist">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "draft">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<CampaignStatus | "all">("all");
@@ -334,11 +335,24 @@ function AttributionPageContent() {
 
   useEffect(() => {
     const submitted = searchParams.get("submitted");
+    const tab = searchParams.get("tab");
     if (submitted) {
+      if (tab === "draft" && !campaignList.some((c) => c.slug === submitted)) {
+        const name = submitted.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) || "Untitled Draft";
+        setCampaignList((prev) => [
+          { id: Date.now(), name, slug: submitted, logo: name.slice(0, 2).toUpperCase(), logoColor: "#94a3b8", advertiser: "—", status: "Draft" as CampaignStatus, startDate: new Date().toLocaleDateString("en-US"), endDate: "—" },
+          ...prev,
+        ]);
+      }
       setHighlightSlug(submitted);
       const timer = setTimeout(() => setHighlightSlug(null), 4000);
       return () => clearTimeout(timer);
     }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "draft") setActiveTab("draft");
   }, [searchParams]);
 
   useEffect(() => {
@@ -360,6 +374,8 @@ function AttributionPageContent() {
   }, [rowMenuId]);
 
   const filtered = campaignList.filter((c) => {
+    if (activeTab === "draft") return c.status === "Draft";
+    if (activeTab === "all" && c.status === "Draft") return false;
     if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (statusFilter !== "all" && c.status !== statusFilter) return false;
     if (dateStart) {
@@ -512,14 +528,19 @@ function AttributionPageContent() {
                 All campaigns
               </button>
               <button
-                onClick={() => setActiveTab("watchlist")}
-                className={`flex h-9 items-center justify-center px-4 text-sm transition-colors ${
-                  activeTab === "watchlist"
+                onClick={() => setActiveTab("draft")}
+                className={`flex h-9 items-center justify-center gap-1.5 px-4 text-sm transition-colors ${
+                  activeTab === "draft"
                     ? "border-b-2 border-[#212be9] font-medium text-[#212be9]"
                     : "text-black hover:text-[#212be9]"
                 }`}
               >
-                Watchlist
+                Drafts
+                {campaignList.filter((c) => c.status === "Draft").length > 0 && (
+                  <span className="inline-flex size-5 items-center justify-center rounded-full bg-[#f1f5f9] text-[10px] font-semibold text-[#64748b]">
+                    {campaignList.filter((c) => c.status === "Draft").length}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -646,8 +667,14 @@ function AttributionPageContent() {
                         <div className="flex size-12 items-center justify-center rounded-full bg-gray-100">
                           <Search className="size-5 text-muted-foreground" />
                         </div>
-                        <h3 className="mt-4 text-sm font-semibold text-[#171417]">No campaigns found</h3>
-                        <p className="mt-1 max-w-[280px] text-sm text-muted-foreground">Try adjusting your search or filters to find what you&apos;re looking for.</p>
+                        <h3 className="mt-4 text-sm font-semibold text-[#171417]">
+                          {activeTab === "draft" ? "No drafts yet" : "No campaigns found"}
+                        </h3>
+                        <p className="mt-1 max-w-[280px] text-sm text-muted-foreground">
+                          {activeTab === "draft"
+                            ? "Campaigns you save as drafts will appear here."
+                            : "Try adjusting your search or filters to find what you\u2019re looking for."}
+                        </p>
                       </div>
                     </td>
                   </tr>

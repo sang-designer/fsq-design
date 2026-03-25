@@ -2,7 +2,7 @@
 
 import { Upload, ChevronDown, ChevronUp, Calendar as CalendarIcon, CircleDashed, Check, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Search, Download, Copy, Mail, X, Loader2, GripVertical, MousePointerClick, ArrowRight, OctagonAlert, SquarePen, Trash2, FileText, Info, CircleAlert, ArrowUpDown, SlidersHorizontal, ExternalLink, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useRef, useCallback, useEffect, useMemo, DragEvent, Suspense } from "react";
 import {
   Select,
@@ -554,7 +554,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
                 </button>
               </div>
               {delimiters.length > 0 && (
-                <div className="mt-3 flex items-center gap-1.5 border-t border-[#e2e8f0] pt-3">
+                <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-[#e2e8f0] pt-3">
                   <span className="text-xs text-[#64748b]">Delimiters:</span>
                   {delimiters.map((d) => (
                     <span key={d} className="rounded bg-[#f1f5f9] px-2 py-0.5 text-xs font-medium text-[#020617]">{d}</span>
@@ -3544,10 +3544,40 @@ function UploadMediaPlanModal({ open, onClose, onUpload, initialDelimiters, drop
     }
   }, [open, initialDelimiters, droppedFileName]);
 
+  const SYMBOL_MAP: Record<string, string> = {
+    "_": "Underscore(_)",
+    "-": "Hyphen(-)",
+    ";": "Semicolon(;)",
+    ":": "Colon(:)",
+    "|": "Pipe(|)",
+    "/": "Slash(/)",
+    "\\": "Backslash(\\)",
+    ".": "Period(.)",
+    ",": "Comma(,)",
+    "~": "Tilde(~)",
+    "#": "Hash(#)",
+    "@": "At(@)",
+    "+": "Plus(+)",
+    "=": "Equals(=)",
+    " ": "Space( )",
+  };
+  const NAME_TO_LABEL: Record<string, string> = Object.fromEntries(
+    Object.entries(SYMBOL_MAP).map(([sym, label]) => [label.replace(/\(.\)$/, "").toLowerCase(), label])
+  );
+
+  const normalizeDelimiter = (raw: string): string => {
+    if (SYMBOL_MAP[raw]) return SYMBOL_MAP[raw];
+    const lower = raw.toLowerCase();
+    if (NAME_TO_LABEL[lower]) return NAME_TO_LABEL[lower];
+    return raw;
+  };
+
   const addDelimiter = (value: string) => {
     const trimmed = value.trim();
-    if (trimmed && !localDelimiters.includes(trimmed)) {
-      setLocalDelimiters((prev) => [...prev, trimmed]);
+    if (!trimmed) { setDelimiterInput(""); return; }
+    const label = normalizeDelimiter(trimmed);
+    if (!localDelimiters.includes(label)) {
+      setLocalDelimiters((prev) => [...prev, label]);
     }
     setDelimiterInput("");
   };
@@ -3557,7 +3587,7 @@ function UploadMediaPlanModal({ open, onClose, onUpload, initialDelimiters, drop
   };
 
   const handleDelimiterKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === ",") {
+    if (e.key === "Enter") {
       e.preventDefault();
       addDelimiter(delimiterInput);
     } else if (e.key === "Backspace" && !delimiterInput && localDelimiters.length > 0) {
@@ -3615,7 +3645,7 @@ function UploadMediaPlanModal({ open, onClose, onUpload, initialDelimiters, drop
           {/* Placement Delimiters */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-[#020617]">Placement Delimiters</label>
-            <p className="mb-2 text-xs text-[#64748b]">Specify how placement names are separated. Press Enter or comma to add.</p>
+            <p className="mb-2 text-xs text-[#64748b]">Type a symbol (e.g. ;) or name (e.g. Semicolon) and press Enter to add.</p>
             <div className="flex min-h-[40px] flex-wrap items-center gap-1.5 rounded-md border border-[#e2e8f0] bg-white px-3 py-2 focus-within:border-[#212be9] focus-within:ring-1 focus-within:ring-[#212be9]">
               {localDelimiters.map((d) => (
                 <span key={d} className="flex items-center gap-1 rounded bg-[#f1f5f9] px-2 py-0.5 text-xs font-medium text-[#020617]">
@@ -3631,7 +3661,7 @@ function UploadMediaPlanModal({ open, onClose, onUpload, initialDelimiters, drop
                 onChange={(e) => setDelimiterInput(e.target.value)}
                 onKeyDown={handleDelimiterKeyDown}
                 onBlur={() => { if (delimiterInput.trim()) addDelimiter(delimiterInput); }}
-                placeholder={localDelimiters.length === 0 ? "e.g. Underscore, Hyphen" : ""}
+                placeholder={localDelimiters.length === 0 ? "e.g. _ or Underscore" : ""}
                 className="flex-1 bg-transparent text-sm outline-none placeholder:text-[#9ca3af]"
               />
             </div>
@@ -3778,7 +3808,7 @@ function Sidebar({ currentStep, hasUploadedFile, hasReuploaded, onUpload, isUplo
                 </button>
               </div>
               {delimiters.length > 0 && (
-                <div className="mt-2 flex items-center gap-1.5 border-t border-[#e2e8f0] pt-2">
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-[#e2e8f0] pt-2">
                   <span className="text-xs text-[#8d8d8d]">Delimiters:</span>
                   {delimiters.map((d) => (
                     <span key={d} className="rounded bg-[#f1f5f9] px-1.5 py-0.5 text-[10px] font-medium text-[#020617]">{d}</span>
@@ -3822,6 +3852,7 @@ export default function NewCampaignPage() {
 
 function NewCampaignContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initialStep = (searchParams.get("step") as Step) || "campaign";
   const [currentStep, setCurrentStep] = useState<Step>(initialStep);
   const [showForm, setShowForm] = useState(false);
@@ -3833,7 +3864,7 @@ function NewCampaignContent() {
   const [uploadBannerDismissed, setUploadBannerDismissed] = useState(false);
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [hasReuploaded, setHasReuploaded] = useState(false);
-  const [delimiters, setDelimiters] = useState<string[]>(["Underscore", "Hyphen"]);
+  const [delimiters, setDelimiters] = useState<string[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [droppedFileName, setDroppedFileName] = useState<string | null>(null);
   const [sfValidated, setSfValidated] = useState(false);
@@ -3949,7 +3980,7 @@ function NewCampaignContent() {
             {!campaignSubmitted && (
               <div className="flex items-center gap-4">
                 <button className="px-2 py-1 text-sm font-medium text-[#dc2626]">Remove</button>
-                <button className="px-2 py-1 text-sm font-medium text-[#212be9]">Save Draft</button>
+                <button onClick={() => { const slug = displayName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""); router.push(`/attribution?tab=draft&submitted=${slug}`); }} className="px-2 py-1 text-sm font-medium text-[#212be9]">Save Draft</button>
               </div>
             )}
           </div>
