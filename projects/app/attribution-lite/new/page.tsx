@@ -17,13 +17,12 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
-type Step = "campaign" | "placement" | "map-partners" | "map-taxonomies" | "map-creatives" | "apply-placements" | "funding" | "pixel" | "review";
+type Step = "campaign" | "placement" | "map-partners" | "map-taxonomies" | "map-creatives" | "apply-placements" | "funding" | "review";
 
 const SIDEBAR_STEPS = [
   { key: "campaign" as Step, label: "Campaign Details" },
   { key: "placement" as Step, label: "Placement Details" },
   { key: "funding" as Step, label: "Funding Allocation" },
-  { key: "pixel" as Step, label: "Pixel Generation" },
   { key: "review" as Step, label: "Review and Submit" },
 ];
 
@@ -39,21 +38,14 @@ const ERROR_FIELDS = [
   "Estimated Total Ad Spend",
 ];
 
-const PIXELS = [
-  { partner: "Ikea", adServer: "CM360", pixelId: "PXL-4829A1", pixelType: "Impression", pixelImg: '<img src="https://p.placed.com/api/v2/sync/4829A1?campaign=ikea_q2" height="1" width="1" />', tracking: "" as string },
-  { partner: "Spotify", adServer: "CM360", pixelId: "PXL-7713B4", pixelType: "Click", pixelImg: '<img src="https://p.placed.com/api/v2/sync/7713B4?campaign=spotify_audio" height="1" width="1" />', tracking: "" as string },
-  { partner: "Viant", adServer: "DV360", pixelId: "PXL-3356C8", pixelType: "Impression", pixelImg: '<img src="https://p.placed.com/api/v2/sync/3356C8?campaign=viant_display" height="1" width="1" />', tracking: "" as string },
-  { partner: "Kinfolk", adServer: "DV360", pixelId: "PXL-9041D2", pixelType: "Conversion", pixelImg: '<img src="https://p.placed.com/api/v2/sync/9041D2?campaign=kinfolk_video" height="1" width="1" />', tracking: "" as string },
-];
-
 function Header() {
   return (
     <header className="flex h-14 items-center justify-between border-b border-[#e0e0e0] bg-white px-12">
       <div className="flex items-center gap-16">
-        <Link href="/attribution" className="flex items-center gap-0.5 font-mono text-lg font-medium text-[#000033]">
+        <Link href="/attribution-lite" className="flex items-center gap-0.5 font-mono text-lg font-medium text-[#000033]">
           <span>FSQ</span>
           <span>/</span>
-          <span>attribution</span>
+          <span>attribution-lite</span>
         </Link>
         <nav className="flex h-14 items-end">
           <div className="flex h-full items-center border-b-2 border-[#000033] px-4">
@@ -431,6 +423,16 @@ function InlineUploadedCard({ fileName, delimiters, onDelimitersChange, onReplac
             )}
           </div>
         )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <button onClick={onReplace} className="flex h-16 w-full items-center justify-center rounded-lg border-2 border-dashed border-[#e0e0e0] bg-[#f9f9f9] transition-colors hover:border-[#212be9] hover:bg-[#f8f9ff]">
+          <div className="flex items-center gap-2">
+            <Upload className="size-4 text-[#212be9]" />
+            <span className="text-xs text-[#212be9]">Replace Uploaded File</span>
+          </div>
+        </button>
+        <p className="text-xs text-[#8d8d8d]">Supported file types: .xls, .xlsx, .csv</p>
       </div>
     </div>
   );
@@ -947,8 +949,6 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
 const PARTNER_NAME_OPTIONS = ["Adtheorent", "Viant", "Nexxen", "TradeDesk", "LiveRamp", "Taboola"];
 const AD_SERVER_OPTIONS = ["CM360", "DV360", "Google Campaign Manager", "Sizmek", "Flashtalking", "Innovid", "Extreme Reach"];
 const AGENCY_OPTIONS = ["Starcom", "Mediavest", "Zenith", "OMD", "Mindshare", "Wavemaker"];
-const PIXEL_TYPE_OPTIONS = ["In-App", "Cross-Device / CTV", "Cross-Device Redirect"];
-const PIXEL_IMPL_OPTIONS = ["Standard Tag", "Server-to-Server", "SDK Integration", "Piggyback Pixel"];
 const MEDIA_TYPE_OPTIONS = ["Display", "Mobile", "Video", "Audio", "CTV", "Social", "Native", "OOH"];
 const CONVERSION_TYPE_OPTIONS = ["Visits and Sales Impact", "Sales Impact", "Visits Only", "Custom Attribution"];
 const PRICING_METHOD_OPTIONS = ["CPM", "CPC", "CPA", "Flat Rate", "Revenue Share"];
@@ -1009,12 +1009,6 @@ function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValu
             <div className="flex gap-8">
               <SelectField label="Agency or Site Served" value={formValues["Agency or Site Served"] ?? ""} onChange={(v) => updateField("Agency or Site Served", v)} error={hasError("Agency or Site Served")} options={AGENCY_OPTIONS} />
               <InputField label="Estimated Total Ad Spend" placeholder="Ad Spend value..." value={formValues["Estimated Total Ad Spend"] ?? ""} onChange={(v) => updateField("Estimated Total Ad Spend", v)} error={hasError("Estimated Total Ad Spend")} />
-            </div>
-            <div className="flex gap-8">
-              <div className="flex flex-1 flex-col gap-2 min-w-[280px]">
-                <SelectField label="FSQ Pixel Implementation" value={formValues["FSQ Pixel Implementation"] ?? ""} onChange={(v) => updateField("FSQ Pixel Implementation", v)} options={PIXEL_IMPL_OPTIONS} />
-              </div>
-              <div className="flex-1 min-w-[280px]" />
             </div>
           </div>
         </div>
@@ -1226,461 +1220,7 @@ function FundingAllocationContent({ measurementBudget, onValidChange }: { measur
   );
 }
 
-type PixelState = "empty" | "empty-uploaded" | "populated";
 
-function MultiSelectDropdown({ options, selected, onChange, placeholder, hasWarning }: {
-  options: string[];
-  selected: string[];
-  onChange: (val: string[]) => void;
-  placeholder: string;
-  hasWarning?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const allSelected = options.length > 0 && options.every((o) => selected.includes(o));
-
-  useEffect(() => {
-    if (!open) return;
-    const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
-
-  const toggle = (opt: string) => {
-    if (selected.includes(opt)) {
-      onChange(selected.filter((s) => s !== opt));
-    } else {
-      onChange([...selected, opt]);
-    }
-  };
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className={`flex min-h-[36px] min-w-[220px] max-w-[340px] items-center justify-between rounded-md border bg-white px-3 py-1.5 text-left text-sm transition-colors ${hasWarning && selected.length === 0 ? "border-[#f59e0b]" : open ? "border-[#212be9] ring-1 ring-[#212be9]" : "border-[#e2e8f0]"}`}
-      >
-        {selected.length === 0 ? (
-          <span className="text-[#94a3b8]">{placeholder}</span>
-        ) : (
-          <span className="flex flex-row flex-wrap gap-1">
-            {selected.map((s) => (
-              <span key={s} className="inline-flex shrink-0 items-center gap-1 rounded bg-[#f1f5f9] px-1.5 py-0.5 text-xs font-medium text-[#020617]">
-                {s}
-                <button
-                  onClick={(e) => { e.stopPropagation(); toggle(s); }}
-                  className="text-[#8d8d8d] hover:text-[#020617]"
-                >
-                  <X className="size-3" />
-                </button>
-              </span>
-            ))}
-          </span>
-        )}
-        <ChevronDown className={`ml-2 size-4 shrink-0 text-[#8d8d8d] transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 min-w-[220px] max-w-[340px] rounded-md border border-[#e2e8f0] bg-white py-1 shadow-lg">
-          <div className="flex items-center justify-between border-b border-[#e2e8f0] px-3 py-1.5">
-            <button
-              onClick={() => onChange([...options])}
-              className={`text-xs font-medium transition-colors ${allSelected ? "text-[#94a3b8]" : "text-[#212be9] hover:text-[#1a22c4]"}`}
-            >
-              Select All
-            </button>
-            <button
-              onClick={() => onChange([])}
-              className={`text-xs font-medium transition-colors ${selected.length === 0 ? "text-[#94a3b8]" : "text-[#dc2626] hover:text-[#b91c1c]"}`}
-            >
-              Reset
-            </button>
-          </div>
-          {options.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => toggle(opt)}
-              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#020617] transition-colors hover:bg-[#f5f5ff]"
-            >
-              <div className={`flex size-4 shrink-0 items-center justify-center rounded border ${selected.includes(opt) ? "border-[#212be9] bg-[#212be9]" : "border-[#d1d5db]"}`}>
-                {selected.includes(opt) && <Check className="size-3 text-white" />}
-              </div>
-              {opt}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue }: { pixelState: PixelState; onValidChange?: (valid: boolean) => void; onBack: () => void; onContinue: () => void }) {
-  const [openActionRow, setOpenActionRow] = useState<number | null>(null);
-  const [showUploadBanner, setShowUploadBanner] = useState(pixelState === "empty-uploaded");
-  const [pixels, setPixels] = useState<{ partner: string; adServer: string; pixelId: string; pixelType: string; pixelImg: string; tracking: string }[]>([]);
-  const [viewPixelRow, setViewPixelRow] = useState<number | null>(null);
-  const [copiedPixelRow, setCopiedPixelRow] = useState<number | null>(null);
-  const pixelPopoverRef = useRef<HTMLDivElement>(null);
-  const [activePixelSubStep, setActivePixelSubStep] = useState(1);
-  const [adServers, setAdServers] = useState(
-    PIXELS.map((p) => ({ partner: p.partner, adServers: p.partner === "Kinfolk" ? [] as string[] : [p.adServer], pixelTypes: [] as string[] }))
-  );
-
-  const generateFromSelections = () => {
-    let counter = 0;
-    const rows: typeof pixels = [];
-    for (const row of adServers) {
-      for (const server of row.adServers) {
-        for (const pType of row.pixelTypes) {
-          counter++;
-          const id = `${String(1000 + counter * 111).slice(0, 4)}${String.fromCharCode(64 + counter)}${counter}`;
-          rows.push({
-            partner: row.partner,
-            adServer: server,
-            pixelId: `PXL-${id}`,
-            pixelType: pType,
-            pixelImg: `<img src="https://p.placed.com/api/v2/sync/${id}?campaign=${row.partner.toLowerCase().replace(/\s+/g, "_")}" height="1" width="1" />`,
-            tracking: "",
-          });
-        }
-      }
-    }
-    return rows;
-  };
-
-  useEffect(() => {
-    if (viewPixelRow === null) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (pixelPopoverRef.current && !pixelPopoverRef.current.contains(e.target as Node)) {
-        setViewPixelRow(null);
-        setCopiedPixelRow(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [viewPixelRow]);
-
-  const updateTracking = (index: number, value: string) => {
-    setPixels((prev) => prev.map((p, i) => (i === index ? { ...p, tracking: value } : p)));
-  };
-
-  const isValid = pixelState !== "populated" || pixels.every((p) => !!p.tracking);
-
-  useEffect(() => {
-    onValidChange?.(isValid);
-  }, [isValid, onValidChange]);
-
-  return (
-    <>
-      {showUploadBanner && (
-        <div className="mb-4 flex items-center rounded-lg border border-[#e0e0e0] bg-white px-4 py-3">
-          <div className="flex flex-1 items-center gap-8">
-            <div>
-              <p className="text-sm font-semibold text-[#020617]">Upload Results</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-[#757575]">File</span>
-              <span className="text-sm font-medium text-[#020617]">Carta/Macdonalds2024</span>
-            </div>
-            <div>
-              <span className="text-xs text-[#757575]">Campaign Details</span>
-              <p className="text-xs font-medium text-[#dc2626]">No Information Available</p>
-            </div>
-            <div>
-              <span className="text-xs text-[#757575]">Partner Details</span>
-              <p className="text-xs font-medium text-[#dc2626]">No Information Available</p>
-            </div>
-            <div>
-              <span className="text-xs text-[#757575]">Placement Details</span>
-              <p className="text-xs font-medium text-[#f59e0b]">Missing Information</p>
-            </div>
-          </div>
-          <button onClick={() => setShowUploadBanner(false)} className="ml-4 shrink-0 p-1 text-[#8d8d8d] hover:text-[#020617]">
-            <X className="size-4" />
-          </button>
-        </div>
-      )}
-
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-[#020617]">Pixel Generation</h2>
-        <div className="mt-1 text-sm leading-5 text-[#646464]">
-          <p>
-            Manage generated pixels here. Pixels are auto-generated using provided Salesforce data and partner details.
-          </p>
-          <p>
-            <span className="cursor-pointer text-[#212be9]">Learn more</span> about self-directed pixel generation.
-          </p>
-        </div>
-      </div>
-
-      <div className="mb-6 h-px w-full bg-[#e2e8f0]" />
-
-      {pixelState === "populated" && <PixelSubSteps activeStep={activePixelSubStep} />}
-
-      {pixelState === "populated" ? (
-        <>
-          {activePixelSubStep === 1 ? (
-            <>
-              <p className="mb-4 text-sm text-[#64748b]">
-                Confirm or update the ad server for each media partner before generating pixels.
-              </p>
-
-              <Alert className="mb-6 border-[#bfdbfe] bg-[#eff6ff]">
-                <Info className="size-4 text-[#3b82f6]" />
-                <AlertTitle className="text-[#1e40af]">Review ad server assignments</AlertTitle>
-                <AlertDescription className="text-[#1e40af]/80">
-                  Ensure each partner has the correct ad server and pixel type selected. You can update selections before proceeding.
-                </AlertDescription>
-              </Alert>
-
-              <div className="relative w-full">
-                <table className="w-full table-fixed">
-                  <thead>
-                    <tr className="border-b border-[#e2e8f0]">
-                      <th className="w-[20%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
-                      <th className="w-[40%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
-                      <th className="w-[40%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {adServers.map((row, i) => (
-                      <tr key={i} className="border-b border-[#e2e8f0]">
-                        <td className="px-4 py-4 text-sm font-medium text-black">{row.partner}</td>
-                        <td className="px-4 py-4">
-                          <MultiSelectDropdown
-                            options={AD_SERVER_OPTIONS}
-                            selected={row.adServers}
-                            onChange={(val) =>
-                              setAdServers((prev) =>
-                                prev.map((r, idx) => (idx === i ? { ...r, adServers: val } : r))
-                              )
-                            }
-                            placeholder="Select ad servers..."
-                            hasWarning={row.adServers.length === 0}
-                          />
-                        </td>
-                        <td className="px-4 py-4">
-                          <MultiSelectDropdown
-                            options={PIXEL_TYPE_OPTIONS}
-                            selected={row.pixelTypes}
-                            onChange={(val) =>
-                              setAdServers((prev) =>
-                                prev.map((r, idx) => (idx === i ? { ...r, pixelTypes: val } : r))
-                              )
-                            }
-                            placeholder="Select pixel types..."
-                            hasWarning={row.pixelTypes.length === 0}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="mt-6 flex items-center justify-between">
-                <button
-                  onClick={onBack}
-                  className="rounded-md border border-[#e2e8f0] bg-white px-4 py-2 text-sm font-medium text-[#020617] transition-colors hover:bg-gray-50"
-                >
-                  Back to Funding Allocation
-                </button>
-                <button
-                  onClick={() => { setPixels(generateFromSelections()); setActivePixelSubStep(2); }}
-                  disabled={adServers.some((r) => r.adServers.length === 0 || r.pixelTypes.length === 0)}
-                  className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Continue to Manage Pixels
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <Alert className="mb-6 border-[#bfdbfe] bg-[#eff6ff]">
-                <Info className="size-4 text-[#3b82f6]" />
-                <AlertTitle className="text-[#1e40af]">Assign tagging for each pixel</AlertTitle>
-                <AlertDescription className="text-[#1e40af]/80">
-                  Select whether the pixel should be tagged by the Partner, Agency, or Both.
-                </AlertDescription>
-              </Alert>
-
-              <div className="mb-4 flex items-center justify-between">
-                <p className="text-sm text-[#171417]">
-                  <span className="text-[#757575]">Showing </span>
-                  <span className="font-medium">{pixels.length}</span>
-                  <span className="text-[#757575]"> of </span>
-                  <span className="font-medium">{pixels.length}</span>
-                  <span className="text-[#757575]"> results</span>
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex w-[200px] items-center rounded-md border border-[#e2e8f0] bg-white px-3 py-2">
-                    <Search className="mr-2 size-4 text-[#64748b]" />
-                    <span className="text-sm text-[#64748b]">Search</span>
-                  </div>
-                  <button className="rounded-md border border-[#e2e8f0] bg-white p-2 hover:bg-gray-50">
-                    <Copy className="size-4 text-[#64748b]" />
-                  </button>
-                  <button className="rounded-md border border-[#e2e8f0] bg-white p-2 hover:bg-gray-50">
-                    <Mail className="size-4 text-[#64748b]" />
-                  </button>
-                  <button className="group relative rounded-md border border-[#212be9] bg-[#fcfcfc] p-2 text-[#212be9] transition-colors hover:bg-[#ebf1ff]">
-                    <Download className="size-4" />
-                    <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#0f172a] px-2.5 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                      Download All
-                      <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#0f172a]" />
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="relative w-full">
-                <table className="w-full table-fixed">
-                  <thead>
-                    <tr className="border-b border-[#e2e8f0]">
-                      <th className="w-[40px] px-4 py-3" />
-                      <th className="w-[12%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
-                      <th className="w-[18%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
-                      <th className="w-[22%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
-                      <th className="w-[12%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Tagging</th>
-                      <th className="w-[12%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel ID</th>
-                      <th className="w-[10%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel</th>
-                      <th className="w-[80px] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pixels.map((pixel, i) => {
-                      return (
-                      <tr key={i} className="border-b border-[#e2e8f0]">
-                        <td className="w-10 px-4 py-4">
-                          <div className="size-4 rounded border border-[#0f172a]" />
-                        </td>
-                        <td className="px-4 py-4 text-sm font-medium text-black">{pixel.partner}</td>
-                        <td className="px-4 py-4">
-                          <span className="rounded bg-[#f1f5f9] px-1.5 py-0.5 text-xs font-medium text-[#020617]">{pixel.adServer}</span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className="rounded bg-[#f1f5f9] px-1.5 py-0.5 text-xs font-medium text-[#020617]">{pixel.pixelType}</span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <Select value={pixel.tracking || undefined} onValueChange={(val) => updateTracking(i, val)}>
-                            <SelectTrigger className={`w-[120px] ${pixel.tracking ? "" : "border-[#f59e0b]"}`} size="sm">
-                              <SelectValue placeholder="Select..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Partner">Partner</SelectItem>
-                              <SelectItem value="Agency">Agency</SelectItem>
-                              <SelectItem value="Both">Both</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-black">{pixel.pixelId}</td>
-                        <td className="relative px-4 py-4">
-                          <button
-                            onClick={() => setViewPixelRow(viewPixelRow === i ? null : i)}
-                            className="rounded px-2 py-1 text-xs font-medium text-[#212be9] transition-colors hover:bg-[#f0f1ff]"
-                          >
-                            View
-                          </button>
-                          {viewPixelRow === i && (
-                            <div ref={pixelPopoverRef} className="absolute bottom-full left-1/2 z-20 mb-2 w-[360px] -translate-x-1/2 rounded-lg border border-[#e2e8f0] bg-white p-3 shadow-lg">
-                              <div className="mb-2 flex items-center justify-between">
-                                <span className="text-xs font-medium text-[#64748b]">Pixel Tag</span>
-                                <button
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(pixel.pixelImg);
-                                    setCopiedPixelRow(i);
-                                    setTimeout(() => setCopiedPixelRow(null), 2000);
-                                  }}
-                                  className={`rounded px-1.5 py-0.5 text-xs font-medium ${copiedPixelRow === i ? "text-[#16a34a]" : "text-[#212be9] hover:bg-[#f0f1ff]"}`}
-                                >
-                                  {copiedPixelRow === i ? "Copied" : "Copy"}
-                                </button>
-                              </div>
-                              <code className="block break-all rounded-md bg-[#f8fafc] p-2.5 text-xs leading-relaxed text-[#334155]">
-                                {pixel.pixelImg}
-                              </code>
-                              <div className="absolute left-1/2 top-full -mt-px -translate-x-1/2 border-[6px] border-transparent border-t-white drop-shadow-sm" />
-                            </div>
-                          )}
-                        </td>
-                        <td className="relative w-[80px] px-4 py-4 text-center">
-                          <button
-                            onClick={() => setOpenActionRow(openActionRow === i ? null : i)}
-                            className="rounded-md p-1 hover:bg-gray-100"
-                          >
-                            <MoreHorizontal className="size-4 text-[#64748b]" />
-                          </button>
-                          {openActionRow === i && (
-                            <div className="absolute right-4 top-12 z-10 w-40 rounded-lg border border-[#e2e8f0] bg-white py-1 shadow-lg">
-                              <button className="flex w-full items-center px-4 py-2 text-left text-sm text-[#020617] hover:bg-gray-50">Email</button>
-                              <button className="flex w-full items-center px-4 py-2 text-left text-sm text-[#020617] hover:bg-gray-50">Download</button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {pixels.length > 10 && (
-              <div className="mt-6 flex items-center justify-end gap-1">
-                <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-[#64748b] hover:bg-gray-50">
-                  <ChevronLeft className="size-4" />
-                  Previous
-                </button>
-                {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <div
-                    key={n}
-                    className={`flex size-10 items-center justify-center rounded-lg text-sm font-medium ${
-                      n === 1 ? "border border-[#e2e8f0] bg-white text-[#0f172a]" : "text-[#64748b] hover:bg-gray-50"
-                    }`}
-                  >
-                    {n}
-                  </div>
-                ))}
-                <div className="flex size-10 items-center justify-center text-sm text-[#64748b]">...</div>
-                <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-[#64748b] hover:bg-gray-50">
-                  Next
-                  <ChevronRight className="size-4" />
-                </button>
-              </div>
-              )}
-
-              <div className="mt-6 flex items-center justify-between">
-                <button
-                  onClick={() => setActivePixelSubStep(1)}
-                  className="rounded-md border border-[#e2e8f0] bg-white px-4 py-2 text-sm font-medium text-[#020617] transition-colors hover:bg-gray-50"
-                >
-                  Back to Confirm Ad Server
-                </button>
-                <button
-                  onClick={onContinue}
-                  disabled={!isValid}
-                  className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Continue to Review
-                </button>
-              </div>
-            </>
-          )}
-        </>
-      ) : (
-        <div className="rounded-lg border border-[#e2e8f0] bg-[#fcfcfc] px-6 py-6">
-          <p className="text-sm font-semibold text-[#020617]">No pixels have been generated</p>
-          <div className="mt-2 text-sm text-[#646464]">
-            <p>No pixel information is available.</p>
-            <p>
-              Please add a valid <span className="cursor-pointer text-[#212be9]">Salesforce Opportunity URL</span>, and at least one <span className="cursor-pointer text-[#212be9]">media partner</span> in the previous steps.
-            </p>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
 
 const PLACEMENT_SUB_STEPS = [
   { num: 1, label: "Media Plan" },
@@ -1690,12 +1230,6 @@ const PLACEMENT_SUB_STEPS = [
   { num: 5, label: "Apply Placements" },
 ];
 
-const PIXEL_SUB_STEPS = [
-  { num: 1, label: "Confirm Ad Server" },
-  { num: 2, label: "Manage Generated Pixels" },
-];
-
-type PlacementState = "empty" | "uploaded" | "new-upload";
 
 function PlacementSubSteps({ activeStep, hasReuploaded }: { activeStep: number; hasReuploaded?: boolean }) {
   return (
@@ -1732,40 +1266,6 @@ function PlacementSubSteps({ activeStep, hasReuploaded }: { activeStep: number; 
   );
 }
 
-function PixelSubSteps({ activeStep }: { activeStep: number }) {
-  return (
-    <div className="mb-6">
-      <div className="mb-3 flex gap-0">
-        {PIXEL_SUB_STEPS.map((s) => (
-          <div
-            key={s.num}
-            className={`h-1 flex-1 ${s.num <= activeStep ? "bg-[#020617]" : "bg-[#e2e8f0]"} ${s.num === 1 ? "rounded-l-full" : ""} ${s.num === PIXEL_SUB_STEPS.length ? "rounded-r-full" : ""}`}
-          />
-        ))}
-      </div>
-      <div className="flex">
-        {PIXEL_SUB_STEPS.map((s) => (
-          <div key={s.num} className="flex flex-1 items-center gap-2">
-            <div
-              className={`flex size-6 items-center justify-center rounded-full text-xs font-semibold ${
-                s.num < activeStep
-                  ? "border border-[#d1d5db] bg-white text-[#9ca3af]"
-                  : s.num === activeStep
-                    ? "border-2 border-[#020617] bg-[#020617] text-white"
-                    : "border-2 border-gray-300 text-gray-400"
-              }`}
-            >
-              {s.num < activeStep ? <Check className="size-3.5" /> : s.num}
-            </div>
-            <span className={`text-sm ${s.num === activeStep ? "font-semibold text-[#020617]" : s.num < activeStep ? "text-[#020617]" : "text-[#757575]"}`}>
-              {s.label}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function PlacementDetailsContent({ placementState, onContinueToMapPartners, onUpload, onFileDrop, hasReuploaded }: { placementState: PlacementState; onContinueToMapPartners: () => void; onUpload: () => void; onFileDrop: (name: string) => void; hasReuploaded?: boolean }) {
   const [showUploadBanner, setShowUploadBanner] = useState(placementState === "new-upload");
@@ -3749,7 +3249,7 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted }: { onBack: () 
             className="mt-0.5 size-4 rounded border-gray-300 accent-[#212be9]"
           />
           <span className="text-sm leading-relaxed text-[#020617]">
-            I confirm that the campaign information provided is accurate and authorize Foursquare to generate measurement pixels and begin campaign tracking upon approval. I understand that any changes after submission may require re-processing of placement data.
+            I confirm that the campaign information provided is accurate and authorize Foursquare to begin campaign tracking upon approval. I understand that any changes after submission may require re-processing of placement data.
           </span>
         </label>
       </div>
@@ -3777,7 +3277,7 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted }: { onBack: () 
         </div>
       ) : (
         <div className="flex items-center py-4">
-          <Link href="/attribution" className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white no-underline transition-colors hover:bg-[#1a22c4]">
+          <Link href="/attribution-lite" className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white no-underline transition-colors hover:bg-[#1a22c4]">
             Back to Dashboard
           </Link>
         </div>
@@ -4016,12 +3516,11 @@ function Sidebar({ currentStep, hasUploadedFile, hasReuploaded, onUpload, isUplo
     currentStep === "map-creatives" ? ["campaign"] :
     currentStep === "apply-placements" ? ["campaign"] :
     currentStep === "funding" ? ["campaign", "placement"] :
-    currentStep === "pixel" ? ["campaign", "placement", "funding"] :
-    currentStep === "review" ? ["campaign", "placement", "funding", "pixel"] : [];
+    currentStep === "review" ? ["campaign", "placement", "funding"] : [];
 
   const errorSteps: Step[] = (() => {
     if (!hasReuploaded) return [];
-    const order: Step[] = ["campaign", "placement", "funding", "pixel"];
+    const order: Step[] = ["campaign", "placement", "funding"];
     const placementSubSteps: Step[] = ["placement", "map-partners", "map-taxonomies", "map-creatives", "apply-placements"];
     const sIdx = placementSubSteps.includes(currentStep) ? order.indexOf("placement") : order.indexOf(currentStep);
     const steps: Step[] = [];
@@ -4056,7 +3555,7 @@ function Sidebar({ currentStep, hasUploadedFile, hasReuploaded, onUpload, isUplo
               {isError && !isActive && <CircleAlert className="size-4 text-[#dc2626]" />}
               {isDone && !isError && <Check className="size-4 text-[#212be9]" />}
               {isActive && !isDone && !isError && (
-                (sidebarCurrentStep === "pixel" || sidebarCurrentStep === "placement")
+                (sidebarCurrentStep === "placement")
                   ? <Loader2 className="size-4 animate-spin text-[#f59e0b]" />
                   : <CircleDashed className="size-4 text-[#020617]" />
               )}
@@ -4147,14 +3646,13 @@ function NewCampaignContent() {
   const [sfValidated, setSfValidated] = useState(false);
   const [campaignStepValid, setCampaignStepValid] = useState(false);
   const [fundingStepValid, setFundingStepValid] = useState(false);
-  const [pixelStepValid, setPixelStepValid] = useState(false);
   const [campaignSubmitted, setCampaignSubmitted] = useState(false);
   const [visitedSteps, setVisitedSteps] = useState<Set<string>>(new Set([initialStep]));
   const [isReparsing, setIsReparsing] = useState(false);
   const [reparseError, setReparseError] = useState<string | null>(null);
   const pendingDelimitersRef = useRef<string[]>([]);
 
-  const placementStepValid = visitedSteps.has("funding") || visitedSteps.has("pixel") || visitedSteps.has("review");
+  const placementStepValid = visitedSteps.has("funding") || visitedSteps.has("review");
 
   const progressPercent =
     currentStep === "campaign" ? 0 :
@@ -4163,13 +3661,11 @@ function NewCampaignContent() {
     currentStep === "map-taxonomies" ? 32 :
     currentStep === "map-creatives" ? 40 :
     currentStep === "apply-placements" ? 48 :
-    currentStep === "funding" ? 60 :
-    currentStep === "pixel" ? 72 :
-    currentStep === "review" ? (campaignSubmitted ? 100 : 84) : 0;
+    currentStep === "funding" ? 65 :
+    currentStep === "review" ? (campaignSubmitted ? 100 : 85) : 0;
 
   const displayName = campaignName.trim() || "Draft";
 
-  const pixelState: PixelState = hasUploadedFile ? "populated" : "empty";
   const placementState: PlacementState = hasUploadedFile ? "uploaded" : "empty";
 
   const goToStep = (step: Step) => {
@@ -4178,7 +3674,7 @@ function NewCampaignContent() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const STEP_ORDER: string[] = ["campaign", "placement", "map-partners", "map-taxonomies", "map-creatives", "apply-placements", "funding", "pixel", "review"];
+  const STEP_ORDER: string[] = ["campaign", "placement", "map-partners", "map-taxonomies", "map-creatives", "apply-placements", "funding", "review"];
   const currentIdx = STEP_ORDER.indexOf(currentStep);
 
   const stepValidityMap: Record<string, boolean> = {
@@ -4189,7 +3685,6 @@ function NewCampaignContent() {
     "map-creatives": true,
     "apply-placements": true,
     funding: fundingStepValid,
-    pixel: pixelStepValid,
     review: true,
   };
 
@@ -4303,7 +3798,7 @@ function NewCampaignContent() {
             <div className="flex items-center gap-3">
               {campaignSubmitted && (
                 <Link
-                  href="/attribution"
+                  href="/attribution-lite"
                   className="flex items-center gap-1.5 rounded-md bg-[#212be9] px-3 py-1.5 text-sm font-medium text-white no-underline transition-colors hover:bg-[#1a22c4]"
                 >
                   <ArrowLeft className="size-4" />
@@ -4318,7 +3813,7 @@ function NewCampaignContent() {
             {!campaignSubmitted && (
               <div className="flex items-center gap-4">
                 <button className="px-2 py-1 text-sm font-medium text-[#dc2626]">Remove</button>
-                <button onClick={() => { const slug = displayName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""); router.push(`/attribution?tab=draft&submitted=${slug}`); }} className="px-2 py-1 text-sm font-medium text-[#212be9]">Save Draft</button>
+                <button onClick={() => { const slug = displayName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""); router.push(`/attribution-lite?tab=draft&submitted=${slug}`); }} className="px-2 py-1 text-sm font-medium text-[#212be9]">Save Draft</button>
               </div>
             )}
           </div>
@@ -4344,7 +3839,6 @@ function NewCampaignContent() {
                 { label: "Campaign Details", status: campaignStepValid ? "success" as const : "warning" as const },
                 { label: "Placement Details", status: placementStepValid ? "success" as const : "warning" as const },
                 { label: "Funding Allocation", status: fundingStepValid ? "success" as const : "warning" as const },
-                { label: "Pixel Generation", status: pixelStepValid ? "success" as const : "warning" as const },
               ].map((item, i) => (
                 <div key={item.label} className="flex flex-1 items-stretch">
                   {i > 0 && <div className="mx-0 w-px self-stretch bg-[#e0e0e0]" />}
@@ -4428,10 +3922,9 @@ function NewCampaignContent() {
             />
           )}
           {currentStep === "funding" && <FundingAllocationContent measurementBudget={parseInt(measurementBudget.replace(/,/g, "") || "0")} onValidChange={setFundingStepValid} />}
-          {currentStep === "pixel" && <PixelGenerationContent pixelState={pixelState} onValidChange={setPixelStepValid} onBack={() => goToStep("funding")} onContinue={() => goToStep("review")} />}
           {currentStep === "review" && (
             <ReviewContent
-              onBack={() => goToStep("pixel")}
+              onBack={() => goToStep("funding")}
               onSubmitted={() => setCampaignSubmitted(true)}
               campaignSubmitted={campaignSubmitted}
             />
@@ -4440,7 +3933,7 @@ function NewCampaignContent() {
           {currentStep === "campaign" && showForm && (
             <div className="mt-8 flex items-center justify-between py-4">
               <Link
-                href="/attribution"
+                href="/attribution-lite"
                 className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
               >
                 Back
@@ -4464,16 +3957,14 @@ function NewCampaignContent() {
                 Back to Apply Placements
               </button>
               <button
-                onClick={() => goToStep("pixel")}
+                onClick={() => goToStep("review")}
                 disabled={!fundingStepValid}
                 className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Continue to Pixel Generation
+                Continue to Review
               </button>
             </div>
           )}
-
-          {currentStep === "pixel" && null}
 
           {currentStep === "placement" && (
             <div className="mt-8 flex items-center justify-between py-4">
