@@ -372,7 +372,7 @@ function InlineUploadedCard({ fileName, delimiters, onDelimitersChange, onReplac
             ) : (
               <ChevronDown className="size-3.5" />
             )}
-            {showDelimiters ? "Hide Delimiters" : delimiters.length > 0 ? "Edit Delimiters" : "Add Delimiters"}
+            {showDelimiters ? "Hide Delimiters" : delimiters.length > 0 ? "Edit Delimiters" : "Add Delimiters (optional)"}
           </button>
 
           {showDelimiters && (
