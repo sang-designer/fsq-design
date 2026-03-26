@@ -28,7 +28,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 
-type CampaignStatus = "Pending" | "Completed" | "Action Required" | "In Progress" | "Draft";
+type CampaignStatus = "Pending" | "Completed" | "In Progress" | "Draft";
 
 type Campaign = {
   id: number;
@@ -48,7 +48,7 @@ const INITIAL_CAMPAIGNS: Campaign[] = [
   { id: 2, name: "McDonald's Q3 Fall Campaign", slug: "mcdonalds-q3-fall", logo: "M", logoColor: "#FFC72C", advertiser: "Google 360", status: "In Progress", startDate: "7/1/2025", endDate: "9/25/2025" },
   { id: 3, name: "Mcdonald's Summer Campaign", slug: "mcdonalds-summer", logo: "M", logoColor: "#FFC72C", advertiser: "Google 360", status: "Completed", startDate: "1/20/2025", endDate: "1/20/2025" },
   { id: 4, name: "Chick Fil A Summer...", slug: "chick-fil-a-summer", logo: "CF", logoColor: "#E51636", advertiser: "Google 360", status: "Pending", startDate: "1/20/2025", endDate: "1/20/2025" },
-  { id: 5, name: "Circle K Campaign Q1-Q4 etc", slug: "circle-k-q1-q4-2", logo: "CK", logoColor: "#ee2e24", advertiser: "Google 360", status: "Action Required", startDate: "1/20/2025", endDate: "1/20/2025" },
+  { id: 5, name: "Circle K Campaign Q1-Q4 etc", slug: "circle-k-q1-q4-2", logo: "CK", logoColor: "#ee2e24", advertiser: "Google 360", status: "Pending", startDate: "1/20/2025", endDate: "1/20/2025" },
   { id: 6, name: "Costco Campaign 2024", slug: "costco-2024", logo: "CO", logoColor: "#E31837", advertiser: "Google 360", status: "Pending", startDate: "1/20/2025", endDate: "1/20/2025" },
   { id: 7, name: "Starbucks X Coke", slug: "starbucks-x-coke", logo: "SB", logoColor: "#00704A", advertiser: "Google 360", status: "Completed", startDate: "1/20/2025", endDate: "1/20/2025" },
   { id: 8, name: "Arby's Midwest Campaign 20...", slug: "arbys-midwest", logo: "AB", logoColor: "#d2232a", advertiser: "Google 360", status: "Completed", startDate: "1/20/2025", endDate: "1/20/2025" },
@@ -56,7 +56,7 @@ const INITIAL_CAMPAIGNS: Campaign[] = [
   { id: 10, name: "Wendy's Spring Promo", slug: "wendys-spring", logo: "WD", logoColor: "#e2203d", advertiser: "Google 360", status: "Pending", startDate: "1/20/2025", endDate: "1/20/2025" },
 ];
 
-const ALL_STATUSES: CampaignStatus[] = ["Pending", "In Progress", "Completed", "Action Required"];
+const ALL_STATUSES: CampaignStatus[] = ["Pending", "In Progress", "Completed"];
 
 const ITEMS_PER_PAGE = 10;
 
@@ -64,11 +64,10 @@ function StatusBadge({ status }: { status: CampaignStatus }) {
   const config: Record<CampaignStatus, { dot: string; text: string }> = {
     Pending: { dot: "bg-orange-400", text: "text-foreground" },
     Completed: { dot: "bg-emerald-500", text: "text-foreground" },
-    "Action Required": { dot: "bg-red-500", text: "text-foreground" },
     "In Progress": { dot: "bg-blue-500", text: "text-foreground" },
     Draft: { dot: "bg-gray-400", text: "text-foreground" },
   };
-  const c = config[status];
+  const c = config[status] ?? { dot: "bg-gray-400", text: "text-foreground" };
   return (
     <span className={`inline-flex items-center gap-1.5 text-sm ${c.text}`}>
       <span className={`size-2 rounded-full ${c.dot}`} />
