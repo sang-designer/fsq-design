@@ -51,13 +51,13 @@ const sidebarItems = [
 ];
 
 const metrics = [
-  { label: "Impressions", value: "133,408,578" },
-  { label: "Reach", value: "31,335,380" },
-  { label: "Frequency", value: "4.26" },
-  { label: "Spend", value: "$1,764,108.08" },
-  { label: "Store Visits", value: "578,464" },
-  { label: "Conversion rate", value: "3.22%" },
-  { label: "Cost per Store Visits", value: "3.22%" },
+  { label: "Impressions", value: "98,240,312" },
+  { label: "Reach", value: "22,580,000" },
+  { label: "Frequency", value: "4.35" },
+  { label: "Spend", value: "$380,000.00" },
+  { label: "Store Visits", value: "412,836" },
+  { label: "Conversion rate", value: "2.94%" },
+  { label: "Cost per Store Visits", value: "$0.92" },
 ];
 
 const suggestedPrompts = [
@@ -154,25 +154,25 @@ const partnerPrompts = [
   "Key Insight & Recommendations.",
 ];
 
-const initialSummary = `**The McDonald's Media Reality**: Your media is fundamentally about driving visit frequency among existing high-frequenting customers (78.5% of all lift), NOT acquiring new or lapsed customers (1-3% lift presence). Partners and ad frequency must be optimized accordingly.
+const initialSummary = `**QSR Brand Q2 2026 Media Reality**: Your media is fundamentally about driving visit frequency among existing high-frequenting customers (72.3% of all lift), NOT acquiring new or lapsed customers (2-5% lift presence). Partners and ad frequency must be optimized accordingly.
 
 **Critical Insights**
 1. Customer Cohort Dominance
-   - High Frequenter customers: 78.5% of campaigns show lift
-   - Medium/Low/Non-customers: 1-3% of campaigns show lift
-   - Implication: Media drives repeat visits among loyalists. This isn't bad \u2013 it's where ROI lives \u2013 but expectations must align.
+   - High Frequenter customers: 72.3% of campaigns show lift
+   - Medium/Low/Non-customers: 2-5% of campaigns show lift
+   - Implication: Media drives repeat visits among loyalists. This is where ROI lives \u2013 but expectations must align.
 2. Ad Frequency Ceiling Effect (Among High Frequenters)
-   - Sweet spot: 3-6 ad exposures (87% lift presence)
-   - Ceiling: 7+ exposures (drops to 62% lift presence)
+   - Sweet spot: 3-5 ad exposures (84% lift presence)
+   - Ceiling: 6+ exposures (drops to 58% lift presence)
    - Implication: Overexposure kills incrementality even with best customers
 3. The CVR Paradox
    - Some partners: High CVR = LESS lift (Epsilon, Programmatic)
-   - Other partners: High CVR = MORE lift (Pandora, TikTok, Twitter)
+   - Other partners: High CVR = MORE lift (Nexxen, Viant)
    - Explanation: CVR measures different things \u2013 either "sure things" (existing propensity) or "persuadables" (genuine behavior change)
 4. Partner Performance Spectrum
-   - \u2B50 Scale: Pandora (93% lift with High Frequenters), Twitter (88%)
-   - \u2192 Maintain: Snap (64%), TikTok (54%)
-   - \u26A0 Reduce: Epsilon (38%), Starcom Programmatic (29%)`;
+   - \u2B50 Scale: Nexxen (89% lift with High Frequenters), Viant (85%)
+   - \u2192 Maintain: Adtheorent (61%)
+   - \u26A0 Reduce: Epsilon (34%), Starcom Programmatic (26%)`;
 
 const promptResponses: Record<string, { title: string; content: string }> = {
   "What is the overall campaign performance insights?": {
@@ -469,21 +469,21 @@ const promptResponses: Record<string, { title: string; content: string }> = {
     title: "Key Insights & Recommendations",
     content: `**Executive Summary**
 
-Your McDonald's Q3 Fall Campaign reached 31.3M users with 133.4M impressions, generating 578K store visits at a 3.22% conversion rate. However, incrementality analysis reveals significant optimization opportunities.
+Your QSR Brand Q2 2026 Campaign reached 22.6M users with 98.2M impressions, generating 413K store visits at a 2.94% conversion rate. Incrementality analysis reveals significant optimization opportunities.
 
 **Top 5 Insights**
-1. **Your media drives loyalty, not acquisition** \u2013 78.5% of lift comes from High Frequenters. Reframe success metrics around visit frequency, not new customer acquisition.
-2. **Partner mix is suboptimal** \u2013 Top-performing partners (Pandora, Twitter) receive only 13% of budget while underperformers (Epsilon, Programmatic) receive 35%.
-3. **Frequency ceiling is real** \u2013 Beyond 6 exposures, lift drops 25%. Current avg frequency of 6.8 means wasted spend on over-exposed users.
-4. **Timing matters more than you think** \u2013 Mid-week lunch/dinner dayparts deliver 68% of lift but receive only 40% of impressions.
+1. **Your media drives loyalty, not acquisition** \u2013 72.3% of lift comes from High Frequenters. Reframe success metrics around visit frequency, not new customer acquisition.
+2. **Partner mix is suboptimal** \u2013 Top-performing partners (Nexxen, Viant) receive only 15% of budget while underperformers (Epsilon, Programmatic) receive 32%.
+3. **Frequency ceiling is real** \u2013 Beyond 5 exposures, lift drops 26%. Current avg frequency of 4.35 is near optimal.
+4. **Timing matters more than you think** \u2013 Mid-week lunch/dinner dayparts deliver 65% of lift but receive only 38% of impressions.
 5. **Geography is mispriced** \u2013 Mega-metros (NY, LA) cost 3x more per lift visit than mid-size markets.
 
 **Recommended Actions (Priority Order)**
-1. Reallocate partner budget: Scale Pandora/Twitter to 30% combined, reduce Epsilon/Programmatic to 15% combined
-2. Implement frequency cap of 6 per user per flight across all partners
+1. Reallocate partner budget: Scale Nexxen/Viant to 35% combined, reduce Epsilon/Programmatic to 12% combined
+2. Maintain frequency cap near 5 per user per flight across all partners
 3. Shift 20% of weekend budget to Wednesday/Thursday lunch and dinner dayparts
-4. Reduce NY/LA allocation from 38% to 25%, redistribute to top 5 mid-size DMAs
-5. Launch Medium Frequenter pilot program with TikTok and Snap
+4. Reduce NY/LA allocation from 35% to 22%, redistribute to top 5 mid-size DMAs
+5. Launch Medium Frequenter pilot program with Adtheorent
 
 **Projected Impact**
    - CPSV improvement: $0.38 \u2192 $0.24 (-37%)
@@ -873,7 +873,7 @@ export default function CampaignDetailPage() {
 
   const generateReport = useCallback((format: "pdf" | "xlsx") => {
     setReportMenuOpen(false);
-    const name = `McDonalds_Q3_Report.${format}`;
+    const name = `QSR_Q2_2026_Report.${format}`;
     const newFile: ReportFile = { name, format, status: "generating", progress: 0 };
     setReportFiles((prev) => [newFile, ...prev]);
     setDownloadsOpen(true);
@@ -997,7 +997,7 @@ export default function CampaignDetailPage() {
     const userMsg: ChatMessage = { role: "user", content: query };
     const resp = promptResponses[query];
 
-    const customResponse = `Based on the current campaign data for McDonald's Q3 Fall Campaign, here is an analysis for your query:
+    const customResponse = `Based on the current campaign data for QSR Brand Q2 2026 Campaign, here is an analysis for your query:
 
 **Analysis: "${query}"**
 
@@ -1126,13 +1126,13 @@ export default function CampaignDetailPage() {
           <Link href="/attribution" className="text-muted-foreground hover:text-foreground transition-colors">Home</Link>
           <ChevronRight className="size-3.5 text-muted-foreground" />
           <span className="flex items-center gap-1.5 font-medium text-[#171417]">
-            <span className="flex size-5 items-center justify-center rounded bg-[#FFC72C] text-[7px] font-bold text-white">M</span>
+            <span className="flex size-5 items-center justify-center rounded bg-[#6366f1] text-[7px] font-bold text-white">QS</span>
             {selectedPartner ? (
               <button onClick={() => setSelectedPartner(null)} className="hover:text-[#212be9] transition-colors">
-                Mcdonald&apos;s Q3: Fall Campaign
+                QSR Q2 2026 Campaign
               </button>
             ) : (
-              <>Mcdonald&apos;s Q3: Fall Campaign</>
+              <>QSR Q2 2026 Campaign</>
             )}
           </span>
           <span className="ml-2 text-xs text-muted-foreground">Visits + Sales Impact</span>
@@ -1347,7 +1347,7 @@ export default function CampaignDetailPage() {
               {/* Partner Title + KPIs */}
               <div className="shrink-0 px-8 py-6">
                 <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  {selectedPartner}: Fall Campaign Overview
+                  {selectedPartner}: QSR Q2 2026 Overview
                 </h1>
                 <div className="mt-5 grid grid-cols-7 gap-3">
                   {(partnerMetrics[selectedPartner] || partnerMetrics.default).map((m, i) => (
@@ -1546,7 +1546,7 @@ export default function CampaignDetailPage() {
             <div className="shrink-0 px-8 py-6">
               <div className="flex items-center justify-between">
                 <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  Mcdonald{"\u2019"}s Q3: Fall Campaign Overview
+                  QSR Q2 2026 Campaign Overview
                 </h1>
                 <button onClick={() => setKpiExpanded(!kpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
                   <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${kpiExpanded ? "" : "-rotate-90"}`} />
@@ -1657,7 +1657,7 @@ export default function CampaignDetailPage() {
             <div className="shrink-0 px-8 py-6">
               <div className="flex items-center justify-between">
                 <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  Mcdonald{"\u2019"}s Q3: Fall Campaign Overview
+                  QSR Q2 2026 Campaign Overview
                 </h1>
                 <button onClick={() => setKpiExpanded(!kpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
                   <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${kpiExpanded ? "" : "-rotate-90"}`} />
@@ -1837,7 +1837,7 @@ export default function CampaignDetailPage() {
             <div className="shrink-0 px-8 py-6">
               <div className="flex items-center justify-between">
                 <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  Mcdonald{"\u2019"}s Q3: Fall Campaign Overview
+                  QSR Q2 2026 Campaign Overview
                 </h1>
                 <button onClick={() => setKpiExpanded(!kpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
                   <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${kpiExpanded ? "" : "-rotate-90"}`} />
@@ -1968,7 +1968,7 @@ export default function CampaignDetailPage() {
             <div className="shrink-0 px-8 py-6">
               <div className="flex items-center justify-between">
                 <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  Mcdonald{"\u2019"}s Q3: Fall Campaign Overview
+                  QSR Q2 2026 Campaign Overview
                 </h1>
                 <button onClick={() => setKpiExpanded(!kpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
                   <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${kpiExpanded ? "" : "-rotate-90"}`} />
@@ -2076,7 +2076,7 @@ export default function CampaignDetailPage() {
           <div className="shrink-0 px-8 py-6">
             <div className="flex items-center justify-between">
               <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                Mcdonald{"\u2019"}s Q3: Fall Campaign Overview
+                QSR Q2 2026 Campaign Overview
               </h1>
               <button onClick={() => setKpiExpanded(!kpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
                 <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${kpiExpanded ? "" : "-rotate-90"}`} />

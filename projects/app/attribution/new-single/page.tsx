@@ -2422,7 +2422,7 @@ function ReviewStep({ campaignName, measurementBudget, metric, partnerName, part
     { key: "adServer", label: "Ad Server", value: partnerData["Ad Server"] || "Google Campaign Manager", required: true, type: "text" },
     { key: "totalSpend", label: "Total Estimated Ad Spend", value: measurementBudget ? `$${measurementBudget}` : "$420,000", required: true, type: "currency" },
     { key: "totalImpressions", label: "Total Estimated Impressions", value: partnerData["Estimated Impressions"] || "5,000,000", required: true, type: "number" },
-    { key: "numPlacements", label: "Number of Placements", value: "24", required: true, type: "number" },
+
     { key: "sfOpportunity", label: "Salesforce Opportunity ID", value: "https://foursquare.lightning.force.com/lightning/r/Opportunity/006Hs00001abc123/view", required: true, type: "link" },
   ]);
 

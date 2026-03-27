@@ -347,11 +347,11 @@ export default function PixelSetupPage() {
               <table className="w-full table-fixed">
                 <thead>
                   <tr className="border-b border-[#e2e8f0]">
-                    <th className="w-[14%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
-                    <th className="w-[18%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
-                    <th className="w-[20%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
-                    <th className="w-[14%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Tagging</th>
-                    <th className="w-[14%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel ID</th>
+                    <th className="w-[15%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
+                    <th className="w-[15%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
+                    <th className="w-[18%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
+                    <th className="w-[16%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Tagging</th>
+                    <th className="w-[16%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel ID</th>
                     <th className="w-[10%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel</th>
                   </tr>
                 </thead>

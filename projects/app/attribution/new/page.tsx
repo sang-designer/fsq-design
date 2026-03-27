@@ -28,9 +28,9 @@ const SIDEBAR_STEPS = [
 ];
 
 const INITIAL_PARTNERS = [
-  { name: "Viant", fundingSource: "Starcom" as string | null, mediaTypes: ["Display", "Mobile"], conversionType: "Visits and Sales Impact" as string | null, startDate: "2025-04-01" as string | null, endDate: "2025-06-30" as string | null, missingFields: 0, estimatedSpend: "$125,000" },
-  { name: "Adtheorent", fundingSource: "Zenith" as string | null, mediaTypes: ["Mobile"], conversionType: "Visits and Sales Impact" as string | null, startDate: "2025-04-01" as string | null, endDate: null as string | null, missingFields: 2, estimatedSpend: "$85,000" },
-  { name: "Nexxen", fundingSource: "Starcom" as string | null, mediaTypes: ["Video", "CTV"], conversionType: "Sales Impact" as string | null, startDate: "2025-04-01" as string | null, endDate: "2025-06-30" as string | null, missingFields: 0, estimatedSpend: "$210,000" },
+  { name: "Viant", fundingSource: "Starcom" as string | null, mediaTypes: ["Display", "Mobile"], conversionType: "Visits and Sales Impact" as string | null, startDate: "2026-04-01" as string | null, endDate: "2026-06-30" as string | null, missingFields: 0, estimatedSpend: "$125,000" },
+  { name: "Adtheorent", fundingSource: "Zenith" as string | null, mediaTypes: ["Mobile"], conversionType: "Visits and Sales Impact" as string | null, startDate: "2026-04-01" as string | null, endDate: null as string | null, missingFields: 2, estimatedSpend: "$85,000" },
+  { name: "Nexxen", fundingSource: "Starcom" as string | null, mediaTypes: ["Video", "CTV"], conversionType: "Sales Impact" as string | null, startDate: "2026-04-01" as string | null, endDate: "2026-06-30" as string | null, missingFields: 0, estimatedSpend: "$210,000" },
 ];
 
 const ERROR_FIELDS = [
@@ -178,7 +178,7 @@ function InputField({ label, placeholder = "", value, onChange, error, required 
 }
 
 const BRAND_OPTIONS = [
-  "McDonalds", "Burger King", "Wendy's", "Chick-fil-A", "Subway",
+  "QSR Brand", "McDonalds", "Burger King", "Wendy's", "Chick-fil-A", "Subway",
   "Starbucks", "Taco Bell", "Domino's", "Pizza Hut", "Chipotle",
   "Dunkin'", "Popeyes", "KFC", "Panera Bread", "Five Guys",
 ];
@@ -465,6 +465,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
     "00341": { brand: "McDonalds", budget: "420,000", metric: "Visits and Sales" },
     "00555": { brand: "Starbucks", budget: "250,000", metric: "Visits" },
     "00789": { brand: "Target", budget: "310,000", metric: "Visits and Sales" },
+    "01026": { brand: "QSR Brand", budget: "380,000", metric: "Visits and Sales" },
   };
 
   const handleSfValidate = () => {
@@ -538,23 +539,23 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
 
   useEffect(() => {
     if (hasUploadedFile) {
-      setAdvertiser("McDonalds");
-      setStartDate("2025-01-15");
-      setEndDate("2025-06-30");
+      setAdvertiser("QSR Brand");
+      setStartDate("2026-04-01");
+      setEndDate("2026-06-30");
       setConversionWindow("30 Days");
       setAgencyName("Starcom Worldwide");
       setOwnerType("Agency");
       setContactName("Sarah Mitchell");
       setEmail("s.mitchell@starcom.com");
       setCountry("United States");
-      setStoreChains("McDonalds US");
+      setStoreChains("QSR Brand US");
       setGeoTargeting("National");
       setGeoLocations("All US Markets");
-      setNotes("Q1-Q2 2025 brand awareness campaign across digital channels.");
+      setNotes("Q2 2026 brand awareness campaign across digital channels.");
       if (!sfValidated) {
-        setSfOpportunity("https://salesforce.com/opp/00341");
+        setSfOpportunity("https://foursquare.lightning.force.com/lightning/r/Opportunity/006Hs00001026QSR/view");
         onSfValidatedChange(true);
-        const sfData = { brand: "McDonalds", budget: measurementBudget || "420,000", metric: metric || "Visits and Sales" };
+        const sfData = { brand: "QSR Brand", budget: measurementBudget || "380,000", metric: metric || "Visits and Sales" };
         setSfOriginal(sfData);
         setBrand(sfData.brand);
         onMeasurementBudgetChange(sfData.budget);
@@ -734,7 +735,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
           </div>
         ) : hasUploadedFile ? (
           <InlineUploadedCard
-            fileName={hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}
+            fileName={hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026"}
             delimiters={delimiters}
             onDelimitersChange={onDelimitersChange}
             onReplace={onUpload}
@@ -819,6 +820,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
                         className={`w-full appearance-none rounded-md border border-[#f0f0f0] bg-[#fcfcfc] py-2 pl-3 pr-9 text-sm text-[#020617] outline-none focus:border-[#212be9] ${!storeChains ? "text-[#8d8d8d]" : ""}`}
                       >
                         <option value="">Type or Select</option>
+                        <option value="QSR Brand US">QSR Brand US</option>
                         <option value="McDonalds US">McDonalds US</option>
                         <option value="Starbucks">Starbucks</option>
                         <option value="Walmart">Walmart</option>
@@ -1258,9 +1260,11 @@ function MultiSelectDropdown({ options, selected, onChange, placeholder, hasWarn
 
   return (
     <div ref={ref} className="relative">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen(!open)}
-        className={`flex min-h-[36px] min-w-[220px] max-w-[340px] items-center justify-between rounded-md border bg-white px-3 py-1.5 text-left text-sm transition-colors ${hasWarning && selected.length === 0 ? "border-[#f59e0b]" : open ? "border-[#212be9] ring-1 ring-[#212be9]" : "border-[#e2e8f0]"}`}
+        className={`flex min-h-[36px] min-w-[220px] max-w-[340px] cursor-pointer items-center justify-between rounded-md border bg-white px-3 py-1.5 text-left text-sm transition-colors ${hasWarning && selected.length === 0 ? "border-[#f59e0b]" : open ? "border-[#212be9] ring-1 ring-[#212be9]" : "border-[#e2e8f0]"}`}
       >
         {selected.length === 0 ? (
           <span className="text-[#94a3b8]">{placeholder}</span>
@@ -1269,18 +1273,21 @@ function MultiSelectDropdown({ options, selected, onChange, placeholder, hasWarn
             {selected.map((s) => (
               <span key={s} className="inline-flex shrink-0 items-center gap-1 rounded bg-[#f1f5f9] px-1.5 py-0.5 text-xs font-medium text-[#020617]">
                 {s}
-                <button
+                <span
+                  role="button"
+                  tabIndex={0}
                   onClick={(e) => { e.stopPropagation(); toggle(s); }}
-                  className="text-[#8d8d8d] hover:text-[#020617]"
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); toggle(s); } }}
+                  className="cursor-pointer text-[#8d8d8d] hover:text-[#020617]"
                 >
                   <X className="size-3" />
-                </button>
+                </span>
               </span>
             ))}
           </span>
         )}
         <ChevronDown className={`ml-2 size-4 shrink-0 text-[#8d8d8d] transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
+      </div>
       {open && (
         <div className="absolute left-0 top-full z-50 mt-1 min-w-[220px] max-w-[340px] rounded-md border border-[#e2e8f0] bg-white py-1 shadow-lg">
           <div className="flex items-center justify-between border-b border-[#e2e8f0] px-3 py-1.5">
@@ -1381,7 +1388,7 @@ function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue 
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-[#757575]">File</span>
-              <span className="text-sm font-medium text-[#020617]">Carta/Macdonalds2024</span>
+              <span className="text-sm font-medium text-[#020617]">QSR_Q2_2026</span>
             </div>
             <div>
               <span className="text-xs text-[#757575]">Campaign Details</span>
@@ -1539,11 +1546,11 @@ function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue 
                   <thead>
                     <tr className="border-b border-[#e2e8f0]">
                       <th className="w-[40px] px-4 py-3" />
-                      <th className="w-[12%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
-                      <th className="w-[18%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
-                      <th className="w-[22%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
-                      <th className="w-[12%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Tagging</th>
-                      <th className="w-[12%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel ID</th>
+                      <th className="w-[13%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
+                      <th className="w-[14%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
+                      <th className="w-[16%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
+                      <th className="w-[16%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Tagging</th>
+                      <th className="w-[15%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel ID</th>
                       <th className="w-[10%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel</th>
                       <th className="w-[80px] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Action</th>
                     </tr>
@@ -1782,7 +1789,7 @@ function PlacementDetailsContent({ placementState, onContinueToMapPartners, onUp
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-[#757575]">File</span>
-              <span className="text-sm font-medium text-[#020617]">Carta/Macdonalds2024</span>
+              <span className="text-sm font-medium text-[#020617]">QSR_Q2_2026</span>
             </div>
             <div>
               <span className="text-xs text-[#757575]">Campaign Details</span>
@@ -1826,7 +1833,7 @@ function PlacementDetailsContent({ placementState, onContinueToMapPartners, onUp
           <div className="mb-4">
             <p className="mb-3 text-sm font-semibold text-[#020617]">Processed Placement Data Results</p>
             <div className="flex items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-4 py-3">
-              <span className="text-sm font-medium text-[#020617]">{hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}</span>
+              <span className="text-sm font-medium text-[#020617]">{hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026"}</span>
               <div className="flex items-center gap-6">
                 <span className="flex items-center gap-1 text-sm">
                   <Check className="size-4 text-[#16a34a]" />
@@ -3141,7 +3148,7 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
       {/* File summary banner */}
       <div className="mb-6 flex items-center justify-between rounded-lg border border-border bg-white px-5 py-3.5">
         <div>
-          <p className="text-sm font-semibold text-[#1f2430]">Carta/Mcdonalds2024</p>
+          <p className="text-sm font-semibold text-[#1f2430]">QSR_Q2_2026</p>
           <p className="text-xs text-[#6b7280]">Uploaded by Sang Yeo</p>
         </div>
         <div className="flex items-center gap-5">
@@ -3520,18 +3527,18 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted }: { onBack: () 
   };
 
   const [fields, setFields] = useState<ReviewField[]>([
-    { key: "campaignName", label: "Campaign Name", value: "McDonalds Q1-Q2 2025", required: true, type: "text" },
-    { key: "advertiser", label: "Advertiser", value: "McDonald's Corporation", required: true, type: "text" },
-    { key: "agency", label: "Agency", value: "OMD Worldwide", required: true, type: "text" },
-    { key: "campaignPeriod", label: "Campaign Period", value: "Apr 1, 2025 – Jun 30, 2025", required: true, type: "date-range" },
-    { key: "storeChains", label: "Store Chains to be Measured", value: "McDonald's US", required: true, type: "text" },
+    { key: "campaignName", label: "Campaign Name", value: "QSR Q2 2026", required: true, type: "text" },
+    { key: "advertiser", label: "Advertiser", value: "QSR Brand", required: true, type: "text" },
+    { key: "agency", label: "Agency", value: "Starcom", required: true, type: "text" },
+    { key: "campaignPeriod", label: "Campaign Period", value: "Apr 1, 2026 – Jun 30, 2026", required: true, type: "date-range" },
+    { key: "storeChains", label: "Store Chains to be Measured", value: "QSR Brand US", required: true, type: "text" },
     { key: "country", label: "Country", value: "United States", required: true, type: "text" },
     { key: "geoScope", label: "Geographical Scope", value: "National", required: true, type: "text" },
     { key: "conversionType", label: "Conversion Type", value: "Visits and Sales Impact", required: true, type: "text" },
-    { key: "totalSpend", label: "Total Estimated Ad Spend", value: "$450,000", required: true, type: "currency" },
-    { key: "totalImpressions", label: "Total Estimated Impressions", value: "125,000,000", required: true, type: "number" },
-    { key: "numPlacements", label: "Number of Placements", value: "24", required: true, type: "number" },
-    { key: "sfOpportunity", label: "Salesforce Opportunity ID", value: "https://foursquare.lightning.force.com/lightning/r/Opportunity/006Hs00001abc123/view", required: true, type: "link" },
+    { key: "totalSpend", label: "Total Estimated Ad Spend", value: "$380,000", required: true, type: "currency" },
+    { key: "totalImpressions", label: "Total Estimated Impressions", value: "98,000,000", required: true, type: "number" },
+
+    { key: "sfOpportunity", label: "Salesforce Opportunity ID", value: "https://foursquare.lightning.force.com/lightning/r/Opportunity/006Hs00001026QSR/view", required: true, type: "link" },
   ]);
 
   const [editingKey, setEditingKey] = useState<string | null>(null);
@@ -3885,7 +3892,7 @@ function UploadMediaPlanModal({ open, onClose, onUpload, initialDelimiters, drop
   };
 
   const handleClickUploadZone = () => {
-    setFileName("MediaPlan_McDonalds_2025.xlsx");
+    setFileName("QSR_Q2_2026.xlsx");
   };
 
   const handleSubmit = () => {
@@ -4029,7 +4036,7 @@ function Sidebar({ currentStep, hasUploadedFile, hasReuploaded, onUpload, isUplo
     return steps;
   })();
 
-  const fileName = hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024";
+  const fileName = hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026";
 
 
   const placementSubSteps: Step[] = ["map-partners", "map-taxonomies", "map-creatives", "apply-placements"];
@@ -4216,7 +4223,7 @@ function NewCampaignContent() {
       if (isReupload) {
         setHasReuploaded(true);
       }
-      setCampaignName("McDonalds Q1-Q2 2025");
+      setCampaignName("QSR Q2 2026");
     }, 2400);
   };
 
@@ -4284,7 +4291,7 @@ function NewCampaignContent() {
         return;
       }
       setIsReparsing(false);
-      setCampaignName("McDonalds Q1-Q2 2025");
+      setCampaignName("QSR Q2 2026");
       setUploadBannerDismissed(false);
     }, 2000);
   };
@@ -4303,7 +4310,7 @@ function NewCampaignContent() {
             <div className="flex items-center gap-3">
               {campaignSubmitted && (
                 <Link
-                  href="/attribution"
+                  href={`/attribution?submitted=${displayName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}`}
                   className="flex items-center gap-1.5 rounded-md bg-[#212be9] px-3 py-1.5 text-sm font-medium text-white no-underline transition-colors hover:bg-[#1a22c4]"
                 >
                   <ArrowLeft className="size-4" />
@@ -4336,7 +4343,7 @@ function NewCampaignContent() {
               <p className="text-base font-semibold text-black">Upload Results</p>
               <div className="flex items-center gap-1">
                 <FileText className="size-4 text-[#8d8d8d]" />
-                <span className="text-xs text-black">{hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}</span>
+                <span className="text-xs text-black">{hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026"}</span>
               </div>
             </div>
             <div className="flex flex-1 items-stretch">

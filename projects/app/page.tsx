@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, TrendingDown, User, ChevronLeft, ChevronRight, SlidersHorizontal, ArrowUpDown } from "lucide-react";
+import { TrendingUp, TrendingDown, User, ChevronLeft, ChevronRight, SlidersHorizontal, ArrowUpDown, Lightbulb } from "lucide-react";
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
 import { useState, useRef, useEffect } from "react";
 
@@ -509,73 +509,34 @@ export default function Home() {
         {pageTab === "history" ? (
         <HistoryTable />
         ) : (
-        <>
-        {/* Top Stats Row */}
-        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:gap-3.5">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-[330px] lg:shrink-0 lg:grid-cols-1 lg:gap-3.5">
-            <StatCard label="Total Edits" value="1,500" badge={{ value: "+12.5%", trend: "up" }} />
-            <StatCard label="Total approved edits" value="236" badge={{ value: "-1%", trend: "down" }} />
-            <StatCard label="Member since" value="2023 🔥" />
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="mb-6 flex size-20 items-center justify-center rounded-full bg-[#f0f1ff]">
+            <Lightbulb className="size-9 text-[#212be9]" />
           </div>
-
-          <div className="flex-1 rounded-xl border border-border bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
-            <h2 className="mb-3 text-sm font-semibold sm:text-base">Contributions Overview</h2>
-            <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1.5">
-              {CHART_SERIES.map((s) => (
-                <div key={s.key} className="flex items-center gap-1.5">
-                  <div className="size-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-                  <span className="text-[11px] text-[#646464]">{s.label}</span>
-                </div>
-              ))}
-            </div>
-            <div className="h-[250px] sm:h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e5e5" />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#737373" }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#737373" }} width={40} />
-                  <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(33, 43, 233, 0.04)" }} />
-                  {CHART_SERIES.map((s) => (
-                    <Bar key={s.key} dataKey={s.key} stackId="contributions" fill={s.color} radius={0} barSize={28} />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          <h2 className="mb-2 text-xl font-semibold tracking-tight text-[#020617] sm:text-2xl">
+            Your Contribution Insights Are On the Way
+          </h2>
+          <p className="mx-auto mb-3 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
+            Once you start making edits, votes, and place contributions, we'll surface personalized insights and trends about your impact here.
+          </p>
+          <p className="mx-auto max-w-sm text-xs leading-relaxed text-muted-foreground/70 sm:text-sm">
+            Keep contributing to unlock detailed breakdowns of your edits, approval rates, and how your work shapes the map.
+          </p>
+          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
+            <button
+              onClick={() => setPageTab("history")}
+              className="rounded-lg bg-[#212be9] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
+            >
+              View My History
+            </button>
+            <button
+              onClick={() => setSummaryOpen(true)}
+              className="rounded-lg border border-border bg-white px-5 py-2.5 text-sm font-medium text-[#020617] transition-colors hover:bg-gray-50"
+            >
+              See Contributions Summary
+            </button>
           </div>
         </div>
-
-        <div className="mb-5 sm:mb-6">
-          <div className="inline-flex items-center gap-1.5 rounded-lg bg-[#f0f0f0] p-1 sm:gap-2">
-            {tabs.map((tab) => (
-              <TabButton key={tab} tab={tab} isActive={activeTab === tab} onClick={() => setActiveTab(tab)} />
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
-          <MetricSection title="Edits">
-            <SimpleMetricCard label={activeTab} value={metrics.edits.value} change={metrics.edits.change} />
-          </MetricSection>
-          <MetricSection title="Rejected edits">
-            <SimpleMetricCard label={activeTab} value={metrics.rejected.value} change={metrics.rejected.change} />
-          </MetricSection>
-          <MetricSection title="Rolled back edits">
-            <SimpleMetricCard label={activeTab} value={metrics.rolledBack.value} change={metrics.rolledBack.change} />
-          </MetricSection>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
-          <MetricSection title="Community approved edits">
-            <SimpleMetricCard label={activeTab} value={metrics.communityApproved.value} change={metrics.communityApproved.change} />
-          </MetricSection>
-          <MetricSection title="Automatically approved edits">
-            <SimpleMetricCard label={activeTab} value={metrics.autoApproved.value} change={metrics.autoApproved.change} />
-          </MetricSection>
-          <MetricSection title="Flagged photos">
-            <SimpleMetricCard label={activeTab} value={metrics.flaggedPhotos.value} change={metrics.flaggedPhotos.change} />
-          </MetricSection>
-        </div>
-        </>
         )}
       </main>
     </div>

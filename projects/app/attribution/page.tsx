@@ -336,13 +336,21 @@ function AttributionPageContent() {
     const submitted = searchParams.get("submitted");
     const tab = searchParams.get("tab");
     if (submitted) {
-      if (tab === "draft" && !campaignList.some((c) => c.slug === submitted)) {
-        const name = submitted.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) || "Untitled Draft";
-        setCampaignList((prev) => [
-          { id: Date.now(), name, slug: submitted, logo: name.slice(0, 2).toUpperCase(), logoColor: "#94a3b8", advertiser: "—", status: "Draft" as CampaignStatus, startDate: new Date().toLocaleDateString("en-US"), endDate: "—" },
+      setCampaignList((prev) => {
+        if (prev.some((c) => c.slug === submitted)) return prev;
+        if (tab === "draft") {
+          const name = submitted.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) || "Untitled Draft";
+          return [
+            { id: Date.now(), name, slug: submitted, logo: name.slice(0, 2).toUpperCase(), logoColor: "#94a3b8", advertiser: "—", status: "Draft" as CampaignStatus, startDate: new Date().toLocaleDateString("en-US"), endDate: "—" },
+            ...prev,
+          ];
+        }
+        const name = submitted.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) || "Untitled Campaign";
+        return [
+          { id: Date.now(), name, slug: submitted, logo: name.slice(0, 2).toUpperCase(), logoColor: "#6366f1", advertiser: "QSR Brand", status: "In Progress" as CampaignStatus, startDate: new Date().toLocaleDateString("en-US"), endDate: "6/30/2026" },
           ...prev,
-        ]);
-      }
+        ];
+      });
       setHighlightSlug(submitted);
       const timer = setTimeout(() => setHighlightSlug(null), 4000);
       return () => clearTimeout(timer);

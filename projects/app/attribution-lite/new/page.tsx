@@ -3030,7 +3030,7 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted }: { onBack: () 
     { key: "conversionType", label: "Conversion Type", value: "Visits and Sales Impact", required: true, type: "text" },
     { key: "totalSpend", label: "Total Estimated Ad Spend", value: "$450,000", required: true, type: "currency" },
     { key: "totalImpressions", label: "Total Estimated Impressions", value: "125,000,000", required: true, type: "number" },
-    { key: "numPlacements", label: "Number of Placements", value: "24", required: true, type: "number" },
+
     { key: "sfOpportunity", label: "Salesforce Opportunity ID", value: "https://foursquare.lightning.force.com/lightning/r/Opportunity/006Hs00001abc123/view", required: true, type: "link" },
   ]);
 
