@@ -1115,12 +1115,10 @@ function FundingAllocationContent({ measurementBudget, onValidChange }: { measur
       ...p,
       fundingVisits: "",
       fundingSalesImpact: "",
-      fundingNameVisits: "",
-      fundingNameSales: "",
     }))
   );
 
-  const updateAllocation = (index: number, field: "fundingVisits" | "fundingSalesImpact" | "fundingNameVisits" | "fundingNameSales", value: string) => {
+  const updateAllocation = (index: number, field: "fundingVisits" | "fundingSalesImpact", value: string) => {
     setAllocations((prev) =>
       prev.map((a, i) => (i === index ? { ...a, [field]: value } : a))
     );
@@ -1164,11 +1162,9 @@ function FundingAllocationContent({ measurementBudget, onValidChange }: { measur
         <table className="w-full table-fixed">
           <thead>
             <tr className="border-b border-border bg-[#f8fafc]">
-              <th className="w-[14%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Partner</th>
-              <th className="w-[16%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Who is funding visits</th>
-              <th className="w-[20%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Funding name for visits</th>
-              <th className="w-[18%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Who is funding sales impact</th>
-              <th className="w-[20%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Funding name for sales impact</th>
+              <th className="w-[30%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Partner</th>
+              <th className="w-[35%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Who is funding visits</th>
+              <th className="w-[35%] px-4 py-3.5 text-left text-sm font-medium text-[#64748b]">Who is funding sales impact</th>
             </tr>
           </thead>
           <tbody>
@@ -1190,15 +1186,6 @@ function FundingAllocationContent({ measurementBudget, onValidChange }: { measur
                     </Select>
                   </td>
                   <td className="px-4 py-4">
-                    <input
-                      type="text"
-                      value={alloc.fundingNameVisits}
-                      onChange={(e) => updateAllocation(i, "fundingNameVisits", e.target.value)}
-                      placeholder="Enter name..."
-                      className="w-full rounded-md border border-[#e2e8f0] bg-white px-3 py-1.5 text-sm text-[#020617] outline-none placeholder:text-[#9ca3af] focus:border-[#212be9]"
-                    />
-                  </td>
-                  <td className="px-4 py-4">
                     <Select value={alloc.fundingSalesImpact || undefined} onValueChange={(val) => updateAllocation(i, "fundingSalesImpact", val)}>
                       <SelectTrigger className={`w-full ${alloc.fundingSalesImpact ? "" : "border-[#f59e0b]"}`} size="sm">
                         <SelectValue placeholder="Select..." />
@@ -1208,15 +1195,6 @@ function FundingAllocationContent({ measurementBudget, onValidChange }: { measur
                         <SelectItem value="Partner">Partner</SelectItem>
                       </SelectContent>
                     </Select>
-                  </td>
-                  <td className="px-4 py-4">
-                    <input
-                      type="text"
-                      value={alloc.fundingNameSales}
-                      onChange={(e) => updateAllocation(i, "fundingNameSales", e.target.value)}
-                      placeholder="Enter name..."
-                      className="w-full rounded-md border border-[#e2e8f0] bg-white px-3 py-1.5 text-sm text-[#020617] outline-none placeholder:text-[#9ca3af] focus:border-[#212be9]"
-                    />
                   </td>
                 </tr>
               );
