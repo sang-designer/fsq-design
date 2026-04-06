@@ -519,21 +519,12 @@ export default function Home() {
           <p className="mx-auto mb-3 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
             Once you start making edits, votes, and place contributions, we'll surface personalized insights and trends about your impact here.
           </p>
-          <p className="mx-auto max-w-sm text-xs leading-relaxed text-muted-foreground/70 sm:text-sm">
-            Keep contributing to unlock detailed breakdowns of your edits, approval rates, and how your work shapes the map.
-          </p>
-          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
+          <div className="mt-8">
             <button
-              onClick={() => setPageTab("history")}
-              className="rounded-lg bg-[#212be9] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
+              onClick={() => window.open("https://foursquare.com/city-guide", "_blank")}
+              className="rounded-lg bg-[#212be9] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
             >
-              View My History
-            </button>
-            <button
-              onClick={() => setSummaryOpen(true)}
-              className="rounded-lg border border-border bg-white px-5 py-2.5 text-sm font-medium text-[#020617] transition-colors hover:bg-gray-50"
-            >
-              See Contributions Summary
+              Start Contributing
             </button>
           </div>
         </div>
