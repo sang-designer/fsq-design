@@ -1176,7 +1176,7 @@ function FundingAllocationContent({ measurementBudget, onValidChange }: { measur
                   </td>
                   <td className="px-4 py-4">
                     <Select value={alloc.fundingVisits || undefined} onValueChange={(val) => updateAllocation(i, "fundingVisits", val)}>
-                      <SelectTrigger className={`w-full ${alloc.fundingVisits ? "" : "border-[#f59e0b]"}`} size="sm">
+                      <SelectTrigger className={`w-full ${alloc.fundingVisits ? "" : "border-[#ef4444]"}`} size="sm">
                         <SelectValue placeholder="Select..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -1187,7 +1187,7 @@ function FundingAllocationContent({ measurementBudget, onValidChange }: { measur
                   </td>
                   <td className="px-4 py-4">
                     <Select value={alloc.fundingSalesImpact || undefined} onValueChange={(val) => updateAllocation(i, "fundingSalesImpact", val)}>
-                      <SelectTrigger className={`w-full ${alloc.fundingSalesImpact ? "" : "border-[#f59e0b]"}`} size="sm">
+                      <SelectTrigger className={`w-full ${alloc.fundingSalesImpact ? "" : "border-[#ef4444]"}`} size="sm">
                         <SelectValue placeholder="Select..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -1242,7 +1242,7 @@ function MultiSelectDropdown({ options, selected, onChange, placeholder, hasWarn
         role="button"
         tabIndex={0}
         onClick={() => setOpen(!open)}
-        className={`flex min-h-[36px] min-w-[220px] max-w-[340px] cursor-pointer items-center justify-between rounded-md border bg-white px-3 py-1.5 text-left text-sm transition-colors ${hasWarning && selected.length === 0 ? "border-[#f59e0b]" : open ? "border-[#212be9] ring-1 ring-[#212be9]" : "border-[#e2e8f0]"}`}
+        className={`flex min-h-[36px] min-w-[220px] max-w-[340px] cursor-pointer items-center justify-between rounded-md border bg-white px-3 py-1.5 text-left text-sm transition-colors ${hasWarning && selected.length === 0 ? "border-[#ef4444]" : open ? "border-[#212be9] ring-1 ring-[#212be9]" : "border-[#e2e8f0]"}`}
       >
         {selected.length === 0 ? (
           <span className="text-[#94a3b8]">{placeholder}</span>
@@ -1549,7 +1549,7 @@ function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue 
                         </td>
                         <td className="px-4 py-4">
                           <Select value={pixel.tracking || undefined} onValueChange={(val) => updateTracking(i, val)}>
-                            <SelectTrigger className={`w-[120px] ${pixel.tracking ? "" : "border-[#f59e0b]"}`} size="sm">
+                            <SelectTrigger className={`w-[120px] ${pixel.tracking ? "" : "border-[#ef4444]"}`} size="sm">
                               <SelectValue placeholder="Select..." />
                             </SelectTrigger>
                             <SelectContent>
