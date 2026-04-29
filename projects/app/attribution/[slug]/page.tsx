@@ -36,10 +36,22 @@ import {
   Table2,
   ArrowDownUp,
   LogOut,
+  RefreshCw,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Tooltip as KpiTooltip,
+  TooltipContent as KpiTooltipContent,
+  TooltipProvider,
+  TooltipTrigger as KpiTooltipTrigger,
+} from "@/components/ui/tooltip";
 import Link from "next/link";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend, Cell } from "recharts";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, useEffect, useRef, useCallback } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine, Legend, Cell } from "recharts";
 
 const sidebarItems = [
   { icon: Gauge, label: "Campaign Overview" },
@@ -59,6 +71,62 @@ const metrics = [
   { label: "Conversion rate", value: "2.94%" },
   { label: "Cost per Store Visits", value: "$0.92" },
 ];
+
+const KPI_TOOLTIPS: Record<string, string> = {
+  Impressions:
+    "Total ad impressions delivered during the campaign flight across all partners, tactics, and measured geographies.",
+  Reach: "Estimated count of unique users who received at least one impression from this campaign during the flight.",
+  Frequency: "Average number of impressions per reached user. Higher values can signal saturation for some cohorts.",
+  Spend: "Total media spend attributed to this campaign in the reporting window, before fees unless otherwise noted.",
+  "Store Visits":
+    "Attributed physical visits to measured store locations tied to exposed users, using the attribution model configured for this study.",
+  "Conversion rate":
+    "Share of exposed users who completed a store visit after impression delivery, based on the campaign attribution window.",
+  "Cost per Store Visits":
+    "Spend divided by attributed store visits (CPSV). Use this to compare efficiency across partners, geographies, and time periods.",
+};
+
+function KpiMetricCard({
+  label,
+  value,
+  animationDelayMs,
+}: {
+  label: string;
+  value: string;
+  animationDelayMs?: number;
+}) {
+  const description = KPI_TOOLTIPS[label] ?? `${label} for the selected reporting period.`;
+  return (
+    <div
+      data-kpi-metric-card
+      className={cn(
+        "hover-lift animate-kpi-entrance rounded-lg border border-border bg-white p-3 text-left shadow-sm outline-none",
+        "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+      )}
+      style={animationDelayMs != null ? { animationDelay: `${animationDelayMs}ms` } : undefined}
+    >
+      <div className="flex items-center justify-between gap-1 text-xs text-muted-foreground">
+        <span>{label}</span>
+        <KpiTooltip>
+          <KpiTooltipTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground/80 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+              aria-label={`${label}: more info`}
+            >
+              <Info className="size-3 shrink-0" aria-hidden />
+            </button>
+          </KpiTooltipTrigger>
+          <KpiTooltipContent side="top" className="max-w-[260px]">
+            <p className="text-xs font-semibold leading-snug text-foreground">{label}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
+          </KpiTooltipContent>
+        </KpiTooltip>
+      </div>
+      <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{value}</p>
+    </div>
+  );
+}
 
 const suggestedPrompts = [
   "What is the overall campaign performance insights?",
@@ -584,7 +652,7 @@ function TypewriterMessage({ content, title, onComplete }: { content: string; ti
   return (
     <div>
       {title && <h3 className="mb-2 text-base font-semibold text-[#171417]">{title}</h3>}
-      <div className="rounded-lg border border-border bg-[#fafafa] p-5 transition-shadow duration-300 hover:shadow-md">
+      <div>
         <MarkdownRenderer text={displayed} />
         {!isComplete && <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[#212be9]" />}
       </div>
@@ -793,7 +861,57 @@ function getGeoColor(index: number) {
   return `rgb(${r},${g},${b})`;
 }
 
-export default function CampaignDetailPage() {
+function CampaignSystemError() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleRetry = () => {
+    router.replace(pathname);
+    router.refresh();
+  };
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="w-full max-w-lg border-border shadow-md">
+        <CardHeader>
+          <CardTitle className="text-lg">We couldn&apos;t load this campaign</CardTitle>
+          <CardDescription>
+            The attribution workspace is temporarily unavailable. Your data is safe; please try again shortly.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <Alert variant="destructive">
+            <OctagonAlert />
+            <AlertTitle>System error</AlertTitle>
+            <AlertDescription>
+              The analysis service did not respond. Check your network connection. If this keeps happening, contact
+              your Foursquare representative with the time you saw this message.
+            </AlertDescription>
+          </Alert>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" asChild>
+              <Link href="/attribution">Back to campaigns</Link>
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              onClick={handleRetry}
+              className="gap-2 bg-[#212be9] text-white hover:bg-[#1a22c4] hover:shadow-lg hover:shadow-[#212be9]/20"
+            >
+              <RefreshCw className="size-4" aria-hidden />
+              Try again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function CampaignDetailPageContent() {
+  const searchParams = useSearchParams();
+  const systemUnavailable = searchParams.get("system_error") === "1";
+
   const THINKING_DURATION = 3000;
   const [initialPhase, setInitialPhase] = useState<"thinking" | "typing" | "done">("thinking");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
@@ -871,7 +989,14 @@ export default function CampaignDetailPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, [downloadsOpen]);
 
+  useEffect(() => {
+    if (!systemUnavailable) return;
+    setReportMenuOpen(false);
+    setDownloadsOpen(false);
+  }, [systemUnavailable]);
+
   const generateReport = useCallback((format: "pdf" | "xlsx") => {
+    if (systemUnavailable) return;
     setReportMenuOpen(false);
     const name = `QSR_Q2_2026_Report.${format}`;
     const newFile: ReportFile = { name, format, status: "generating", progress: 0 };
@@ -897,7 +1022,7 @@ export default function CampaignDetailPage() {
         );
       }
     }, 600);
-  }, []);
+  }, [systemUnavailable]);
 
   const { displayed: initialDisplayed, isComplete: initialComplete } = useTypewriter(
     initialPhase !== "thinking" ? initialSummary : "",
@@ -1055,6 +1180,7 @@ export default function CampaignDetailPage() {
   };
 
   return (
+    <TooltipProvider delayDuration={250}>
     <div className="flex h-screen flex-col bg-white font-sans">
       {/* Masthead */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-white px-12">
@@ -1194,7 +1320,20 @@ export default function CampaignDetailPage() {
                 <div className="max-h-[240px] overflow-y-auto">
                   {reportFiles.length === 0 && (
                     <div className="px-4 py-5 text-center text-xs text-muted-foreground">
-                      No reports yet. Click <button onClick={() => { setDownloadsOpen(false); setReportMenuOpen(true); }} className="font-medium text-[#212be9] underline underline-offset-2">&apos;Generate Report&apos;</button> to get started.
+                      No reports yet. Click{" "}
+                      <button
+                        type="button"
+                        disabled={systemUnavailable}
+                        onClick={() => {
+                          if (systemUnavailable) return;
+                          setDownloadsOpen(false);
+                          setReportMenuOpen(true);
+                        }}
+                        className={`font-medium underline underline-offset-2 ${systemUnavailable ? "cursor-not-allowed text-muted-foreground no-underline opacity-50" : "text-[#212be9]"}`}
+                      >
+                        &apos;Generate Report&apos;
+                      </button>{" "}
+                      to get started.
                     </div>
                   )}
                   {reportFiles.map((file, i) => (
@@ -1226,7 +1365,12 @@ export default function CampaignDetailPage() {
                         </button>
                       )}
                       {file.status === "error" && (
-                        <button onClick={() => generateReport(file.format)} className="btn-press flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:text-[#212be9]">
+                        <button
+                          type="button"
+                          disabled={systemUnavailable}
+                          onClick={() => generateReport(file.format)}
+                          className={`btn-press flex size-6 shrink-0 items-center justify-center rounded transition-colors ${systemUnavailable ? "cursor-not-allowed text-muted-foreground opacity-40" : "text-muted-foreground hover:text-[#212be9]"}`}
+                        >
                           <Reply className="size-3.5" />
                         </button>
                       )}
@@ -1251,14 +1395,24 @@ export default function CampaignDetailPage() {
           {/* Generate Report Button + Dropdown */}
           <div ref={reportMenuRef} className="relative ml-1">
             <button
-              onClick={() => setReportMenuOpen(!reportMenuOpen)}
-              className="btn-press inline-flex items-center gap-1.5 rounded-md bg-[#212be9] px-4 py-1.5 text-sm font-medium text-white transition-all duration-200 hover:bg-[#1a22c4] hover:shadow-lg hover:shadow-[#212be9]/20"
+              type="button"
+              disabled={systemUnavailable}
+              onClick={() => {
+                if (systemUnavailable) return;
+                setReportMenuOpen(!reportMenuOpen);
+              }}
+              className={`btn-press inline-flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
+                systemUnavailable
+                  ? "cursor-not-allowed bg-muted text-muted-foreground opacity-60"
+                  : "bg-[#212be9] text-white hover:bg-[#1a22c4] hover:shadow-lg hover:shadow-[#212be9]/20"
+              }`}
             >
               Generate report <ChevronDown className={`size-3.5 transition-transform duration-200 ${reportMenuOpen ? "rotate-180" : ""}`} />
             </button>
-            {reportMenuOpen && (
+            {reportMenuOpen && !systemUnavailable && (
               <div className="animate-slide-in-up absolute right-0 top-full z-50 mt-1 w-[180px] rounded-md border border-border bg-white py-1 shadow-md">
                 <button
+                  type="button"
                   onClick={() => generateReport("pdf")}
                   className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#171417] transition-colors duration-150 hover:bg-[#f5f5ff] hover:text-[#212be9]"
                 >
@@ -1266,6 +1420,7 @@ export default function CampaignDetailPage() {
                   Generate as PDF
                 </button>
                 <button
+                  type="button"
                   onClick={() => generateReport("xlsx")}
                   className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#171417] transition-colors duration-150 hover:bg-[#f5f5ff] hover:text-[#212be9]"
                 >
@@ -1279,7 +1434,7 @@ export default function CampaignDetailPage() {
       </div>
 
       {/* Report Toast Notification */}
-      {reportToast.visible && (
+      {reportToast.visible && !systemUnavailable && (
         <div className={`animate-slide-in-up fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 rounded-lg px-5 py-3 shadow-lg ${reportToast.type === "success" ? "border border-[#212be9]/20 bg-white text-[#171417]" : "border border-red-200 bg-red-50 text-red-700"}`}>
           <div className="flex items-center gap-2.5 text-sm font-medium">
             {reportToast.type === "success" ? (
@@ -1292,6 +1447,9 @@ export default function CampaignDetailPage() {
       )}
 
       {/* Main Area */}
+      {systemUnavailable ? (
+        <CampaignSystemError />
+      ) : (
       <div className="flex min-h-0 flex-1">
         {selectedPartner ? (
           <>
@@ -1351,10 +1509,7 @@ export default function CampaignDetailPage() {
                 </h1>
                 <div className="mt-5 grid grid-cols-7 gap-3">
                   {(partnerMetrics[selectedPartner] || partnerMetrics.default).map((m, i) => (
-                    <div key={m.label} className="hover-lift animate-kpi-entrance rounded-lg border border-border bg-white p-3 shadow-sm" style={{ animationDelay: `${i * 60}ms` }}>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">{m.label}<Info className="size-3 text-muted-foreground/60" /></div>
-                      <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{m.value}</p>
-                    </div>
+                    <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
                   ))}
                 </div>
               </div>
@@ -1371,7 +1526,7 @@ export default function CampaignDetailPage() {
                         {partnerChatMessages.length === 0 && (
                           <div>
                             <h2 className="mb-3 text-base font-semibold text-[#171417]">Campaign Summary</h2>
-                            <div className="rounded-lg border border-border bg-[#fafafa] p-5">
+                            <div>
                               {partnerPhase === "thinking" && (
                                 <div className="flex items-center gap-3">
                                   <div className="flex gap-1">
@@ -1555,10 +1710,7 @@ export default function CampaignDetailPage() {
               {kpiExpanded && (
                 <div className="mt-5 grid grid-cols-7 gap-3">
                   {metrics.map((m, i) => (
-                    <div key={m.label} className="hover-lift animate-kpi-entrance rounded-lg border border-border bg-white p-3 shadow-sm" style={{ animationDelay: `${i * 60}ms` }}>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">{m.label}<Info className="size-3 text-muted-foreground/60" /></div>
-                      <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{m.value}</p>
-                    </div>
+                    <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
                   ))}
                 </div>
               )}
@@ -1604,7 +1756,7 @@ export default function CampaignDetailPage() {
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                           <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "AGE", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
                           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "INDEX", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={50} />
-                          <Tooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+                          <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
                           <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
                           <Bar dataKey="impressionIndex" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
                             {userCohortData[cohortTimeRange].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
@@ -1666,10 +1818,7 @@ export default function CampaignDetailPage() {
               {kpiExpanded && (
                 <div className="mt-5 grid grid-cols-7 gap-3">
                   {metrics.map((m, i) => (
-                    <div key={m.label} className="hover-lift animate-kpi-entrance rounded-lg border border-border bg-white p-3 shadow-sm" style={{ animationDelay: `${i * 60}ms` }}>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">{m.label}<Info className="size-3 text-muted-foreground/60" /></div>
-                      <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{m.value}</p>
-                    </div>
+                    <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
                   ))}
                 </div>
               )}
@@ -1717,7 +1866,7 @@ export default function CampaignDetailPage() {
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                           <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "AGE", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
                           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "IMPRESSION", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={60} />
-                          <Tooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+                          <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
                           <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
                           <Bar dataKey="impressionIndex" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
                             {demoAgeData[demoAgeTimeRange].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
@@ -1784,7 +1933,7 @@ export default function CampaignDetailPage() {
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                           <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "GENDER", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
                           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "IMPRESSION", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={60} />
-                          <Tooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+                          <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
                           <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
                           <Bar dataKey="keyOne" name="KEY ONE" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={56} isAnimationActive animationDuration={800} animationEasing="ease-out">
                             {demoGenderData.map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
@@ -1846,10 +1995,7 @@ export default function CampaignDetailPage() {
               {kpiExpanded && (
                 <div className="mt-5 grid grid-cols-7 gap-3">
                   {metrics.map((m, i) => (
-                    <div key={m.label} className="hover-lift animate-kpi-entrance rounded-lg border border-border bg-white p-3 shadow-sm" style={{ animationDelay: `${i * 60}ms` }}>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">{m.label}<Info className="size-3 text-muted-foreground/60" /></div>
-                      <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{m.value}</p>
-                    </div>
+                    <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
                   ))}
                 </div>
               )}
@@ -1977,10 +2123,7 @@ export default function CampaignDetailPage() {
               {kpiExpanded && (
                 <div className="mt-5 grid grid-cols-7 gap-3">
                   {metrics.map((m, i) => (
-                    <div key={m.label} className="hover-lift animate-kpi-entrance rounded-lg border border-border bg-white p-3 shadow-sm" style={{ animationDelay: `${i * 60}ms` }}>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">{m.label}<Info className="size-3 text-muted-foreground/60" /></div>
-                      <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{m.value}</p>
-                    </div>
+                    <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
                   ))}
                 </div>
               )}
@@ -2028,7 +2171,7 @@ export default function CampaignDetailPage() {
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                           <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "DAY OF WEEK", position: "insideBottom", offset: -4, fontSize: 11, fill: "#757575", fontWeight: 700 }} height={50} />
                           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "INDEX", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#757575", fontWeight: 700 }} width={50} />
-                          <Tooltip content={<DateTimeChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+                          <RechartsTooltip content={<DateTimeChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
                           <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
                           <Bar dataKey="keyOne" name="KEY ONE" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
                             {dayOfWeekData[dtDimension].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
@@ -2086,10 +2229,7 @@ export default function CampaignDetailPage() {
             {kpiExpanded && (
               <div className="mt-5 grid grid-cols-7 gap-3">
                 {metrics.map((m, i) => (
-                  <div key={m.label} className="hover-lift animate-kpi-entrance rounded-lg border border-border bg-white p-3 shadow-sm" style={{ animationDelay: `${i * 60}ms` }}>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">{m.label}<Info className="size-3 text-muted-foreground/60" /></div>
-                    <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{m.value}</p>
-                  </div>
+                  <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
                 ))}
               </div>
             )}
@@ -2109,7 +2249,7 @@ export default function CampaignDetailPage() {
                     {chatMessages.length === 0 && (
                       <div>
                         <h2 className="mb-3 text-base font-semibold text-[#171417]">Campaign Summary</h2>
-                        <div className="rounded-lg border border-border bg-[#fafafa] p-5">
+                        <div>
                           {initialPhase === "thinking" && (
                             <div className="flex items-center gap-3">
                               <div className="flex gap-1">
@@ -2278,6 +2418,22 @@ export default function CampaignDetailPage() {
           </>
         )}
       </div>
+      )}
     </div>
+    </TooltipProvider>
+  );
+}
+
+export default function CampaignDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen flex-col items-center justify-center bg-background font-sans text-sm text-muted-foreground">
+          Loading campaign…
+        </div>
+      }
+    >
+      <CampaignDetailPageContent />
+    </Suspense>
   );
 }

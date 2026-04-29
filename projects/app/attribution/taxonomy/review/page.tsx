@@ -22,11 +22,11 @@ const STEP_ROUTES = [
 ];
 
 const CAMPAIGN_DETAILS = [
-  { label: "Campaign Name", value: "McDonalds Q1-Q2 2025" },
-  { label: "Advertiser", value: "McDonalds" },
+  { label: "Campaign Name", value: "QSR Q2 2026 Campaign" },
+  { label: "Advertiser", value: "QSR Brand" },
   { label: "Agency", value: "Starcom Worldwide" },
   { label: "Flight Date", value: "01/15/2025 - 06/30/2025" },
-  { label: "Store chains to be measured", value: "McDonalds US" },
+  { label: "Store chains to be measured", value: "QSR US" },
   { label: "Country", value: "United States" },
   { label: "Geographical Location", value: "National: All US Markets" },
   { label: "Media Types", values: [{ text: "Display", count: 13 }, { text: "Online Video", count: 8 }, { text: "Audio", count: 2 }] },
@@ -99,10 +99,10 @@ export default function ReviewPage() {
         <div className="flex items-center justify-between px-12 py-2.5">
           <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight text-[#020617]">McDonalds Q1-Q2 2025</h1>
+              <h1 className="text-2xl font-semibold tracking-tight text-[#020617]">QSR Q2 2026 Campaign</h1>
               <span className="rounded-full bg-[#ebf1ff] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[#212be9]">{progressPercent}%</span>
               {submitted && (
-                <button onClick={() => router.push("/attribution?submitted=mcdonalds-q1-q2-2025")} className="rounded-md bg-[#212be9] px-3 py-1 text-sm font-medium text-white hover:bg-[#1a22c4] transition-colors">Back to Main</button>
+                <button onClick={() => router.push("/attribution?submitted=qsr-q2-2026")} className="rounded-md bg-[#212be9] px-3 py-1 text-sm font-medium text-white hover:bg-[#1a22c4] transition-colors">Back to Main</button>
               )}
             </div>
             {!submitted && (
@@ -403,7 +403,7 @@ export default function ReviewPage() {
           ) : (
             <div className="flex items-center py-4">
               <button
-                onClick={() => router.push("/attribution?submitted=mcdonalds-q1-q2-2025")}
+                onClick={() => router.push("/attribution?submitted=qsr-q2-2026")}
                 className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
               >
                 Back to Main

@@ -4139,6 +4139,24 @@ function NewCampaignContent() {
   const [reparseError, setReparseError] = useState<string | null>(null);
   const pendingDelimitersRef = useRef<string[]>([]);
 
+  // #region agent log
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const btns = document.querySelectorAll('button');
+      btns.forEach((btn) => {
+        const nested = btn.querySelectorAll('button');
+        if (nested.length > 0) {
+          nested.forEach((child) => {
+            fetch('http://127.0.0.1:7408/ingest/47ce4a58-b679-4a9a-ad59-c56cdd1b1eb9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'681479'},body:JSON.stringify({sessionId:'681479',location:'attribution/new/page.tsx:NewCampaignContent',message:'nested button found',data:{parentHTML:btn.outerHTML.slice(0,400),childHTML:child.outerHTML.slice(0,400),parentClass:btn.className.slice(0,200),childClass:child.className.slice(0,200)},timestamp:Date.now()})}).catch(()=>{});
+          });
+        }
+      });
+      fetch('http://127.0.0.1:7408/ingest/47ce4a58-b679-4a9a-ad59-c56cdd1b1eb9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'681479'},body:JSON.stringify({sessionId:'681479',location:'attribution/new/page.tsx:NewCampaignContent',message:'nested button scan complete',data:{totalButtons:document.querySelectorAll('button').length},timestamp:Date.now()})}).catch(()=>{});
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [currentStep]);
+  // #endregion
+
   const placementStepValid = visitedSteps.has("funding") || visitedSteps.has("pixel") || visitedSteps.has("review");
 
   const progressPercent =

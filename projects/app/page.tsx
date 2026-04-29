@@ -453,6 +453,21 @@ export default function Home() {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [pageTab, setPageTab] = useState<"history" | "insights">("history");
 
+  // #region agent log
+  useEffect(() => {
+    const btns = document.querySelectorAll('button');
+    btns.forEach((btn) => {
+      const nested = btn.querySelectorAll('button');
+      if (nested.length > 0) {
+        nested.forEach((child) => {
+          fetch('http://127.0.0.1:7408/ingest/47ce4a58-b679-4a9a-ad59-c56cdd1b1eb9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'681479'},body:JSON.stringify({sessionId:'681479',location:'page.tsx:Home',message:'nested button found',data:{parentHTML:btn.outerHTML.slice(0,300),childHTML:child.outerHTML.slice(0,300),parentClassName:btn.className,childClassName:child.className},timestamp:Date.now()})}).catch(()=>{});
+        });
+      }
+    });
+    fetch('http://127.0.0.1:7408/ingest/47ce4a58-b679-4a9a-ad59-c56cdd1b1eb9',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'681479'},body:JSON.stringify({sessionId:'681479',location:'page.tsx:Home',message:'nested button scan complete',data:{totalButtons:document.querySelectorAll('button').length},timestamp:Date.now()})}).catch(()=>{});
+  }, []);
+  // #endregion
+
   return (
     <div className="min-h-screen bg-white font-sans">
       {/* Global Nav */}
