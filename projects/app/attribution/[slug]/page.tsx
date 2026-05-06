@@ -139,6 +139,7 @@ const suggestedPrompts = [
   "Show me key optimization opportunities.",
   "Show me campaign performance by cohort.",
   "Show me partner performance comparison.",
+  "Show me all partners performance metrics table.",
   "Key Insight & Recommendations.",
 ];
 
@@ -504,7 +505,7 @@ const promptResponses: Record<string, { title: string; content: string }> = {
 3. Use High Frequenter campaigns as the benchmark for partner evaluation`,
   },
   "Show me partner performance comparison.": {
-    title: "Partner Performance Comparison",
+    title: "Partner Performance Analysis",
     content: `**Partner Ranking by Lift Effectiveness**
 
 **Tier 1 \u2013 Scale (High lift, high confidence)**
@@ -558,6 +559,32 @@ Your QSR Brand Q2 2026 Campaign reached 22.6M users with 98.2M impressions, gene
    - Incremental lift improvement: 2.41% \u2192 3.6% (+49%)
    - Additional lift visits per flight: +1,840
    - Annual budget savings at current volume: ~$980K`,
+  },
+  "Show me all partners performance metrics table.": {
+    title: "All Partners Performance Metrics",
+    content: `**Campaign Performance Metrics by Partner**
+
+| Rank | Partner | Spend | Store Visits | CPSV | Lift Rate |
+|------|---------|-------|--------------|------|-----------|
+| 1 | The Trade Desk | $105,000 | 98,450 | $1.07 | **5.1%** |
+| 2 | Viant | $84,000 | 89,240 | $0.94 | **4.8%** |
+| 3 | DV360 | $98,000 | 92,180 | $1.06 | **4.6%** |
+| 4 | Adtheorent | $70,000 | 72,836 | $0.96 | **3.2%** |
+| 5 | Amazon DSP | $63,000 | 68,920 | **$0.91** | **2.9%** |
+| **—** | **TOTAL** | **$420,000** | **421,626** | **$0.996** | **4.12%** |
+
+**Performance Insights:**
+
+🏆 **Top Performer:** The Trade Desk leads with 5.1% lift rate  
+💰 **Best Efficiency:** Amazon DSP delivers lowest CPSV at $0.91  
+📈 **Balanced Excellence:** Viant combines strong lift (4.8%) with competitive efficiency  
+⚠️ **Optimization Target:** Adtheorent shows potential for lift rate improvement  
+
+**Key Recommendations:**
+✅ **Scale Up:** Increase The Trade Desk allocation (+10-15%)  
+✅ **Maintain:** Hold Viant and DV360 at current performance levels  
+💡 **Optimize:** Test Amazon DSP creative refresh to boost incrementality  
+🎯 **Monitor:** Review Adtheorent frequency caps and targeting precision`,
   },
 };
 
