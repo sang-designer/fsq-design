@@ -2547,6 +2547,7 @@ const INITIAL_TAX_CATEGORIES: TaxCategory[] = [
   { id: "tc5", name: "Creative Format", count: 0, tokens: [] },
   { id: "tc6", name: "Optimization Goal", count: 0, tokens: [] },
   { id: "tc7", name: "Measurement Type", count: 0, tokens: [] },
+  { id: "tc9", name: "Custom", count: 0, tokens: [] },
   { id: "tc8", name: "Ignored", count: 0, tokens: [] },
 ];
 
@@ -2649,7 +2650,7 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
         <div className="w-[420px] shrink-0">
           <h3 className="mb-2 text-base font-semibold text-[#020617]">Assigned Taxonomy Values</h3>
           <div className="rounded-lg border border-[#e2e8f0]">
-            <div className="max-h-[400px] space-y-1.5 overflow-y-auto p-2">
+            <div className="space-y-1.5 p-2">
               {categories.map((cat) => {
                 const isOver = dragOverId === cat.id;
                 const isExp = expanded.has(cat.id);
