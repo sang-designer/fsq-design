@@ -2875,23 +2875,23 @@ function MapCreativesContent({ onBack, onContinue, hasReuploaded }: { onBack: ()
 /* ───── ApplyPlacementsContent ───── */
 
 const INITIAL_PLACEMENT_ROWS_AP = [
-  { id: "HKE239J", status: "error" as const, subPlacement: "Pandora_2025_Display_Q1", partner: "Viant", channel: "", publisher: "Google_DV360", audience: "Audience_Seg_01", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "New_York", mediaCpm: "$5.00" },
-  { id: "HKE239K", status: "resolved" as const, subPlacement: "Pandora_2025_Mobile_Q1", partner: "Viant", channel: "Display", publisher: "Google_DV360", audience: "Audience_Seg_02", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "Los_Angeles", mediaCpm: "$3.75" },
-  { id: "HKE240J", status: "error" as const, subPlacement: "Soundwave_2025_Audio_Q2", partner: "Adtheorent", channel: "Audio", publisher: "Amazon_DSP", audience: "Audience_Seg_05", adSize: "320x50", creative: "Rich_Media", language: "English", geography: "Chicago", mediaCpm: "" },
-  { id: "HKE241J", status: "resolved" as const, subPlacement: "Streamline_2025_Video_Q1", partner: "Nexxen", channel: "Video", publisher: "TradeDesk", audience: "Audience_Seg_08", adSize: "728x90", creative: "Video_Pre_Roll", language: "English", geography: "Houston", mediaCpm: "$12.00" },
-  { id: "HKE242J", status: "error" as const, subPlacement: "FitTrack_2025_Mobile_Q2", partner: "Adtheorent", channel: "Mobile", publisher: "Meta_Ads", audience: "Audience_Seg_12", adSize: "300x600", creative: "Interactive", language: "Spanish", geography: "San_Antonio", mediaCpm: "" },
-  { id: "HKE243J", status: "error" as const, subPlacement: "", partner: "Viant", channel: "Display", publisher: "", audience: "Audience_Seg_03", adSize: "300x250", creative: "Standard_Banner", language: "English", geography: "", mediaCpm: "" },
-  { id: "HKE244J", status: "resolved" as const, subPlacement: "TechSavvy_2025_Display_Q1", partner: "Nexxen", channel: "Display", publisher: "Google_DV360", audience: "Audience_Seg_15", adSize: "300x600", creative: "Native_Content", language: "English", geography: "San_Francisco", mediaCpm: "$6.50" },
-  { id: "HKE245J", status: "resolved" as const, subPlacement: "TravelQuest_2025_CTV_Q2", partner: "Viant", channel: "CTV", publisher: "TradeDesk", audience: "Audience_Seg_20", adSize: "970x250", creative: "Rich_Media", language: "English", geography: "Seattle", mediaCpm: "$15.75" },
-  { id: "HKE246J", status: "error" as const, subPlacement: "CulinaryDelight_2025_Social", partner: "Adtheorent", channel: "Social", publisher: "Meta_Ads", audience: "Audience_Seg_22", adSize: "300x250", creative: "Standard_Banner", language: "English", geography: "Denver", mediaCpm: "" },
-  { id: "HKE247J", status: "parsed" as const, subPlacement: "HealthTech_2025_Native_Q3", partner: "Viant", channel: "Native", publisher: "TradeDesk", audience: "Audience_Seg_01", adSize: "728x90", creative: "Native_Content", language: "English", geography: "Phoenix", mediaCpm: "$8.50" },
-  { id: "HKE248J", status: "error" as const, subPlacement: "SportsFan_2025_CTV_Q2", partner: "Nexxen", channel: "CTV", publisher: "Amazon_DSP", audience: "Audience_Seg_12", adSize: "970x250", creative: "Video_Pre_Roll", language: "English", geography: "Philadelphia", mediaCpm: "" },
-  { id: "HKE249J", status: "parsed" as const, subPlacement: "EcoLiving_2025_Display_Q1", partner: "Adtheorent", channel: "Display", publisher: "Meta_Ads", audience: "Audience_Seg_05", adSize: "300x600", creative: "Rich_Media", language: "Spanish", geography: "Dallas", mediaCpm: "$4.25" },
+  { id: "HKE239J", status: "low" as const, subPlacement: "Pandora_2025_Display_Q1", partner: "Viant", channel: "", publisher: "", audience: "Audience_Seg_01", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "", mediaCpm: "" },
+  { id: "HKE239K", status: "high" as const, subPlacement: "Pandora_2025_Mobile_Q1", partner: "Viant", channel: "Display", publisher: "Google_DV360", audience: "Audience_Seg_02", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "Los_Angeles", mediaCpm: "$3.75" },
+  { id: "HKE240J", status: "low" as const, subPlacement: "", partner: "Adtheorent", channel: "", publisher: "", audience: "Audience_Seg_05", adSize: "320x50", creative: "Rich_Media", language: "English", geography: "", mediaCpm: "" },
+  { id: "HKE241J", status: "high" as const, subPlacement: "Streamline_2025_Video_Q1", partner: "Nexxen", channel: "Video", publisher: "TradeDesk", audience: "Audience_Seg_08", adSize: "728x90", creative: "Video_Pre_Roll", language: "English", geography: "Houston", mediaCpm: "$12.00" },
+  { id: "HKE242J", status: "medium" as const, subPlacement: "FitTrack_2025_Mobile_Q2", partner: "Adtheorent", channel: "Mobile", publisher: "Meta_Ads", audience: "Audience_Seg_12", adSize: "300x600", creative: "Interactive", language: "Spanish", geography: "", mediaCpm: "" },
+  { id: "HKE243J", status: "low" as const, subPlacement: "", partner: "Viant", channel: "", publisher: "", audience: "Audience_Seg_03", adSize: "300x250", creative: "Standard_Banner", language: "English", geography: "", mediaCpm: "" },
+  { id: "HKE244J", status: "high" as const, subPlacement: "TechSavvy_2025_Display_Q1", partner: "Nexxen", channel: "Display", publisher: "Google_DV360", audience: "Audience_Seg_15", adSize: "300x600", creative: "Native_Content", language: "English", geography: "San_Francisco", mediaCpm: "$6.50" },
+  { id: "HKE245J", status: "high" as const, subPlacement: "TravelQuest_2025_CTV_Q2", partner: "Viant", channel: "CTV", publisher: "TradeDesk", audience: "Audience_Seg_20", adSize: "970x250", creative: "Rich_Media", language: "English", geography: "Seattle", mediaCpm: "$15.75" },
+  { id: "HKE246J", status: "medium" as const, subPlacement: "CulinaryDelight_2025_Social", partner: "Adtheorent", channel: "Social", publisher: "Meta_Ads", audience: "Audience_Seg_22", adSize: "300x250", creative: "Standard_Banner", language: "English", geography: "Denver", mediaCpm: "" },
+  { id: "HKE247J", status: "medium" as const, subPlacement: "HealthTech_2025_Native_Q3", partner: "Viant", channel: "Native", publisher: "TradeDesk", audience: "Audience_Seg_01", adSize: "728x90", creative: "Native_Content", language: "English", geography: "", mediaCpm: "$8.50" },
+  { id: "HKE248J", status: "low" as const, subPlacement: "SportsFan_2025_CTV_Q2", partner: "Nexxen", channel: "", publisher: "", audience: "Audience_Seg_12", adSize: "970x250", creative: "Video_Pre_Roll", language: "English", geography: "", mediaCpm: "" },
+  { id: "HKE249J", status: "medium" as const, subPlacement: "EcoLiving_2025_Display_Q1", partner: "Adtheorent", channel: "Display", publisher: "Meta_Ads", audience: "Audience_Seg_05", adSize: "300x600", creative: "Rich_Media", language: "Spanish", geography: "Dallas", mediaCpm: "" },
 ];
 
 type PlacementRow = {
   id: string;
-  status: "error" | "resolved" | "parsed";
+  status: "low" | "medium" | "high";
   subPlacement: string;
   partner: string;
   channel: string;
@@ -3002,13 +3002,14 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
   const isBulkMode = selectedRows.size > 0 && editingRow === null;
   const isEditMode = editingRow !== null && editForm !== null;
   const bulkFieldCount = Object.values(bulkForm).filter(Boolean).length;
-  const selectedAreAllNeedsReview = isBulkMode && [...selectedRows].every((i) => rows[i].status === "parsed");
+  const selectedAreAllNeedsReview = isBulkMode && [...selectedRows].every((i) => rows[i].status === "medium");
 
   const recomputeStatus = (row: PlacementRow): PlacementRow["status"] => {
     const required: (keyof PlacementRow)[] = ["subPlacement", "channel", "publisher", "geography", "mediaCpm"];
-    const hasEmpty = required.some((f) => !row[f]);
-    if (hasEmpty) return "error";
-    return "resolved";
+    const filledCount = required.filter((f) => !!row[f]).length;
+    if (filledCount <= 2) return "low";
+    if (filledCount <= 4) return "medium";
+    return "high";
   };
 
   const updateCell = (origIdx: number, field: keyof PlacementRow, value: string) => {
@@ -3139,17 +3140,17 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
         <div className="flex items-center gap-5">
           <span className="flex items-center gap-1 text-sm">
             <Check className="size-4 text-[#16a34a]" />
-            <span className="font-medium text-[#16a34a]">{rows.filter((r) => r.status === "resolved").length + 103} Mapped</span>
+            <span className="font-medium text-[#16a34a]">{rows.filter((r) => r.status === "high").length + 103} Mapped</span>
           </span>
           <span className="flex items-center gap-1 text-sm">
             <CircleAlert className="size-4 text-[#f59e0b]" />
-            <span className="font-medium text-[#f59e0b]">{rows.filter((r) => r.status === "parsed").length} Needs Review</span>
+            <span className="font-medium text-[#f59e0b]">{rows.filter((r) => r.status === "medium").length} Medium</span>
           </span>
           <span className="flex items-center gap-1 text-sm">
             <CircleAlert className="size-4 text-[#dc2626]" />
-            <span className="font-medium text-[#dc2626]">{rows.filter((r) => r.status === "error").length} Errors</span>
+            <span className="font-medium text-[#dc2626]">{rows.filter((r) => r.status === "low").length} Low</span>
           </span>
-          <span className="text-sm text-[#6b7280]">{rows.length > 0 ? Math.round(((rows.length - rows.filter((r) => r.status === "error").length) / rows.length) * 100) : 0}% Parsing Accuracy</span>
+          <span className="text-sm text-[#6b7280]">{rows.length > 0 ? Math.round(((rows.filter((r) => r.status === "high").length) / rows.length) * 100) : 0}% Parsing Accuracy</span>
           <span className="text-sm font-semibold text-[#1f2430]">{rows.length + 106} Total Placements</span>
         </div>
       </div>
@@ -3158,11 +3159,13 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <p className="text-sm text-[#1f2430]">
+            <span className="text-[#6b7280]">Total </span>
+            <span className="font-medium">{rows.reduce((acc, r) => acc + ["subPlacement", "channel", "publisher", "geography", "mediaCpm"].filter((f) => !!(r as Record<string, string>)[f]).length, 0)}</span>
+            <span className="text-[#6b7280]"> fields parsed</span>
+            <span className="mx-2 text-[#d1d5db]">|</span>
             <span className="text-[#6b7280]">Showing </span>
             <span className="font-medium">{rows.length}</span>
-            <span className="text-[#6b7280]"> of </span>
-            <span className="font-medium">{rows.length}</span>
-            <span className="text-[#6b7280]"> results</span>
+            <span className="text-[#6b7280]"> rows</span>
             {selectedRows.size > 0 && (
               <span className="ml-2 text-[#2d46f6]">({selectedRows.size} selected)</span>
             )}
@@ -3234,12 +3237,12 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
                   />
                 </td>
                 <td className="px-3 py-3">
-                  {row.status === "error" ? (
-                    <Badge className="bg-red-50 text-[#dc2626] dark:bg-red-900/30">Missing Field</Badge>
-                  ) : row.status === "resolved" ? (
-                    <Badge className="bg-green-50 text-[#389e45] dark:bg-green-900/30">Resolved</Badge>
+                  {row.status === "low" ? (
+                    <Badge className="bg-red-50 text-[#dc2626] dark:bg-red-900/30">Low</Badge>
+                  ) : row.status === "high" ? (
+                    <Badge className="bg-green-50 text-[#389e45] dark:bg-green-900/30">High</Badge>
                   ) : (
-                    <Badge className="bg-orange-50 text-[#f59e0b] dark:bg-orange-900/30">Needs Review</Badge>
+                    <Badge className="bg-orange-50 text-[#f59e0b] dark:bg-orange-900/30">Medium</Badge>
                   )}
                 </td>
                 {editable.map(({ field, maxW, options }) => {
@@ -3328,12 +3331,12 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
             {isEditMode && editForm && (
               <div className="flex items-center gap-2.5">
                 <h3 className="text-base font-semibold text-[#1f2430]">Edit Placement</h3>
-                {editForm.status === "error" ? (
-                  <Badge className="bg-red-50 text-[#dc2626] dark:bg-red-900/30">Error</Badge>
-                ) : editForm.status === "resolved" ? (
-                  <Badge className="bg-green-50 text-[#389e45] dark:bg-green-900/30">Resolved</Badge>
+                {editForm.status === "low" ? (
+                  <Badge className="bg-red-50 text-[#dc2626] dark:bg-red-900/30">Low</Badge>
+                ) : editForm.status === "high" ? (
+                  <Badge className="bg-green-50 text-[#389e45] dark:bg-green-900/30">High</Badge>
                 ) : (
-                  <Badge className="bg-orange-50 text-[#f59e0b] dark:bg-orange-900/30">Needs Review</Badge>
+                  <Badge className="bg-orange-50 text-[#f59e0b] dark:bg-orange-900/30">Medium</Badge>
                 )}
               </div>
             )}
@@ -3462,7 +3465,7 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
                           prev.map((r, i) => {
                             if (!selectedRows.has(i)) return r;
                             const updated = { ...r, ...Object.fromEntries(Object.entries(bulkForm).filter(([, v]) => v)) };
-                            updated.status = "resolved";
+                            updated.status = "high";
                             return updated;
                           })
                         );

@@ -100,7 +100,7 @@ function KpiMetricCard({
     <div
       data-kpi-metric-card
       className={cn(
-        "hover-lift animate-kpi-entrance rounded-lg border border-border bg-white p-3 text-left shadow-sm outline-none",
+        "hover-lift animate-kpi-entrance w-[172px] rounded-lg border border-border bg-white p-3 text-left shadow-sm outline-none",
         "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
       )}
       style={animationDelayMs != null ? { animationDelay: `${animationDelayMs}ms` } : undefined}
@@ -212,6 +212,178 @@ Ad Frequency Sweet Spot:
    - Campaigns with lift: 3.8 avg frequency
    - Campaigns without lift: 11.2 avg frequency
    - Optimal range: 3-5 exposures`,
+};
+
+const partnerCohortData: Record<string, { category: string; impressionIndex: number; bvrLiftIndex: number }[]> = {
+  AdTheorent: [
+    { category: "Not a customer", impressionIndex: 125, bvrLiftIndex: 62 },
+    { category: "High", impressionIndex: 48, bvrLiftIndex: 138 },
+    { category: "Medium", impressionIndex: 95, bvrLiftIndex: 112 },
+    { category: "Low", impressionIndex: 72, bvrLiftIndex: 88 },
+    { category: "Other", impressionIndex: 28, bvrLiftIndex: 42 },
+  ],
+  default: [
+    { category: "Not a customer", impressionIndex: 108, bvrLiftIndex: 55 },
+    { category: "High", impressionIndex: 62, bvrLiftIndex: 98 },
+    { category: "Medium", impressionIndex: 85, bvrLiftIndex: 92 },
+    { category: "Low", impressionIndex: 92, bvrLiftIndex: 78 },
+    { category: "Other", impressionIndex: 35, bvrLiftIndex: 45 },
+  ],
+};
+
+const partnerCohortTableData: Record<string, { cohort: string; impressionIndex: number; bvrLiftIndex: number; cvr: number }[]> = {
+  AdTheorent: [
+    { cohort: "Not a customer", impressionIndex: 125, bvrLiftIndex: 3.82, cvr: 6.14 },
+    { cohort: "High", impressionIndex: 48, bvrLiftIndex: 12.44, cvr: 15.08 },
+    { cohort: "Medium", impressionIndex: 95, bvrLiftIndex: 8.18, cvr: 11.22 },
+    { cohort: "Low", impressionIndex: 72, bvrLiftIndex: 5.62, cvr: 8.75 },
+    { cohort: "Other", impressionIndex: 28, bvrLiftIndex: 2.95, cvr: 5.33 },
+  ],
+  default: [
+    { cohort: "Not a customer", impressionIndex: 108, bvrLiftIndex: 3.12, cvr: 5.88 },
+    { cohort: "High", impressionIndex: 62, bvrLiftIndex: 7.65, cvr: 10.42 },
+    { cohort: "Medium", impressionIndex: 85, bvrLiftIndex: 5.88, cvr: 8.94 },
+    { cohort: "Low", impressionIndex: 92, bvrLiftIndex: 4.45, cvr: 7.18 },
+    { cohort: "Other", impressionIndex: 35, bvrLiftIndex: 2.55, cvr: 4.82 },
+  ],
+};
+
+const partnerDemoAgeData: Record<string, { category: string; impressionIndex: number; bvrLiftIndex: number }[]> = {
+  AdTheorent: [
+    { category: "18 - 24", impressionIndex: 142, bvrLiftIndex: 88 },
+    { category: "25 - 34", impressionIndex: 118, bvrLiftIndex: 125 },
+    { category: "35 - 44", impressionIndex: 95, bvrLiftIndex: 142 },
+    { category: "45 - 54", impressionIndex: 68, bvrLiftIndex: 108 },
+    { category: "> 54", impressionIndex: 42, bvrLiftIndex: 65 },
+  ],
+  default: [
+    { category: "18 - 24", impressionIndex: 105, bvrLiftIndex: 72 },
+    { category: "25 - 34", impressionIndex: 88, bvrLiftIndex: 95 },
+    { category: "35 - 44", impressionIndex: 78, bvrLiftIndex: 110 },
+    { category: "45 - 54", impressionIndex: 62, bvrLiftIndex: 85 },
+    { category: "> 54", impressionIndex: 45, bvrLiftIndex: 58 },
+  ],
+};
+
+const partnerDemoAgeTableData: Record<string, { age: string; impressionIndex: number; bvrLiftIndex: number; cvr: number }[]> = {
+  AdTheorent: [
+    { age: "18 - 24", impressionIndex: 142, bvrLiftIndex: 8.82, cvr: 12.45 },
+    { age: "25 - 34", impressionIndex: 118, bvrLiftIndex: 7.55, cvr: 11.22 },
+    { age: "35 - 44", impressionIndex: 95, bvrLiftIndex: 6.18, cvr: 9.88 },
+    { age: "45 - 54", impressionIndex: 68, bvrLiftIndex: 4.92, cvr: 7.65 },
+    { age: "> 54", impressionIndex: 42, bvrLiftIndex: 3.15, cvr: 5.42 },
+  ],
+  default: [
+    { age: "18 - 24", impressionIndex: 105, bvrLiftIndex: 5.92, cvr: 8.88 },
+    { age: "25 - 34", impressionIndex: 88, bvrLiftIndex: 5.12, cvr: 7.95 },
+    { age: "35 - 44", impressionIndex: 78, bvrLiftIndex: 4.55, cvr: 7.22 },
+    { age: "45 - 54", impressionIndex: 62, bvrLiftIndex: 3.82, cvr: 6.15 },
+    { age: "> 54", impressionIndex: 45, bvrLiftIndex: 2.88, cvr: 4.92 },
+  ],
+};
+
+const partnerDemoGenderData: Record<string, { category: string; keyOne: number; keyTwo: number }[]> = {
+  AdTheorent: [
+    { category: "Male", keyOne: 118, keyTwo: 95 },
+    { category: "Female", keyOne: 82, keyTwo: 112 },
+  ],
+  default: [
+    { category: "Male", keyOne: 102, keyTwo: 88 },
+    { category: "Female", keyOne: 78, keyTwo: 95 },
+  ],
+};
+
+const partnerDemoGenderTableData: Record<string, { gender: string; impressionIndex: number; bvrLiftIndex: number; cvr: number }[]> = {
+  AdTheorent: [
+    { gender: "Male", impressionIndex: 118, bvrLiftIndex: 7.22, cvr: 10.55 },
+    { gender: "Female", impressionIndex: 82, bvrLiftIndex: 5.85, cvr: 8.92 },
+  ],
+  default: [
+    { gender: "Male", impressionIndex: 102, bvrLiftIndex: 5.88, cvr: 8.42 },
+    { gender: "Female", impressionIndex: 78, bvrLiftIndex: 4.92, cvr: 7.18 },
+  ],
+};
+
+const partnerGeoData: Record<string, { state: string; abbr: string; index: number }[]> = {
+  AdTheorent: [
+    { state: "Alabama", abbr: "AL", index: 132 }, { state: "Alaska", abbr: "AK", index: 68 }, { state: "Arizona", abbr: "AZ", index: 145 },
+    { state: "Arkansas", abbr: "AR", index: 88 }, { state: "California", abbr: "CA", index: 192 }, { state: "Colorado", abbr: "CO", index: 155 },
+    { state: "Connecticut", abbr: "CT", index: 162 }, { state: "Delaware", abbr: "DE", index: 105 }, { state: "Florida", abbr: "FL", index: 178 },
+    { state: "Georgia", abbr: "GA", index: 165 }, { state: "Hawaii", abbr: "HI", index: 58 }, { state: "Idaho", abbr: "ID", index: 72 },
+    { state: "Illinois", abbr: "IL", index: 188 }, { state: "Indiana", abbr: "IN", index: 118 }, { state: "Iowa", abbr: "IA", index: 92 },
+    { state: "Kansas", abbr: "KS", index: 108 }, { state: "Kentucky", abbr: "KY", index: 98 }, { state: "Louisiana", abbr: "LA", index: 112 },
+    { state: "Maine", abbr: "ME", index: 78 }, { state: "Maryland", abbr: "MD", index: 148 }, { state: "Massachusetts", abbr: "MA", index: 172 },
+    { state: "Michigan", abbr: "MI", index: 138 }, { state: "Minnesota", abbr: "MN", index: 125 }, { state: "Mississippi", abbr: "MS", index: 95 },
+    { state: "Missouri", abbr: "MO", index: 115 }, { state: "Montana", abbr: "MT", index: 65 }, { state: "Nebraska", abbr: "NE", index: 82 },
+    { state: "Nevada", abbr: "NV", index: 135 }, { state: "New Hampshire", abbr: "NH", index: 88 }, { state: "New Jersey", abbr: "NJ", index: 175 },
+    { state: "New Mexico", abbr: "NM", index: 72 }, { state: "New York", abbr: "NY", index: 205 }, { state: "North Carolina", abbr: "NC", index: 158 },
+    { state: "North Dakota", abbr: "ND", index: 62 }, { state: "Ohio", abbr: "OH", index: 142 }, { state: "Oklahoma", abbr: "OK", index: 102 },
+    { state: "Oregon", abbr: "OR", index: 118 }, { state: "Pennsylvania", abbr: "PA", index: 168 }, { state: "Rhode Island", abbr: "RI", index: 112 },
+    { state: "South Carolina", abbr: "SC", index: 128 }, { state: "South Dakota", abbr: "SD", index: 58 }, { state: "Tennessee", abbr: "TN", index: 145 },
+    { state: "Texas", abbr: "TX", index: 182 }, { state: "Utah", abbr: "UT", index: 85 }, { state: "Vermont", abbr: "VT", index: 75 },
+    { state: "Virginia", abbr: "VA", index: 155 }, { state: "Washington", abbr: "WA", index: 142 }, { state: "West Virginia", abbr: "WV", index: 92 },
+    { state: "Wisconsin", abbr: "WI", index: 128 }, { state: "Wyoming", abbr: "WY", index: 55 },
+  ],
+  default: [
+    { state: "Alabama", abbr: "AL", index: 118 }, { state: "Alaska", abbr: "AK", index: 75 }, { state: "Arizona", abbr: "AZ", index: 128 },
+    { state: "Arkansas", abbr: "AR", index: 95 }, { state: "California", abbr: "CA", index: 172 }, { state: "Colorado", abbr: "CO", index: 138 },
+    { state: "Connecticut", abbr: "CT", index: 145 }, { state: "Delaware", abbr: "DE", index: 112 }, { state: "Florida", abbr: "FL", index: 162 },
+    { state: "Georgia", abbr: "GA", index: 148 }, { state: "Hawaii", abbr: "HI", index: 65 }, { state: "Idaho", abbr: "ID", index: 82 },
+    { state: "Illinois", abbr: "IL", index: 165 }, { state: "Indiana", abbr: "IN", index: 125 }, { state: "Iowa", abbr: "IA", index: 98 },
+    { state: "Kansas", abbr: "KS", index: 115 }, { state: "Kentucky", abbr: "KY", index: 105 }, { state: "Louisiana", abbr: "LA", index: 108 },
+    { state: "Maine", abbr: "ME", index: 85 }, { state: "Maryland", abbr: "MD", index: 138 }, { state: "Massachusetts", abbr: "MA", index: 155 },
+    { state: "Michigan", abbr: "MI", index: 132 }, { state: "Minnesota", abbr: "MN", index: 118 }, { state: "Mississippi", abbr: "MS", index: 102 },
+    { state: "Missouri", abbr: "MO", index: 112 }, { state: "Montana", abbr: "MT", index: 72 }, { state: "Nebraska", abbr: "NE", index: 88 },
+    { state: "Nevada", abbr: "NV", index: 122 }, { state: "New Hampshire", abbr: "NH", index: 92 }, { state: "New Jersey", abbr: "NJ", index: 158 },
+    { state: "New Mexico", abbr: "NM", index: 78 }, { state: "New York", abbr: "NY", index: 185 }, { state: "North Carolina", abbr: "NC", index: 142 },
+    { state: "North Dakota", abbr: "ND", index: 68 }, { state: "Ohio", abbr: "OH", index: 135 }, { state: "Oklahoma", abbr: "OK", index: 108 },
+    { state: "Oregon", abbr: "OR", index: 112 }, { state: "Pennsylvania", abbr: "PA", index: 152 }, { state: "Rhode Island", abbr: "RI", index: 105 },
+    { state: "South Carolina", abbr: "SC", index: 122 }, { state: "South Dakota", abbr: "SD", index: 65 }, { state: "Tennessee", abbr: "TN", index: 132 },
+    { state: "Texas", abbr: "TX", index: 168 }, { state: "Utah", abbr: "UT", index: 88 }, { state: "Vermont", abbr: "VT", index: 82 },
+    { state: "Virginia", abbr: "VA", index: 145 }, { state: "Washington", abbr: "WA", index: 128 }, { state: "West Virginia", abbr: "WV", index: 98 },
+    { state: "Wisconsin", abbr: "WI", index: 122 }, { state: "Wyoming", abbr: "WY", index: 62 },
+  ],
+};
+
+const partnerDayOfWeekData: Record<string, Record<"Day of week" | "Hour of day", { category: string; keyOne: number; keyTwo: number }[]>> = {
+  AdTheorent: {
+    "Day of week": [
+      { category: "Monday", keyOne: 78, keyTwo: 92 },
+      { category: "Tuesday", keyOne: 105, keyTwo: 118 },
+      { category: "Wednesday", keyOne: 132, keyTwo: 125 },
+      { category: "Thursday", keyOne: 145, keyTwo: 138 },
+      { category: "Friday", keyOne: 118, keyTwo: 108 },
+      { category: "Saturday", keyOne: 88, keyTwo: 72 },
+      { category: "Sunday", keyOne: 62, keyTwo: 55 },
+    ],
+    "Hour of day": [
+      { category: "6am–9am", keyOne: 55, keyTwo: 68 },
+      { category: "9am–12pm", keyOne: 92, keyTwo: 112 },
+      { category: "12pm–3pm", keyOne: 138, keyTwo: 125 },
+      { category: "3pm–6pm", keyOne: 148, keyTwo: 142 },
+      { category: "6pm–9pm", keyOne: 115, keyTwo: 98 },
+      { category: "9pm–12am", keyOne: 72, keyTwo: 58 },
+    ],
+  },
+  default: {
+    "Day of week": [
+      { category: "Monday", keyOne: 68, keyTwo: 82 },
+      { category: "Tuesday", keyOne: 88, keyTwo: 102 },
+      { category: "Wednesday", keyOne: 112, keyTwo: 108 },
+      { category: "Thursday", keyOne: 125, keyTwo: 118 },
+      { category: "Friday", keyOne: 98, keyTwo: 92 },
+      { category: "Saturday", keyOne: 75, keyTwo: 65 },
+      { category: "Sunday", keyOne: 55, keyTwo: 48 },
+    ],
+    "Hour of day": [
+      { category: "6am–9am", keyOne: 48, keyTwo: 62 },
+      { category: "9am–12pm", keyOne: 82, keyTwo: 98 },
+      { category: "12pm–3pm", keyOne: 118, keyTwo: 108 },
+      { category: "3pm–6pm", keyOne: 128, keyTwo: 122 },
+      { category: "6pm–9pm", keyOne: 95, keyTwo: 85 },
+      { category: "9pm–12am", keyOne: 62, keyTwo: 52 },
+    ],
+  },
 };
 
 const partnerPrompts = [
@@ -968,6 +1140,15 @@ function CampaignDetailPageContent() {
   const [partnerOpen, setPartnerOpen] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
   const [partnerTab, setPartnerTab] = useState("Overview");
+  const [partnerCohortView, setPartnerCohortView] = useState<"chart" | "table">("chart");
+  const [partnerDemoAgeView, setPartnerDemoAgeView] = useState<"chart" | "table">("chart");
+  const [partnerDemoGenderView, setPartnerDemoGenderView] = useState<"chart" | "table">("chart");
+  const [partnerGeoView, setPartnerGeoView] = useState<"chart" | "table">("chart");
+  const [partnerDtView, setPartnerDtView] = useState<"chart" | "table">("chart");
+  const [partnerDtDimension, setPartnerDtDimension] = useState<"Day of week" | "Hour of day">("Day of week");
+  const [partnerHoveredState, setPartnerHoveredState] = useState<string | null>(null);
+  const [partnerKpiExpanded, setPartnerKpiExpanded] = useState(true);
+  const [partnerPromptTab, setPartnerPromptTab] = useState<"default" | "saved">("default");
   const [partnerPhase, setPartnerPhase] = useState<"thinking" | "typing" | "done">("thinking");
   const [partnerChatMessages, setPartnerChatMessages] = useState<ChatMessage[]>([]);
   const [partnerIsResponding, setPartnerIsResponding] = useState(false);
@@ -1531,19 +1712,26 @@ function CampaignDetailPageContent() {
 
               {/* Partner Title + KPIs */}
               <div className="shrink-0 px-8 py-6">
-                <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  {selectedPartner}: QSR Q2 2026 Overview
-                </h1>
-                <div className="mt-5 grid grid-cols-7 gap-3">
-                  {(partnerMetrics[selectedPartner] || partnerMetrics.default).map((m, i) => (
-                    <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
-                  ))}
+                <div className="flex items-center justify-between">
+                  <h1 className="text-xl font-semibold leading-7 text-[#171417]">
+                    {selectedPartner}: QSR Q2 2026 Overview
+                  </h1>
+                  <button onClick={() => setPartnerKpiExpanded(!partnerKpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
+                    <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${partnerKpiExpanded ? "" : "-rotate-90"}`} />
+                  </button>
                 </div>
+                {partnerKpiExpanded && (
+                  <div className="mt-5 flex gap-3">
+                    {(partnerMetrics[selectedPartner] || partnerMetrics.default).map((m, i) => (
+                      <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="shrink-0 border-t border-border" />
 
-              {/* Partner Chat + Prompts */}
+              {partnerTab === "Overview" ? (
               <div className="flex min-h-0 flex-1">
                 {/* Partner chat area */}
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -1648,13 +1836,42 @@ function CampaignDetailPageContent() {
 
                 {/* Partner suggested prompts */}
                 <div className="flex w-[300px] shrink-0 flex-col border-l border-border bg-white animate-slide-in-right">
+                  <div className="flex items-center justify-between border-b border-border px-4 pt-3">
+                    <div className="flex items-center gap-0">
+                      <button
+                        onClick={() => setPartnerPromptTab("default")}
+                        className={`px-3 pb-2.5 text-sm transition-all duration-200 ${partnerPromptTab === "default" ? "border-b-2 border-[#171417] font-medium text-[#171417]" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        Default
+                      </button>
+                      <button
+                        onClick={() => setPartnerPromptTab("saved")}
+                        className={`flex items-center gap-1.5 px-3 pb-2.5 text-sm transition-all duration-200 ${partnerPromptTab === "saved" ? "border-b-2 border-[#171417] font-medium text-[#171417]" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        Saved
+                        {savedPrompts.size > 0 && (
+                          <span className={`inline-flex size-5 items-center justify-center rounded-full text-[10px] font-medium transition-colors duration-200 ${partnerPromptTab === "saved" ? "bg-[#555] text-white" : "bg-gray-200 text-gray-600"}`}>
+                            {savedPrompts.size}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
                   <div className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-[#171417]">
                     <Lightbulb className="size-4" />
                     Suggested Prompts
                   </div>
                   <div className="flex-1 overflow-y-auto px-4 pb-4">
                     <div className="flex flex-col gap-2">
-                      {partnerPrompts.map((prompt, i) => (
+                      {partnerPromptTab === "saved" && savedPrompts.size === 0 && (
+                        <p className="py-6 text-center text-xs text-muted-foreground">
+                          No saved prompts yet. Click the bookmark icon on any prompt to save it.
+                        </p>
+                      )}
+                      {(partnerPromptTab === "default"
+                        ? partnerPrompts
+                        : [...savedPrompts]
+                      ).map((prompt, i) => (
                         <div key={i} className="animate-prompt-cascade group flex items-start gap-2 rounded-lg border border-border bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#212be9]/30 hover:shadow-md" style={{ animationDelay: `${i * 40}ms` }}>
                           <button onClick={() => submitPartnerPrompt(prompt)} className="btn-press flex min-w-0 flex-1 items-start gap-2.5 text-left">
                             <svg className="mt-0.5 size-3.5 shrink-0 text-muted-foreground group-hover:text-[#212be9] transition-colors" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1672,6 +1889,384 @@ function CampaignDetailPageContent() {
                   </div>
                 </div>
               </div>
+              ) : partnerTab === "User Cohort" ? (
+              <div className="flex-1 overflow-y-auto px-8 py-6">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-lg font-semibold text-[#171417]">User Cohort</h2>
+                  <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
+                  <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
+                </div>
+                <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-[#171417]">Index by Visit</h3>
+                      <Info className="size-3.5 text-muted-foreground/60" />
+                    </div>
+                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
+                      <button onClick={() => setPartnerCohortView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerCohortView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
+                      <button onClick={() => setPartnerCohortView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerCohortView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
+                    </div>
+                  </div>
+                  {partnerCohortView === "chart" ? (
+                    <>
+                      <div className="mt-6 h-[380px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={partnerCohortData[selectedPartner || ""] || partnerCohortData.default} barGap={4} barCategoryGap="20%">
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                            <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "AGE", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "INDEX", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={50} />
+                            <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+                            <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
+                            <Bar dataKey="impressionIndex" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
+                              {(partnerCohortData[selectedPartner || ""] || partnerCohortData.default).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
+                            </Bar>
+                            <Bar dataKey="bvrLiftIndex" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
+                              {(partnerCohortData[selectedPartner || ""] || partnerCohortData.default).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="mt-4 flex items-center justify-center gap-6">
+                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
+                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="mt-4">
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-border">
+                            <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">Cohort</th>
+                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Impression Index <ArrowDownUp className="size-3" /></span></th>
+                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">BVR Lift Index</th>
+                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">CVR</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(partnerCohortTableData[selectedPartner || ""] || partnerCohortTableData.default).map((row) => (
+                            <tr key={row.cohort} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
+                              <td className="py-4 pr-4 font-medium text-[#171417]">{row.cohort}</td>
+                              <td className="px-4 py-4 tabular-nums text-[#171417]">{row.impressionIndex}</td>
+                              <td className="px-4 py-4">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-[#4250E0]" style={{ width: `${Math.min(100, row.bvrLiftIndex * 10)}%` }} /></div>
+                                  <span className="tabular-nums text-[#171417]">{row.bvrLiftIndex}%</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 tabular-nums text-[#171417]">{row.cvr}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+              ) : partnerTab === "Demographics" ? (
+              <div className="flex-1 overflow-y-auto px-8 py-6">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-lg font-semibold text-[#171417]">Demographics</h2>
+                  <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
+                  <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
+                </div>
+
+                {/* Age Chart */}
+                <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-[#171417]">Age</h3>
+                      <Info className="size-3.5 text-muted-foreground/60" />
+                    </div>
+                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
+                      <button onClick={() => setPartnerDemoAgeView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerDemoAgeView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
+                      <button onClick={() => setPartnerDemoAgeView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerDemoAgeView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
+                    </div>
+                  </div>
+                  {partnerDemoAgeView === "chart" ? (
+                    <>
+                      <div className="mt-6 h-[320px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={partnerDemoAgeData[selectedPartner || ""] || partnerDemoAgeData.default} barGap={4} barCategoryGap="20%">
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                            <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "AGE", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "IMPRESSION", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={60} />
+                            <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+                            <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
+                            <Bar dataKey="impressionIndex" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
+                              {(partnerDemoAgeData[selectedPartner || ""] || partnerDemoAgeData.default).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
+                            </Bar>
+                            <Bar dataKey="bvrLiftIndex" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
+                              {(partnerDemoAgeData[selectedPartner || ""] || partnerDemoAgeData.default).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="mt-4 flex items-center justify-center gap-6">
+                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
+                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="mt-4">
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-border">
+                            <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">Age</th>
+                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Impression Index <ArrowDownUp className="size-3" /></span></th>
+                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">BVR Lift Index</th>
+                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">CVR</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(partnerDemoAgeTableData[selectedPartner || ""] || partnerDemoAgeTableData.default).map((row) => (
+                            <tr key={row.age} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
+                              <td className="py-4 pr-4 font-medium text-[#171417]">{row.age}</td>
+                              <td className="px-4 py-4 tabular-nums text-[#171417]">{row.impressionIndex}</td>
+                              <td className="px-4 py-4">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-[#4250E0]" style={{ width: `${Math.min(100, row.bvrLiftIndex * 10)}%` }} /></div>
+                                  <span className="tabular-nums text-[#171417]">{row.bvrLiftIndex}%</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 tabular-nums text-[#171417]">{row.cvr}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Gender Chart */}
+                <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-[#171417]">Gender</h3>
+                      <Info className="size-3.5 text-muted-foreground/60" />
+                    </div>
+                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
+                      <button onClick={() => setPartnerDemoGenderView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerDemoGenderView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
+                      <button onClick={() => setPartnerDemoGenderView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerDemoGenderView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
+                    </div>
+                  </div>
+                  {partnerDemoGenderView === "chart" ? (
+                    <>
+                      <div className="mt-6 h-[320px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={partnerDemoGenderData[selectedPartner || ""] || partnerDemoGenderData.default} barGap={4} barCategoryGap="30%">
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                            <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "GENDER", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "IMPRESSION", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={60} />
+                            <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+                            <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
+                            <Bar dataKey="keyOne" name="KEY ONE" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={56} isAnimationActive animationDuration={800} animationEasing="ease-out">
+                              {(partnerDemoGenderData[selectedPartner || ""] || partnerDemoGenderData.default).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
+                            </Bar>
+                            <Bar dataKey="keyTwo" name="KEY TWO" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={56} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
+                              {(partnerDemoGenderData[selectedPartner || ""] || partnerDemoGenderData.default).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="mt-4 flex items-center justify-center gap-6">
+                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">KEY ONE</span></div>
+                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">KEY TWO</span></div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="mt-4">
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-border">
+                            <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">Gender</th>
+                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Impression Index <ArrowDownUp className="size-3" /></span></th>
+                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">BVR Lift Index</th>
+                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">CVR</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(partnerDemoGenderTableData[selectedPartner || ""] || partnerDemoGenderTableData.default).map((row) => (
+                            <tr key={row.gender} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
+                              <td className="py-4 pr-4 font-medium text-[#171417]">{row.gender}</td>
+                              <td className="px-4 py-4 tabular-nums text-[#171417]">{row.impressionIndex}</td>
+                              <td className="px-4 py-4">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-[#4250E0]" style={{ width: `${Math.min(100, row.bvrLiftIndex * 10)}%` }} /></div>
+                                  <span className="tabular-nums text-[#171417]">{row.bvrLiftIndex}%</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 tabular-nums text-[#171417]">{row.cvr}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+              ) : partnerTab === "Geography" ? (
+              <div className="flex-1 overflow-y-auto px-8 py-6">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-lg font-semibold text-[#171417]">Geography</h2>
+                  <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
+                  <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
+                </div>
+                <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-[#171417]">Geography Overview</h3>
+                      <Info className="size-3.5 text-muted-foreground/60" />
+                    </div>
+                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
+                      <button onClick={() => setPartnerGeoView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerGeoView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
+                      <button onClick={() => setPartnerGeoView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerGeoView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
+                    </div>
+                  </div>
+                  {partnerGeoView === "chart" ? (
+                    <div className="relative mt-6">
+                      <div className="absolute left-0 top-8 flex flex-col items-center gap-1">
+                        <div className="h-24 w-3 rounded-sm" style={{ background: "linear-gradient(to bottom, rgb(30,50,205), rgb(100,130,235), rgb(180,200,255), rgb(220,225,255))" }} />
+                        <span className="text-[10px] tabular-nums text-muted-foreground">200</span>
+                        <div className="h-4" />
+                        <span className="text-[10px] tabular-nums text-muted-foreground">100</span>
+                      </div>
+                      <div className="ml-10">
+                        <div className="grid grid-cols-11 gap-1">
+                          {(partnerGeoData[selectedPartner || ""] || partnerGeoData.default)
+                            .sort((a, b) => a.state.localeCompare(b.state))
+                            .map((s, i) => (
+                            <div
+                              key={s.abbr}
+                              onMouseEnter={() => setPartnerHoveredState(s.abbr)}
+                              onMouseLeave={() => setPartnerHoveredState(null)}
+                              className="group relative flex aspect-square items-center justify-center rounded-md text-[10px] font-semibold transition-all duration-300 hover:scale-110 hover:shadow-lg hover:z-10"
+                              style={{
+                                backgroundColor: getGeoColor(s.index),
+                                color: s.index > 150 ? "white" : "#171417",
+                                opacity: partnerHoveredState && partnerHoveredState !== s.abbr ? 0.5 : 1,
+                                animationDelay: `${i * 20}ms`,
+                              }}
+                            >
+                              {s.abbr}
+                              <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 rounded-lg border border-border bg-white px-3 py-2 shadow-lg group-hover:block">
+                                <p className="whitespace-nowrap text-xs font-semibold text-[#171417]">{s.state}</p>
+                                <p className="whitespace-nowrap text-[10px] text-muted-foreground">Index: <span className="font-semibold tabular-nums text-[#171417]">{s.index}</span></p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 max-h-[500px] overflow-y-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="sticky top-0 bg-white">
+                          <tr className="border-b border-border">
+                            <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">State</th>
+                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Index <ArrowDownUp className="size-3" /></span></th>
+                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">Performance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...(partnerGeoData[selectedPartner || ""] || partnerGeoData.default)].sort((a, b) => b.index - a.index).map((row) => (
+                            <tr key={row.abbr} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
+                              <td className="py-3 pr-4">
+                                <span className="font-medium text-[#171417]">{row.state}</span>
+                                <span className="ml-1.5 text-xs text-muted-foreground">({row.abbr})</span>
+                              </td>
+                              <td className="px-4 py-3 tabular-nums font-semibold text-[#171417]">{row.index}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-2 w-28 overflow-hidden rounded-full bg-gray-100">
+                                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (row.index / 220) * 100)}%`, backgroundColor: getGeoColor(row.index) }} />
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+              ) : partnerTab === "Date and Time" ? (
+              <div className="flex-1 overflow-y-auto px-8 py-6">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-lg font-semibold text-[#171417]">Date and Time</h2>
+                  <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
+                  <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
+                </div>
+                <div className="mt-6 rounded-2xl border border-border bg-white px-4 py-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <h3 className="text-base font-semibold text-[#171417]">Date and Time</h3>
+                      <Info className="size-4 text-muted-foreground/60" />
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <select
+                        value={partnerDtDimension}
+                        onChange={(e) => setPartnerDtDimension(e.target.value as "Day of week" | "Hour of day")}
+                        className="rounded-md border border-[#f0f0f0] bg-[#fcfcfc] px-3 py-2 text-xs text-[#171417] outline-none focus:border-[#212be9] min-w-[160px]"
+                      >
+                        <option value="Day of week">Day of week</option>
+                        <option value="Hour of day">Hour of day</option>
+                      </select>
+                      <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
+                        <button onClick={() => setPartnerDtView("chart")} className={`flex size-7 items-center justify-center rounded transition-all duration-200 ${partnerDtView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-4" /></button>
+                        <button onClick={() => setPartnerDtView("table")} className={`flex size-7 items-center justify-center rounded transition-all duration-200 ${partnerDtView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-4" /></button>
+                      </div>
+                    </div>
+                  </div>
+                  {partnerDtView === "chart" ? (
+                    <>
+                      <div className="mt-6 h-[380px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={(partnerDayOfWeekData[selectedPartner || ""] || partnerDayOfWeekData.default)[partnerDtDimension]} barGap={4} barCategoryGap="20%">
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                            <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: partnerDtDimension === "Day of week" ? "DAY OF WEEK" : "HOUR OF DAY", position: "insideBottom", offset: -4, fontSize: 11, fill: "#757575", fontWeight: 700 }} height={50} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "INDEX", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#757575", fontWeight: 700 }} width={50} />
+                            <RechartsTooltip content={<DateTimeChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+                            <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
+                            <Bar dataKey="keyOne" name="KEY ONE" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
+                              {((partnerDayOfWeekData[selectedPartner || ""] || partnerDayOfWeekData.default)[partnerDtDimension]).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
+                            </Bar>
+                            <Bar dataKey="keyTwo" name="KEY TWO" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
+                              {((partnerDayOfWeekData[selectedPartner || ""] || partnerDayOfWeekData.default)[partnerDtDimension]).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="mt-4 flex items-center justify-center gap-6">
+                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-bold uppercase text-[#757575]">Key One</span></div>
+                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-bold uppercase text-[#757575]">Key Two</span></div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="mt-4 max-h-[500px] overflow-y-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="sticky top-0 bg-white">
+                          <tr className="border-b border-border">
+                            <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">{partnerDtDimension === "Day of week" ? "Day" : "Hour"}</th>
+                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Key One <ArrowDownUp className="size-3" /></span></th>
+                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">Key Two</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {((partnerDayOfWeekData[selectedPartner || ""] || partnerDayOfWeekData.default)[partnerDtDimension]).map((row) => (
+                            <tr key={row.category} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
+                              <td className="py-3 pr-4 font-medium text-[#171417]">{row.category}</td>
+                              <td className="px-4 py-3 tabular-nums font-semibold text-[#171417]">{row.keyOne}</td>
+                              <td className="px-4 py-3 tabular-nums font-semibold text-[#171417]">{row.keyTwo}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+              ) : null}
             </div>
           </>
         ) : (
@@ -1735,7 +2330,7 @@ function CampaignDetailPageContent() {
                 </button>
               </div>
               {kpiExpanded && (
-                <div className="mt-5 grid grid-cols-7 gap-3">
+                <div className="mt-5 flex gap-3">
                   {metrics.map((m, i) => (
                     <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
                   ))}
@@ -1843,7 +2438,7 @@ function CampaignDetailPageContent() {
                 </button>
               </div>
               {kpiExpanded && (
-                <div className="mt-5 grid grid-cols-7 gap-3">
+                <div className="mt-5 flex gap-3">
                   {metrics.map((m, i) => (
                     <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
                   ))}
@@ -2020,7 +2615,7 @@ function CampaignDetailPageContent() {
                 </button>
               </div>
               {kpiExpanded && (
-                <div className="mt-5 grid grid-cols-7 gap-3">
+                <div className="mt-5 flex gap-3">
                   {metrics.map((m, i) => (
                     <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
                   ))}
@@ -2148,7 +2743,7 @@ function CampaignDetailPageContent() {
                 </button>
               </div>
               {kpiExpanded && (
-                <div className="mt-5 grid grid-cols-7 gap-3">
+                <div className="mt-5 flex gap-3">
                   {metrics.map((m, i) => (
                     <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
                   ))}
@@ -2254,7 +2849,7 @@ function CampaignDetailPageContent() {
             </div>
 
             {kpiExpanded && (
-              <div className="mt-5 grid grid-cols-7 gap-3">
+              <div className="mt-5 flex gap-3">
                 {metrics.map((m, i) => (
                   <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
                 ))}
