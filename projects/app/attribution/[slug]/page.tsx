@@ -71,6 +71,7 @@ const suggestedPrompts = [
   "Show me key optimization opportunities.",
   "Show me campaign performance by cohort.",
   "Show me partner performance comparison.",
+  "Show me the partner summary report.",
   "Key Insight & Recommendations.",
 ];
 
@@ -465,6 +466,10 @@ const promptResponses: Record<string, { title: string; content: string }> = {
    - Optimized weighted CPLV: $10.20
    - Projected savings per flight: ~$245K at same visit volume`,
   },
+  "Show me the partner summary report.": {
+    title: "Partner Summary Report",
+    content: "__PARTNER_SUMMARY_TABLE__",
+  },
   "Key Insight & Recommendations.": {
     title: "Key Insights & Recommendations",
     content: `**Executive Summary**
@@ -497,7 +502,79 @@ type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   title?: string;
+  tableType?: "partnerSummary";
 };
+
+type PartnerSummaryRow = {
+  name: string;
+  spend: string;
+  impressions: string;
+  reach: string;
+  frequency: string;
+  cvr: string;
+  visits: string;
+  cpsv: string;
+  bvrLift: string;
+  liftVisits: string;
+  cplv: string;
+};
+
+const partnerSummaryData: PartnerSummaryRow[] = [
+  { name: "Pandora", spend: "$48,200", impressions: "14,204,322", reach: "4,102,440", frequency: "3.46", cvr: "3.12%", visits: "62,338", cpsv: "$0.77", bvrLift: "4.82%", liftVisits: "2,840", cplv: "$16.97" },
+  { name: "Snap", spend: "$62,400", impressions: "18,580,110", reach: "5,240,800", frequency: "3.55", cvr: "2.88%", visits: "78,420", cpsv: "$0.80", bvrLift: "3.41%", liftVisits: "2,190", cplv: "$28.49" },
+  { name: "iHeartRadio", spend: "$35,800", impressions: "10,840,600", reach: "3,420,200", frequency: "3.17", cvr: "2.64%", visits: "44,280", cpsv: "$0.81", bvrLift: "2.98%", liftVisits: "1,540", cplv: "$23.25" },
+  { name: "Spotify", spend: "$52,600", impressions: "16,320,450", reach: "4,860,320", frequency: "3.36", cvr: "3.04%", visits: "68,940", cpsv: "$0.76", bvrLift: "4.12%", liftVisits: "2,620", cplv: "$20.08" },
+  { name: "Yelp", spend: "$28,400", impressions: "8,440,220", reach: "2,680,400", frequency: "3.15", cvr: "3.28%", visits: "38,520", cpsv: "$0.74", bvrLift: "5.14%", liftVisits: "1,980", cplv: "$14.34" },
+];
+
+function PartnerSummaryReportTable() {
+  return (
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <h3 className="text-base font-semibold text-[#171417]">Summary Report</h3>
+        <span className="flex size-5 items-center justify-center rounded-full border border-border text-muted-foreground">
+          <Info className="size-3" />
+        </span>
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="w-full min-w-[900px] text-left text-sm">
+          <thead>
+            <tr className="border-b border-border bg-white">
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Report Name</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Spend</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Impressions</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Reach</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Frequency</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">CVR</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Visits</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">CPSV</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">BVR Lift</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Lift Visits</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">CPLV</th>
+            </tr>
+          </thead>
+          <tbody>
+            {partnerSummaryData.map((row) => (
+              <tr key={row.name} className="border-b border-border last:border-0 hover:bg-gray-50/50">
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm font-medium text-[#212be9]">{row.name}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.spend}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.impressions}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.reach}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.frequency}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.cvr}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.visits}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.cpsv}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.bvrLift}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.liftVisits}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.cplv}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 function useTypewriter(text: string, speed: number = 8) {
   const [displayed, setDisplayed] = useState("");
@@ -997,6 +1074,9 @@ export default function CampaignDetailPage() {
     const userMsg: ChatMessage = { role: "user", content: query };
     const resp = promptResponses[query];
 
+    const isPartnerSummary = !resp && /partner\s*summary\s*report/i.test(query);
+    const matchedResp = resp || (isPartnerSummary ? promptResponses["Show me the partner summary report."] : undefined);
+
     const customResponse = `Based on the current campaign data for QSR Brand Q2 2026 Campaign, here is an analysis for your query:
 
 **Analysis: "${query}"**
@@ -1023,8 +1103,9 @@ export default function CampaignDetailPage() {
 
     const assistantMsg: ChatMessage = {
       role: "assistant",
-      content: resp?.content || customResponse,
-      title: resp?.title || "Campaign Analysis",
+      content: matchedResp?.content || customResponse,
+      title: matchedResp?.title || "Campaign Analysis",
+      ...(matchedResp?.content === "__PARTNER_SUMMARY_TABLE__" ? { tableType: "partnerSummary" as const } : {}),
     };
     setChatMessages((prev) => [...prev, userMsg]);
     setIsResponding(true);
@@ -2154,7 +2235,11 @@ export default function CampaignDetailPage() {
                           </div>
                         ) : (
                           <div className="animate-slide-in-left">
-                            <TypewriterMessage content={msg.content} title={msg.title} />
+                            {msg.tableType === "partnerSummary" ? (
+                              <PartnerSummaryReportTable />
+                            ) : (
+                              <TypewriterMessage content={msg.content} title={msg.title} />
+                            )}
                           </div>
                         )}
                       </div>
