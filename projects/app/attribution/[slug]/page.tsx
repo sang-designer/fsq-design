@@ -17,11 +17,7 @@ import {
   OctagonAlert,
   Loader2,
   Lightbulb,
-  Gauge,
-  Eye,
-  Users,
-  MapPinned,
-  CalendarClock,
+  Brain,
   Settings,
   Grid3X3,
   CircleAlert,
@@ -33,8 +29,6 @@ import {
   Bookmark,
   FileChartLine,
   ChartColumn,
-  Table2,
-  ArrowDownUp,
   LogOut,
   RefreshCw,
 } from "lucide-react";
@@ -54,12 +48,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine, Legend, Cell } from "recharts";
 
 const sidebarItems = [
-  { icon: Gauge, label: "Campaign Overview" },
-  { icon: Eye, label: "User Cohort" },
-  { icon: Users, label: "Demographic" },
-  { icon: MapPinned, label: "Geography" },
-  { icon: CalendarClock, label: "Date and Time" },
-  { icon: Settings, label: "Settings" },
+  { icon: Brain, label: "Campaign Overview" },
 ];
 
 const metrics = [
@@ -154,7 +143,19 @@ const partners = [
   "Snap",
 ];
 
-const partnerTabs = ["Overview", "User Cohort", "Demographics", "Geography", "Date and Time"];
+const campaignPerformanceData: { partner: string; impressions: number }[] = [
+  { partner: "Snap", impressions: 68 },
+  { partner: "iHeartRadio", impressions: 8 },
+  { partner: "Spotify", impressions: 6 },
+  { partner: "Pandora", impressions: 12 },
+  { partner: "Yelp", impressions: 5 },
+  { partner: "AdTheorent", impressions: 42 },
+  { partner: "Nexxen", impressions: 22 },
+  { partner: "Teads", impressions: 15 },
+  { partner: "Zeta", impressions: 18 },
+  { partner: "Epsilon", impressions: 10 },
+];
+
 
 const partnerMetrics: Record<string, { label: string; value: string }[]> = {
   AdTheorent: [
@@ -214,177 +215,6 @@ Ad Frequency Sweet Spot:
    - Optimal range: 3-5 exposures`,
 };
 
-const partnerCohortData: Record<string, { category: string; impressionIndex: number; bvrLiftIndex: number }[]> = {
-  AdTheorent: [
-    { category: "Not a customer", impressionIndex: 125, bvrLiftIndex: 62 },
-    { category: "High", impressionIndex: 48, bvrLiftIndex: 138 },
-    { category: "Medium", impressionIndex: 95, bvrLiftIndex: 112 },
-    { category: "Low", impressionIndex: 72, bvrLiftIndex: 88 },
-    { category: "Other", impressionIndex: 28, bvrLiftIndex: 42 },
-  ],
-  default: [
-    { category: "Not a customer", impressionIndex: 108, bvrLiftIndex: 55 },
-    { category: "High", impressionIndex: 62, bvrLiftIndex: 98 },
-    { category: "Medium", impressionIndex: 85, bvrLiftIndex: 92 },
-    { category: "Low", impressionIndex: 92, bvrLiftIndex: 78 },
-    { category: "Other", impressionIndex: 35, bvrLiftIndex: 45 },
-  ],
-};
-
-const partnerCohortTableData: Record<string, { cohort: string; impressionIndex: number; bvrLiftIndex: number; cvr: number }[]> = {
-  AdTheorent: [
-    { cohort: "Not a customer", impressionIndex: 125, bvrLiftIndex: 3.82, cvr: 6.14 },
-    { cohort: "High", impressionIndex: 48, bvrLiftIndex: 12.44, cvr: 15.08 },
-    { cohort: "Medium", impressionIndex: 95, bvrLiftIndex: 8.18, cvr: 11.22 },
-    { cohort: "Low", impressionIndex: 72, bvrLiftIndex: 5.62, cvr: 8.75 },
-    { cohort: "Other", impressionIndex: 28, bvrLiftIndex: 2.95, cvr: 5.33 },
-  ],
-  default: [
-    { cohort: "Not a customer", impressionIndex: 108, bvrLiftIndex: 3.12, cvr: 5.88 },
-    { cohort: "High", impressionIndex: 62, bvrLiftIndex: 7.65, cvr: 10.42 },
-    { cohort: "Medium", impressionIndex: 85, bvrLiftIndex: 5.88, cvr: 8.94 },
-    { cohort: "Low", impressionIndex: 92, bvrLiftIndex: 4.45, cvr: 7.18 },
-    { cohort: "Other", impressionIndex: 35, bvrLiftIndex: 2.55, cvr: 4.82 },
-  ],
-};
-
-const partnerDemoAgeData: Record<string, { category: string; impressionIndex: number; bvrLiftIndex: number }[]> = {
-  AdTheorent: [
-    { category: "18 - 24", impressionIndex: 142, bvrLiftIndex: 88 },
-    { category: "25 - 34", impressionIndex: 118, bvrLiftIndex: 125 },
-    { category: "35 - 44", impressionIndex: 95, bvrLiftIndex: 142 },
-    { category: "45 - 54", impressionIndex: 68, bvrLiftIndex: 108 },
-    { category: "> 54", impressionIndex: 42, bvrLiftIndex: 65 },
-  ],
-  default: [
-    { category: "18 - 24", impressionIndex: 105, bvrLiftIndex: 72 },
-    { category: "25 - 34", impressionIndex: 88, bvrLiftIndex: 95 },
-    { category: "35 - 44", impressionIndex: 78, bvrLiftIndex: 110 },
-    { category: "45 - 54", impressionIndex: 62, bvrLiftIndex: 85 },
-    { category: "> 54", impressionIndex: 45, bvrLiftIndex: 58 },
-  ],
-};
-
-const partnerDemoAgeTableData: Record<string, { age: string; impressionIndex: number; bvrLiftIndex: number; cvr: number }[]> = {
-  AdTheorent: [
-    { age: "18 - 24", impressionIndex: 142, bvrLiftIndex: 8.82, cvr: 12.45 },
-    { age: "25 - 34", impressionIndex: 118, bvrLiftIndex: 7.55, cvr: 11.22 },
-    { age: "35 - 44", impressionIndex: 95, bvrLiftIndex: 6.18, cvr: 9.88 },
-    { age: "45 - 54", impressionIndex: 68, bvrLiftIndex: 4.92, cvr: 7.65 },
-    { age: "> 54", impressionIndex: 42, bvrLiftIndex: 3.15, cvr: 5.42 },
-  ],
-  default: [
-    { age: "18 - 24", impressionIndex: 105, bvrLiftIndex: 5.92, cvr: 8.88 },
-    { age: "25 - 34", impressionIndex: 88, bvrLiftIndex: 5.12, cvr: 7.95 },
-    { age: "35 - 44", impressionIndex: 78, bvrLiftIndex: 4.55, cvr: 7.22 },
-    { age: "45 - 54", impressionIndex: 62, bvrLiftIndex: 3.82, cvr: 6.15 },
-    { age: "> 54", impressionIndex: 45, bvrLiftIndex: 2.88, cvr: 4.92 },
-  ],
-};
-
-const partnerDemoGenderData: Record<string, { category: string; keyOne: number; keyTwo: number }[]> = {
-  AdTheorent: [
-    { category: "Male", keyOne: 118, keyTwo: 95 },
-    { category: "Female", keyOne: 82, keyTwo: 112 },
-  ],
-  default: [
-    { category: "Male", keyOne: 102, keyTwo: 88 },
-    { category: "Female", keyOne: 78, keyTwo: 95 },
-  ],
-};
-
-const partnerDemoGenderTableData: Record<string, { gender: string; impressionIndex: number; bvrLiftIndex: number; cvr: number }[]> = {
-  AdTheorent: [
-    { gender: "Male", impressionIndex: 118, bvrLiftIndex: 7.22, cvr: 10.55 },
-    { gender: "Female", impressionIndex: 82, bvrLiftIndex: 5.85, cvr: 8.92 },
-  ],
-  default: [
-    { gender: "Male", impressionIndex: 102, bvrLiftIndex: 5.88, cvr: 8.42 },
-    { gender: "Female", impressionIndex: 78, bvrLiftIndex: 4.92, cvr: 7.18 },
-  ],
-};
-
-const partnerGeoData: Record<string, { state: string; abbr: string; index: number }[]> = {
-  AdTheorent: [
-    { state: "Alabama", abbr: "AL", index: 132 }, { state: "Alaska", abbr: "AK", index: 68 }, { state: "Arizona", abbr: "AZ", index: 145 },
-    { state: "Arkansas", abbr: "AR", index: 88 }, { state: "California", abbr: "CA", index: 192 }, { state: "Colorado", abbr: "CO", index: 155 },
-    { state: "Connecticut", abbr: "CT", index: 162 }, { state: "Delaware", abbr: "DE", index: 105 }, { state: "Florida", abbr: "FL", index: 178 },
-    { state: "Georgia", abbr: "GA", index: 165 }, { state: "Hawaii", abbr: "HI", index: 58 }, { state: "Idaho", abbr: "ID", index: 72 },
-    { state: "Illinois", abbr: "IL", index: 188 }, { state: "Indiana", abbr: "IN", index: 118 }, { state: "Iowa", abbr: "IA", index: 92 },
-    { state: "Kansas", abbr: "KS", index: 108 }, { state: "Kentucky", abbr: "KY", index: 98 }, { state: "Louisiana", abbr: "LA", index: 112 },
-    { state: "Maine", abbr: "ME", index: 78 }, { state: "Maryland", abbr: "MD", index: 148 }, { state: "Massachusetts", abbr: "MA", index: 172 },
-    { state: "Michigan", abbr: "MI", index: 138 }, { state: "Minnesota", abbr: "MN", index: 125 }, { state: "Mississippi", abbr: "MS", index: 95 },
-    { state: "Missouri", abbr: "MO", index: 115 }, { state: "Montana", abbr: "MT", index: 65 }, { state: "Nebraska", abbr: "NE", index: 82 },
-    { state: "Nevada", abbr: "NV", index: 135 }, { state: "New Hampshire", abbr: "NH", index: 88 }, { state: "New Jersey", abbr: "NJ", index: 175 },
-    { state: "New Mexico", abbr: "NM", index: 72 }, { state: "New York", abbr: "NY", index: 205 }, { state: "North Carolina", abbr: "NC", index: 158 },
-    { state: "North Dakota", abbr: "ND", index: 62 }, { state: "Ohio", abbr: "OH", index: 142 }, { state: "Oklahoma", abbr: "OK", index: 102 },
-    { state: "Oregon", abbr: "OR", index: 118 }, { state: "Pennsylvania", abbr: "PA", index: 168 }, { state: "Rhode Island", abbr: "RI", index: 112 },
-    { state: "South Carolina", abbr: "SC", index: 128 }, { state: "South Dakota", abbr: "SD", index: 58 }, { state: "Tennessee", abbr: "TN", index: 145 },
-    { state: "Texas", abbr: "TX", index: 182 }, { state: "Utah", abbr: "UT", index: 85 }, { state: "Vermont", abbr: "VT", index: 75 },
-    { state: "Virginia", abbr: "VA", index: 155 }, { state: "Washington", abbr: "WA", index: 142 }, { state: "West Virginia", abbr: "WV", index: 92 },
-    { state: "Wisconsin", abbr: "WI", index: 128 }, { state: "Wyoming", abbr: "WY", index: 55 },
-  ],
-  default: [
-    { state: "Alabama", abbr: "AL", index: 118 }, { state: "Alaska", abbr: "AK", index: 75 }, { state: "Arizona", abbr: "AZ", index: 128 },
-    { state: "Arkansas", abbr: "AR", index: 95 }, { state: "California", abbr: "CA", index: 172 }, { state: "Colorado", abbr: "CO", index: 138 },
-    { state: "Connecticut", abbr: "CT", index: 145 }, { state: "Delaware", abbr: "DE", index: 112 }, { state: "Florida", abbr: "FL", index: 162 },
-    { state: "Georgia", abbr: "GA", index: 148 }, { state: "Hawaii", abbr: "HI", index: 65 }, { state: "Idaho", abbr: "ID", index: 82 },
-    { state: "Illinois", abbr: "IL", index: 165 }, { state: "Indiana", abbr: "IN", index: 125 }, { state: "Iowa", abbr: "IA", index: 98 },
-    { state: "Kansas", abbr: "KS", index: 115 }, { state: "Kentucky", abbr: "KY", index: 105 }, { state: "Louisiana", abbr: "LA", index: 108 },
-    { state: "Maine", abbr: "ME", index: 85 }, { state: "Maryland", abbr: "MD", index: 138 }, { state: "Massachusetts", abbr: "MA", index: 155 },
-    { state: "Michigan", abbr: "MI", index: 132 }, { state: "Minnesota", abbr: "MN", index: 118 }, { state: "Mississippi", abbr: "MS", index: 102 },
-    { state: "Missouri", abbr: "MO", index: 112 }, { state: "Montana", abbr: "MT", index: 72 }, { state: "Nebraska", abbr: "NE", index: 88 },
-    { state: "Nevada", abbr: "NV", index: 122 }, { state: "New Hampshire", abbr: "NH", index: 92 }, { state: "New Jersey", abbr: "NJ", index: 158 },
-    { state: "New Mexico", abbr: "NM", index: 78 }, { state: "New York", abbr: "NY", index: 185 }, { state: "North Carolina", abbr: "NC", index: 142 },
-    { state: "North Dakota", abbr: "ND", index: 68 }, { state: "Ohio", abbr: "OH", index: 135 }, { state: "Oklahoma", abbr: "OK", index: 108 },
-    { state: "Oregon", abbr: "OR", index: 112 }, { state: "Pennsylvania", abbr: "PA", index: 152 }, { state: "Rhode Island", abbr: "RI", index: 105 },
-    { state: "South Carolina", abbr: "SC", index: 122 }, { state: "South Dakota", abbr: "SD", index: 65 }, { state: "Tennessee", abbr: "TN", index: 132 },
-    { state: "Texas", abbr: "TX", index: 168 }, { state: "Utah", abbr: "UT", index: 88 }, { state: "Vermont", abbr: "VT", index: 82 },
-    { state: "Virginia", abbr: "VA", index: 145 }, { state: "Washington", abbr: "WA", index: 128 }, { state: "West Virginia", abbr: "WV", index: 98 },
-    { state: "Wisconsin", abbr: "WI", index: 122 }, { state: "Wyoming", abbr: "WY", index: 62 },
-  ],
-};
-
-const partnerDayOfWeekData: Record<string, Record<"Day of week" | "Hour of day", { category: string; keyOne: number; keyTwo: number }[]>> = {
-  AdTheorent: {
-    "Day of week": [
-      { category: "Monday", keyOne: 78, keyTwo: 92 },
-      { category: "Tuesday", keyOne: 105, keyTwo: 118 },
-      { category: "Wednesday", keyOne: 132, keyTwo: 125 },
-      { category: "Thursday", keyOne: 145, keyTwo: 138 },
-      { category: "Friday", keyOne: 118, keyTwo: 108 },
-      { category: "Saturday", keyOne: 88, keyTwo: 72 },
-      { category: "Sunday", keyOne: 62, keyTwo: 55 },
-    ],
-    "Hour of day": [
-      { category: "6am–9am", keyOne: 55, keyTwo: 68 },
-      { category: "9am–12pm", keyOne: 92, keyTwo: 112 },
-      { category: "12pm–3pm", keyOne: 138, keyTwo: 125 },
-      { category: "3pm–6pm", keyOne: 148, keyTwo: 142 },
-      { category: "6pm–9pm", keyOne: 115, keyTwo: 98 },
-      { category: "9pm–12am", keyOne: 72, keyTwo: 58 },
-    ],
-  },
-  default: {
-    "Day of week": [
-      { category: "Monday", keyOne: 68, keyTwo: 82 },
-      { category: "Tuesday", keyOne: 88, keyTwo: 102 },
-      { category: "Wednesday", keyOne: 112, keyTwo: 108 },
-      { category: "Thursday", keyOne: 125, keyTwo: 118 },
-      { category: "Friday", keyOne: 98, keyTwo: 92 },
-      { category: "Saturday", keyOne: 75, keyTwo: 65 },
-      { category: "Sunday", keyOne: 55, keyTwo: 48 },
-    ],
-    "Hour of day": [
-      { category: "6am–9am", keyOne: 48, keyTwo: 62 },
-      { category: "9am–12pm", keyOne: 82, keyTwo: 98 },
-      { category: "12pm–3pm", keyOne: 118, keyTwo: 108 },
-      { category: "3pm–6pm", keyOne: 128, keyTwo: 122 },
-      { category: "6pm–9pm", keyOne: 95, keyTwo: 85 },
-      { category: "9pm–12am", keyOne: 62, keyTwo: 52 },
-    ],
-  },
-};
 
 const partnerPrompts = [
   "Show me the geography analysis.",
@@ -764,6 +594,7 @@ type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   title?: string;
+  chartType?: "userCohort" | "demographic" | "geography" | "dateTime" | "campaignPerformance";
 };
 
 function useTypewriter(text: string, speed: number = 8) {
@@ -970,27 +801,6 @@ const demoGenderData = [
   { category: "Female", keyOne: 34, keyTwo: 72 },
 ];
 
-const demoAgeTableData = [
-  { age: "18 - 24", impressionIndex: 193, bvrLiftIndex: 6.22, cvr: 9.33 },
-  { age: "25 - 34", impressionIndex: 176, bvrLiftIndex: 6.22, cvr: 9.33 },
-  { age: "35 - 44", impressionIndex: 115, bvrLiftIndex: 6.22, cvr: 9.33 },
-  { age: "45 - 54", impressionIndex: 58, bvrLiftIndex: 6.22, cvr: 9.33 },
-  { age: "> 54", impressionIndex: 57, bvrLiftIndex: 6.22, cvr: 9.33 },
-];
-
-const demoGenderTableData = [
-  { gender: "Male", impressionIndex: 193, bvrLiftIndex: 6.22, cvr: 9.33 },
-  { gender: "Female", impressionIndex: 176, bvrLiftIndex: 6.22, cvr: 9.33 },
-];
-
-const cohortTableData = [
-  { cohort: "Not a customer", impressionIndex: 212, bvrLiftIndex: 4.18, cvr: 7.62 },
-  { cohort: "High", impressionIndex: 156, bvrLiftIndex: 8.44, cvr: 12.10 },
-  { cohort: "Medium", impressionIndex: 188, bvrLiftIndex: 6.92, cvr: 9.85 },
-  { cohort: "Low", impressionIndex: 142, bvrLiftIndex: 5.31, cvr: 8.47 },
-  { cohort: "Other", impressionIndex: 68, bvrLiftIndex: 3.55, cvr: 6.21 },
-];
-
 const geoStateData: Record<"Flight" | "Weekly" | "Monthly", { state: string; abbr: string; index: number }[]> = {
   Flight: [
     { state: "Alabama", abbr: "AL", index: 145 }, { state: "Alaska", abbr: "AK", index: 80 }, { state: "Arizona", abbr: "AZ", index: 110 },
@@ -1060,6 +870,207 @@ function getGeoColor(index: number) {
   return `rgb(${r},${g},${b})`;
 }
 
+function InlineCohortChart() {
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-[#171417]">User Cohort — Index by Visit</h3>
+      </div>
+      <div className="h-[280px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={userCohortData["Flight"]} barGap={4} barCategoryGap="20%">
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+            <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} dy={8} height={40} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} domain={[0, 160]} width={40} />
+            <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+            <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
+            <Bar dataKey="impressionIndex" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={36} isAnimationActive animationDuration={800} animationEasing="ease-out" />
+            <Bar dataKey="bvrLiftIndex" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={36} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-3 flex items-center justify-center gap-6">
+        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
+        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
+      </div>
+    </div>
+  );
+}
+
+function InlineDemoChart() {
+  return (
+    <div className="mt-4 space-y-4">
+      <div className="rounded-lg border border-border bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-[#171417]">Demographics — Age</h3>
+        </div>
+        <div className="h-[260px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={demoAgeData["Flight"]} barGap={4} barCategoryGap="20%">
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} dy={8} height={40} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} domain={[0, 160]} width={40} />
+              <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+              <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
+              <Bar dataKey="impressionIndex" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={36} isAnimationActive animationDuration={800} />
+              <Bar dataKey="bvrLiftIndex" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={36} isAnimationActive animationDuration={800} animationBegin={200} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="mt-3 flex items-center justify-center gap-6">
+          <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
+          <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
+        </div>
+      </div>
+      <div className="rounded-lg border border-border bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-[#171417]">Demographics — Gender</h3>
+        </div>
+        <div className="h-[200px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={demoGenderData} barGap={4} barCategoryGap="30%">
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} dy={8} height={40} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} domain={[0, 160]} width={40} />
+              <RechartsTooltip content={<DateTimeChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+              <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
+              <Bar dataKey="keyOne" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={48} isAnimationActive animationDuration={800} />
+              <Bar dataKey="keyTwo" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={48} isAnimationActive animationDuration={800} animationBegin={200} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="mt-3 flex items-center justify-center gap-6">
+          <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
+          <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InlineGeoChart() {
+  const topStates = geoStateData["Flight"].sort((a, b) => b.index - a.index).slice(0, 10);
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-[#171417]">Geography — Top 10 States by Index</h3>
+      </div>
+      <div className="h-[320px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={topStates} layout="vertical" barCategoryGap="16%">
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
+            <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} domain={[0, 220]} />
+            <YAxis type="category" dataKey="state" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} width={100} />
+            <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
+            <ReferenceLine x={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
+            <Bar dataKey="index" fill="#4250E0" radius={[0, 3, 3, 0]} maxBarSize={24} isAnimationActive animationDuration={800} animationEasing="ease-out">
+              {topStates.map((entry, i) => (
+                <Cell key={i} fill={getGeoColor(entry.index)} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function InlineDateTimeChart() {
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-[#171417]">Date & Time — Day of Week</h3>
+      </div>
+      <div className="h-[280px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={dayOfWeekData["Day of week"]} barGap={4} barCategoryGap="20%">
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+            <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} dy={8} height={40} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} domain={[0, 180]} width={40} />
+            <RechartsTooltip content={<DateTimeChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+            <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
+            <Bar dataKey="keyOne" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={36} isAnimationActive animationDuration={800} />
+            <Bar dataKey="keyTwo" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={36} isAnimationActive animationDuration={800} animationBegin={200} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-3 flex items-center justify-center gap-6">
+        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
+        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
+      </div>
+    </div>
+  );
+}
+
+function InlineChart({ type }: { type: "userCohort" | "demographic" | "geography" | "dateTime" | "campaignPerformance" }) {
+  switch (type) {
+    case "userCohort": return <InlineCohortChart />;
+    case "demographic": return <InlineDemoChart />;
+    case "geography": return <InlineGeoChart />;
+    case "dateTime": return <InlineDateTimeChart />;
+    case "campaignPerformance": return <CampaignPerformanceChart />;
+  }
+}
+
+function CampaignPerformanceChart() {
+  const [selectedPartners, setSelectedPartners] = useState<Set<string>>(new Set());
+  const allPartnerNames = campaignPerformanceData.map((d) => d.partner);
+  const isShowAll = selectedPartners.size === 0;
+  const filteredData = isShowAll ? campaignPerformanceData : campaignPerformanceData.filter((d) => selectedPartners.has(d.partner));
+
+  const togglePartner = (name: string) => {
+    setSelectedPartners((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
+  return (
+    <div className="rounded-lg border border-border bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-[#171417]">Campaign Performance</h3>
+        </div>
+        <button className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-gray-100">
+          <MoreVertical className="size-4" />
+        </button>
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => setSelectedPartners(new Set())}
+          className={`text-xs font-medium transition-all duration-200 ${isShowAll ? "text-[#171417]" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          Show all partners
+        </button>
+        <div className="h-4 w-px bg-border" />
+        {allPartnerNames.map((name) => (
+          <button
+            key={name}
+            onClick={() => togglePartner(name)}
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition-all duration-200 ${selectedPartners.has(name) ? "border-[#171417] text-[#171417]" : "border-border text-muted-foreground hover:border-gray-300 hover:text-foreground"}`}
+          >
+            {name}
+          </button>
+        ))}
+      </div>
+      <p className="mt-4 text-xs text-muted-foreground">Impressions (%)</p>
+      <div className="mt-2 h-[260px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={filteredData} barCategoryGap="40%">
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+            <XAxis dataKey="partner" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} width={35} />
+            <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+            <Bar dataKey="impressions" fill="#212be9" radius={[3, 3, 0, 0]} maxBarSize={56} isAnimationActive animationDuration={600} animationEasing="ease-out" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
 function CampaignSystemError() {
   const router = useRouter();
   const pathname = usePathname();
@@ -1115,20 +1126,6 @@ function CampaignDetailPageContent() {
   const [initialPhase, setInitialPhase] = useState<"thinking" | "typing" | "done">("thinking");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [activeSidebarItem, setActiveSidebarItem] = useState("Campaign Overview");
-  const [cohortTimeRange, setCohortTimeRange] = useState<"Flight" | "Weekly" | "Monthly">("Flight");
-  const [cohortChartKey, setCohortChartKey] = useState(0);
-  const [demoAgeTimeRange, setDemoAgeTimeRange] = useState<"Flight" | "Weekly" | "Monthly">("Flight");
-  const [demoChartKey, setDemoChartKey] = useState(0);
-  const [demoAgeView, setDemoAgeView] = useState<"chart" | "table">("chart");
-  const [demoGenderView, setDemoGenderView] = useState<"chart" | "table">("chart");
-  const [cohortView, setCohortView] = useState<"chart" | "table">("chart");
-  const [geoTimeRange, setGeoTimeRange] = useState<"Flight" | "Weekly" | "Monthly">("Flight");
-  const [geoView, setGeoView] = useState<"chart" | "table">("chart");
-  const [geoChartKey, setGeoChartKey] = useState(0);
-  const [hoveredState, setHoveredState] = useState<string | null>(null);
-  const [dtDimension, setDtDimension] = useState<"Day of week" | "Hour of day">("Day of week");
-  const [dtView, setDtView] = useState<"chart" | "table">("chart");
-  const [dtChartKey, setDtChartKey] = useState(0);
   const [promptsPanelOpen, setPromptsPanelOpen] = useState(true);
   const [kpiExpanded, setKpiExpanded] = useState(true);
   const [promptTab, setPromptTab] = useState<"default" | "saved">("default");
@@ -1139,11 +1136,6 @@ function CampaignDetailPageContent() {
   const [inputValue, setInputValue] = useState("");
   const [partnerOpen, setPartnerOpen] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
-  const [partnerTab, setPartnerTab] = useState("Overview");
-  const [partnerCohortView, setPartnerCohortView] = useState<"chart" | "table">("chart");
-  const [partnerDemoAgeView, setPartnerDemoAgeView] = useState<"chart" | "table">("chart");
-  const [partnerDemoGenderView, setPartnerDemoGenderView] = useState<"chart" | "table">("chart");
-  const [partnerGeoView, setPartnerGeoView] = useState<"chart" | "table">("chart");
   const [partnerDtView, setPartnerDtView] = useState<"chart" | "table">("chart");
   const [partnerDtDimension, setPartnerDtDimension] = useState<"Day of week" | "Hour of day">("Day of week");
   const [partnerHoveredState, setPartnerHoveredState] = useState<string | null>(null);
@@ -1251,7 +1243,6 @@ function CampaignDetailPageContent() {
       setPartnerPhase("thinking");
       setPartnerChatMessages([]);
       setPartnerInputValue("");
-      setPartnerTab("Overview");
       const t = window.setTimeout(() => setPartnerPhase("typing"), THINKING_DURATION);
       return () => clearTimeout(t);
     }
@@ -1280,14 +1271,35 @@ function CampaignDetailPageContent() {
     const resp = promptResponses[query];
     const name = selectedPartner || "Partner";
 
-    const customResp = `Based on ${name} campaign data, here is an analysis for your query:
+    const lowerQ = query.toLowerCase();
+    let chartType: ChatMessage["chartType"] = undefined;
+    let intentContent = "";
+
+    if (/cohort|new.*(vs|versus).*existing|retention|frequency/i.test(lowerQ)) {
+      chartType = "userCohort";
+      intentContent = `Here's the **User Cohort** analysis for ${name}:\n\n- **New Users** make up 38% of impressions but 52% of lift\n- **High Frequenters** respond best at 4–6 exposures\n- Retention across Lapsed users shows a positive trend week-over-week\n\nThe chart below breaks down index by cohort segment.`;
+    } else if (/demograph|age|gender|income|household/i.test(lowerQ)) {
+      chartType = "demographic";
+      intentContent = `Here's the **Demographic** breakdown for ${name}:\n\n- **25–34** age group shows the highest impression index (142)\n- Female audience over-indexes at 1.3x vs male\n- HHI $75K–$100K is the strongest converting segment\n\nSee the chart below for full detail.`;
+    } else if (/geo|geography|state|dma|region|market|location/i.test(lowerQ)) {
+      chartType = "geography";
+      intentContent = `Here's the **Geography** analysis for ${name}:\n\n- **Chicago DMA** leads with 5.1% lift, followed by Atlanta (4.8%)\n- Top 10 DMAs account for 67% of total attributed visits\n- Northeast region shows strongest cost-per-visit efficiency\n\nThe chart below shows the geographic distribution.`;
+    } else if (/date|time|day.*week|hour|daypart|when|temporal/i.test(lowerQ)) {
+      chartType = "dateTime";
+      intentContent = `Here's the **Date & Time** analysis for ${name}:\n\n- **Tuesday–Thursday** drives 72% of total lift\n- Lunch daypart (11am–2pm) outperforms dinner by 1.4x\n- Weekend performance drops 35% vs weekday average\n\nThe chart below shows the temporal patterns.`;
+    } else if (/campaign performance|partner performance|performance insight|overall performance|impressions by partner/i.test(lowerQ)) {
+      chartType = "campaignPerformance";
+      intentContent = `Here's the **Campaign Performance** comparison across all partners:\n\n- **Snap** leads at 68% impression share\n- **${name}** contributes ${campaignPerformanceData.find((d) => d.partner === name)?.impressions || 15}% of total impressions\n- Use the filter pills to compare specific partners\n\nThe interactive chart below lets you select and compare partners.`;
+    }
+
+    const customResp = intentContent || `Based on ${name} campaign data, here is an analysis for your query:
 
 **Analysis: "${query}"**
 
 **${name} Performance Data**
    - **Impressions:** ${partnerMetrics[name]?.[0]?.value || "18.2M"} across all DMAs
    - **Lift Presence:** 93% among High Frequenters
-   - **CVR Pattern:** Positive correlation \u2013 high CVR signals genuine engagement
+   - **CVR Pattern:** Positive correlation – high CVR signals genuine engagement
 
 **Findings**
    - High Frequenters respond best at 4-6 ad exposures (sweet spot)
@@ -1296,17 +1308,17 @@ function CampaignDetailPageContent() {
 
 **Summary**
 1. ${name} is a top-tier partner for driving High Frequenter visits
-2. Frequency management is critical \u2013 cap at 6 exposures per user
+2. Frequency management is critical – cap at 6 exposures per user
 3. Recommend scaling ${name} budget from current allocation to 15-18% of total
 
 **Next Steps**
-   - Compare ${name} performance across cohorts in the User Cohort tab
-   - Review geographic distribution for budget reallocation opportunities`;
+   - Ask about user cohorts, demographics, geography, or date/time for detailed charts`;
 
     const assistantMsg: ChatMessage = {
       role: "assistant",
       content: resp?.content || customResp,
       title: resp?.title || `${name} Analysis`,
+      ...(chartType && { chartType }),
     };
     setPartnerChatMessages((prev) => [...prev, userMsg]);
     setPartnerIsResponding(true);
@@ -1327,8 +1339,95 @@ function CampaignDetailPageContent() {
   const submitPrompt = useCallback((text: string) => {
     if (!text.trim() || isResponding) return;
     const query = text.trim();
+    const queryLower = query.toLowerCase();
     const userMsg: ChatMessage = { role: "user", content: query };
     const resp = promptResponses[query];
+
+    let chartType: ChatMessage["chartType"] = undefined;
+    let chartSummary = "";
+
+    if (queryLower.includes("cohort") || queryLower.includes("user cohort")) {
+      chartType = "userCohort";
+      chartSummary = `**User Cohort Analysis**
+
+The chart below shows the Impression Index and BVR Lift Index across customer cohorts for the full flight period.
+
+**Key Findings**
+   - **Low Frequenters** show the highest BVR Lift Index (142), indicating strong incremental visit behavior
+   - **Medium Frequenters** are well-balanced with 88 impression index and 113 lift index
+   - **High Frequenters** have low impression share (35) but solid lift (72) — efficient targeting
+   - **Non-customers** show high impression delivery (112) but below-average lift (78)
+
+**Recommendation**
+1. Shift more impressions toward Low and Medium Frequenters where lift is strongest
+2. Reduce non-customer delivery where efficiency is lowest`;
+    } else if (queryLower.includes("demographic") || queryLower.includes("demographics") || queryLower.includes("demo")) {
+      chartType = "demographic";
+      chartSummary = `**Demographics Analysis**
+
+Below are the age and gender breakdowns for Impression Index and BVR Lift Index.
+
+**Age Insights**
+   - **45-54** age group dominates lift performance (148 BVR Lift Index)
+   - **18-24** has high impression delivery (112) but below-average lift (78)
+   - **35-44** shows balanced performance with growing lift (110)
+
+**Gender Insights**
+   - **Male** over-indexes on impressions (108) but under-indexes on lift (76)
+   - **Female** under-indexes on impressions (34) but delivers strong lift (72)
+
+**Recommendation**
+1. Increase budget allocation toward 35-54 age cohorts
+2. Explore female-skewed creative to capitalize on higher lift efficiency`;
+    } else if (queryLower.includes("geography") || queryLower.includes("geo") || queryLower.includes("state") || queryLower.includes("dma")) {
+      chartType = "geography";
+      chartSummary = `**Geography Analysis**
+
+The chart below shows the top 10 states ranked by BVR Lift Index for the full flight.
+
+**Key Findings**
+   - **North Dakota** leads with 210 index — small market but highly efficient
+   - **Nebraska** (200) and **Kansas** (195) round out the top 3
+   - **New York** (190) and **Illinois** (185) show strong performance in major metros
+   - Mid-size states consistently outperform mega-markets
+
+**Recommendation**
+1. Consider reallocating geo-targeting weight toward high-index midwestern states
+2. Test incremental budget in North Dakota, Nebraska, and Kansas corridors
+3. Major metros (NY, IL, CA) justify continued spend but at lower efficiency`;
+    } else if (queryLower.includes("date") || queryLower.includes("time") || queryLower.includes("day of week") || queryLower.includes("hour")) {
+      chartType = "dateTime";
+      chartSummary = `**Date & Time Analysis**
+
+The chart below shows Impression Index and BVR Lift Index by day of week.
+
+**Key Findings**
+   - **Thursday** is the top-performing day with 148 impression index and 108 lift index
+   - **Wednesday** shows balanced delivery (110) and strong lift (112)
+   - **Monday and Friday** are the weakest days — low on both metrics
+   - Mid-week dayparts consistently drive the most efficient visits
+
+**Recommendation**
+1. Concentrate delivery on Wednesday-Thursday for maximum lift
+2. Reduce Monday/Friday delivery or test different creative for those days
+3. Consider daypart optimization: lunch (11am-1pm) and dinner (5pm-7pm) windows`;
+    } else if (queryLower.includes("campaign performance") || queryLower.includes("partner performance") || queryLower.includes("performance insight") || queryLower.includes("overall performance") || queryLower.includes("impressions by partner")) {
+      chartType = "campaignPerformance";
+      chartSummary = `**Campaign Performance by Partner**
+
+The chart below shows impression share (%) across all media partners for the full flight.
+
+**Key Findings**
+   - **Snap** dominates impression delivery at 68% — highest reach partner
+   - **AdTheorent** is second at 42% with strong programmatic scale
+   - **Nexxen** (22%) and **Zeta** (18%) deliver mid-tier volume
+   - Long-tail partners (iHeartRadio, Spotify, Yelp) each contribute <10%
+
+**Recommendation**
+1. Evaluate whether Snap's dominance is intentional or over-concentrated
+2. Consider rebalancing toward mid-tier partners showing higher lift efficiency
+3. Use the partner filter to compare specific partners head-to-head`;
+    }
 
     const customResponse = `Based on the current campaign data for QSR Brand Q2 2026 Campaign, here is an analysis for your query:
 
@@ -1356,8 +1455,9 @@ function CampaignDetailPageContent() {
 
     const assistantMsg: ChatMessage = {
       role: "assistant",
-      content: resp?.content || customResponse,
-      title: resp?.title || "Campaign Analysis",
+      content: chartType ? chartSummary : (resp?.content || customResponse),
+      title: chartType ? undefined : (resp?.title || "Campaign Analysis"),
+      chartType,
     };
     setChatMessages((prev) => [...prev, userMsg]);
     setIsResponding(true);
@@ -1703,12 +1803,6 @@ function CampaignDetailPageContent() {
 
             {/* Partner Detail: content area */}
             <div className="flex min-h-0 min-w-0 flex-1 flex-col animate-slide-in-right">
-              {/* Partner tabs */}
-              <div className="flex shrink-0 items-center border-b border-border bg-white px-6">
-                {partnerTabs.map((tab) => (
-                  <button key={tab} onClick={() => setPartnerTab(tab)} className={`px-4 py-2.5 text-sm transition-all duration-200 ${partnerTab === tab ? "border-b-2 border-[#212be9] font-medium text-[#212be9]" : "text-muted-foreground hover:text-foreground"}`}>{tab}</button>
-                ))}
-              </div>
 
               {/* Partner Title + KPIs */}
               <div className="shrink-0 px-8 py-6">
@@ -1731,7 +1825,6 @@ function CampaignDetailPageContent() {
 
               <div className="shrink-0 border-t border-border" />
 
-              {partnerTab === "Overview" ? (
               <div className="flex min-h-0 flex-1">
                 {/* Partner chat area */}
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -1787,6 +1880,7 @@ function CampaignDetailPageContent() {
                             ) : (
                               <div className="animate-slide-in-left">
                                 <TypewriterMessage content={msg.content} title={msg.title} />
+                                {msg.chartType && <div className="mt-2"><InlineChart type={msg.chartType} /></div>}
                               </div>
                             )}
                           </div>
@@ -1875,8 +1969,8 @@ function CampaignDetailPageContent() {
                         <div key={i} className="animate-prompt-cascade group flex items-start gap-2 rounded-lg border border-border bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#212be9]/30 hover:shadow-md" style={{ animationDelay: `${i * 40}ms` }}>
                           <button onClick={() => submitPartnerPrompt(prompt)} className="btn-press flex min-w-0 flex-1 items-start gap-2.5 text-left">
                             <svg className="mt-0.5 size-3.5 shrink-0 text-muted-foreground group-hover:text-[#212be9] transition-colors" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                              <path d="M4.5 8L7 10.5L11.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M2 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M8 14h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                             </svg>
                             <span className="text-xs leading-4 text-[#171417] group-hover:text-[#212be9] transition-colors">{prompt}</span>
                           </button>
@@ -1889,384 +1983,6 @@ function CampaignDetailPageContent() {
                   </div>
                 </div>
               </div>
-              ) : partnerTab === "User Cohort" ? (
-              <div className="flex-1 overflow-y-auto px-8 py-6">
-                <div className="flex items-center gap-4">
-                  <h2 className="text-lg font-semibold text-[#171417]">User Cohort</h2>
-                  <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
-                  <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
-                </div>
-                <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold text-[#171417]">Index by Visit</h3>
-                      <Info className="size-3.5 text-muted-foreground/60" />
-                    </div>
-                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                      <button onClick={() => setPartnerCohortView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerCohortView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
-                      <button onClick={() => setPartnerCohortView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerCohortView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
-                    </div>
-                  </div>
-                  {partnerCohortView === "chart" ? (
-                    <>
-                      <div className="mt-6 h-[380px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={partnerCohortData[selectedPartner || ""] || partnerCohortData.default} barGap={4} barCategoryGap="20%">
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                            <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "AGE", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "INDEX", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={50} />
-                            <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
-                            <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
-                            <Bar dataKey="impressionIndex" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
-                              {(partnerCohortData[selectedPartner || ""] || partnerCohortData.default).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                            </Bar>
-                            <Bar dataKey="bvrLiftIndex" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
-                              {(partnerCohortData[selectedPartner || ""] || partnerCohortData.default).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="mt-4 flex items-center justify-center gap-6">
-                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
-                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="mt-4">
-                      <table className="w-full text-left text-sm">
-                        <thead>
-                          <tr className="border-b border-border">
-                            <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">Cohort</th>
-                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Impression Index <ArrowDownUp className="size-3" /></span></th>
-                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">BVR Lift Index</th>
-                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">CVR</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(partnerCohortTableData[selectedPartner || ""] || partnerCohortTableData.default).map((row) => (
-                            <tr key={row.cohort} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                              <td className="py-4 pr-4 font-medium text-[#171417]">{row.cohort}</td>
-                              <td className="px-4 py-4 tabular-nums text-[#171417]">{row.impressionIndex}</td>
-                              <td className="px-4 py-4">
-                                <div className="flex items-center gap-2">
-                                  <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-[#4250E0]" style={{ width: `${Math.min(100, row.bvrLiftIndex * 10)}%` }} /></div>
-                                  <span className="tabular-nums text-[#171417]">{row.bvrLiftIndex}%</span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4 tabular-nums text-[#171417]">{row.cvr}%</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
-              ) : partnerTab === "Demographics" ? (
-              <div className="flex-1 overflow-y-auto px-8 py-6">
-                <div className="flex items-center gap-4">
-                  <h2 className="text-lg font-semibold text-[#171417]">Demographics</h2>
-                  <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
-                  <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
-                </div>
-
-                {/* Age Chart */}
-                <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold text-[#171417]">Age</h3>
-                      <Info className="size-3.5 text-muted-foreground/60" />
-                    </div>
-                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                      <button onClick={() => setPartnerDemoAgeView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerDemoAgeView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
-                      <button onClick={() => setPartnerDemoAgeView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerDemoAgeView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
-                    </div>
-                  </div>
-                  {partnerDemoAgeView === "chart" ? (
-                    <>
-                      <div className="mt-6 h-[320px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={partnerDemoAgeData[selectedPartner || ""] || partnerDemoAgeData.default} barGap={4} barCategoryGap="20%">
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                            <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "AGE", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "IMPRESSION", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={60} />
-                            <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
-                            <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
-                            <Bar dataKey="impressionIndex" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
-                              {(partnerDemoAgeData[selectedPartner || ""] || partnerDemoAgeData.default).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                            </Bar>
-                            <Bar dataKey="bvrLiftIndex" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
-                              {(partnerDemoAgeData[selectedPartner || ""] || partnerDemoAgeData.default).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="mt-4 flex items-center justify-center gap-6">
-                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
-                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="mt-4">
-                      <table className="w-full text-left text-sm">
-                        <thead>
-                          <tr className="border-b border-border">
-                            <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">Age</th>
-                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Impression Index <ArrowDownUp className="size-3" /></span></th>
-                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">BVR Lift Index</th>
-                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">CVR</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(partnerDemoAgeTableData[selectedPartner || ""] || partnerDemoAgeTableData.default).map((row) => (
-                            <tr key={row.age} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                              <td className="py-4 pr-4 font-medium text-[#171417]">{row.age}</td>
-                              <td className="px-4 py-4 tabular-nums text-[#171417]">{row.impressionIndex}</td>
-                              <td className="px-4 py-4">
-                                <div className="flex items-center gap-2">
-                                  <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-[#4250E0]" style={{ width: `${Math.min(100, row.bvrLiftIndex * 10)}%` }} /></div>
-                                  <span className="tabular-nums text-[#171417]">{row.bvrLiftIndex}%</span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4 tabular-nums text-[#171417]">{row.cvr}%</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-
-                {/* Gender Chart */}
-                <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold text-[#171417]">Gender</h3>
-                      <Info className="size-3.5 text-muted-foreground/60" />
-                    </div>
-                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                      <button onClick={() => setPartnerDemoGenderView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerDemoGenderView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
-                      <button onClick={() => setPartnerDemoGenderView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerDemoGenderView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
-                    </div>
-                  </div>
-                  {partnerDemoGenderView === "chart" ? (
-                    <>
-                      <div className="mt-6 h-[320px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={partnerDemoGenderData[selectedPartner || ""] || partnerDemoGenderData.default} barGap={4} barCategoryGap="30%">
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                            <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "GENDER", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "IMPRESSION", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={60} />
-                            <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
-                            <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
-                            <Bar dataKey="keyOne" name="KEY ONE" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={56} isAnimationActive animationDuration={800} animationEasing="ease-out">
-                              {(partnerDemoGenderData[selectedPartner || ""] || partnerDemoGenderData.default).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                            </Bar>
-                            <Bar dataKey="keyTwo" name="KEY TWO" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={56} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
-                              {(partnerDemoGenderData[selectedPartner || ""] || partnerDemoGenderData.default).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="mt-4 flex items-center justify-center gap-6">
-                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">KEY ONE</span></div>
-                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">KEY TWO</span></div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="mt-4">
-                      <table className="w-full text-left text-sm">
-                        <thead>
-                          <tr className="border-b border-border">
-                            <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">Gender</th>
-                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Impression Index <ArrowDownUp className="size-3" /></span></th>
-                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">BVR Lift Index</th>
-                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">CVR</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(partnerDemoGenderTableData[selectedPartner || ""] || partnerDemoGenderTableData.default).map((row) => (
-                            <tr key={row.gender} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                              <td className="py-4 pr-4 font-medium text-[#171417]">{row.gender}</td>
-                              <td className="px-4 py-4 tabular-nums text-[#171417]">{row.impressionIndex}</td>
-                              <td className="px-4 py-4">
-                                <div className="flex items-center gap-2">
-                                  <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-[#4250E0]" style={{ width: `${Math.min(100, row.bvrLiftIndex * 10)}%` }} /></div>
-                                  <span className="tabular-nums text-[#171417]">{row.bvrLiftIndex}%</span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4 tabular-nums text-[#171417]">{row.cvr}%</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
-              ) : partnerTab === "Geography" ? (
-              <div className="flex-1 overflow-y-auto px-8 py-6">
-                <div className="flex items-center gap-4">
-                  <h2 className="text-lg font-semibold text-[#171417]">Geography</h2>
-                  <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
-                  <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
-                </div>
-                <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold text-[#171417]">Geography Overview</h3>
-                      <Info className="size-3.5 text-muted-foreground/60" />
-                    </div>
-                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                      <button onClick={() => setPartnerGeoView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerGeoView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
-                      <button onClick={() => setPartnerGeoView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${partnerGeoView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
-                    </div>
-                  </div>
-                  {partnerGeoView === "chart" ? (
-                    <div className="relative mt-6">
-                      <div className="absolute left-0 top-8 flex flex-col items-center gap-1">
-                        <div className="h-24 w-3 rounded-sm" style={{ background: "linear-gradient(to bottom, rgb(30,50,205), rgb(100,130,235), rgb(180,200,255), rgb(220,225,255))" }} />
-                        <span className="text-[10px] tabular-nums text-muted-foreground">200</span>
-                        <div className="h-4" />
-                        <span className="text-[10px] tabular-nums text-muted-foreground">100</span>
-                      </div>
-                      <div className="ml-10">
-                        <div className="grid grid-cols-11 gap-1">
-                          {(partnerGeoData[selectedPartner || ""] || partnerGeoData.default)
-                            .sort((a, b) => a.state.localeCompare(b.state))
-                            .map((s, i) => (
-                            <div
-                              key={s.abbr}
-                              onMouseEnter={() => setPartnerHoveredState(s.abbr)}
-                              onMouseLeave={() => setPartnerHoveredState(null)}
-                              className="group relative flex aspect-square items-center justify-center rounded-md text-[10px] font-semibold transition-all duration-300 hover:scale-110 hover:shadow-lg hover:z-10"
-                              style={{
-                                backgroundColor: getGeoColor(s.index),
-                                color: s.index > 150 ? "white" : "#171417",
-                                opacity: partnerHoveredState && partnerHoveredState !== s.abbr ? 0.5 : 1,
-                                animationDelay: `${i * 20}ms`,
-                              }}
-                            >
-                              {s.abbr}
-                              <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 rounded-lg border border-border bg-white px-3 py-2 shadow-lg group-hover:block">
-                                <p className="whitespace-nowrap text-xs font-semibold text-[#171417]">{s.state}</p>
-                                <p className="whitespace-nowrap text-[10px] text-muted-foreground">Index: <span className="font-semibold tabular-nums text-[#171417]">{s.index}</span></p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-4 max-h-[500px] overflow-y-auto">
-                      <table className="w-full text-left text-sm">
-                        <thead className="sticky top-0 bg-white">
-                          <tr className="border-b border-border">
-                            <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">State</th>
-                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Index <ArrowDownUp className="size-3" /></span></th>
-                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">Performance</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {[...(partnerGeoData[selectedPartner || ""] || partnerGeoData.default)].sort((a, b) => b.index - a.index).map((row) => (
-                            <tr key={row.abbr} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                              <td className="py-3 pr-4">
-                                <span className="font-medium text-[#171417]">{row.state}</span>
-                                <span className="ml-1.5 text-xs text-muted-foreground">({row.abbr})</span>
-                              </td>
-                              <td className="px-4 py-3 tabular-nums font-semibold text-[#171417]">{row.index}</td>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                  <div className="h-2 w-28 overflow-hidden rounded-full bg-gray-100">
-                                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (row.index / 220) * 100)}%`, backgroundColor: getGeoColor(row.index) }} />
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
-              ) : partnerTab === "Date and Time" ? (
-              <div className="flex-1 overflow-y-auto px-8 py-6">
-                <div className="flex items-center gap-4">
-                  <h2 className="text-lg font-semibold text-[#171417]">Date and Time</h2>
-                  <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
-                  <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
-                </div>
-                <div className="mt-6 rounded-2xl border border-border bg-white px-4 py-3 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      <h3 className="text-base font-semibold text-[#171417]">Date and Time</h3>
-                      <Info className="size-4 text-muted-foreground/60" />
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <select
-                        value={partnerDtDimension}
-                        onChange={(e) => setPartnerDtDimension(e.target.value as "Day of week" | "Hour of day")}
-                        className="rounded-md border border-[#f0f0f0] bg-[#fcfcfc] px-3 py-2 text-xs text-[#171417] outline-none focus:border-[#212be9] min-w-[160px]"
-                      >
-                        <option value="Day of week">Day of week</option>
-                        <option value="Hour of day">Hour of day</option>
-                      </select>
-                      <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                        <button onClick={() => setPartnerDtView("chart")} className={`flex size-7 items-center justify-center rounded transition-all duration-200 ${partnerDtView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-4" /></button>
-                        <button onClick={() => setPartnerDtView("table")} className={`flex size-7 items-center justify-center rounded transition-all duration-200 ${partnerDtView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-4" /></button>
-                      </div>
-                    </div>
-                  </div>
-                  {partnerDtView === "chart" ? (
-                    <>
-                      <div className="mt-6 h-[380px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={(partnerDayOfWeekData[selectedPartner || ""] || partnerDayOfWeekData.default)[partnerDtDimension]} barGap={4} barCategoryGap="20%">
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                            <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: partnerDtDimension === "Day of week" ? "DAY OF WEEK" : "HOUR OF DAY", position: "insideBottom", offset: -4, fontSize: 11, fill: "#757575", fontWeight: 700 }} height={50} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "INDEX", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#757575", fontWeight: 700 }} width={50} />
-                            <RechartsTooltip content={<DateTimeChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
-                            <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
-                            <Bar dataKey="keyOne" name="KEY ONE" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
-                              {((partnerDayOfWeekData[selectedPartner || ""] || partnerDayOfWeekData.default)[partnerDtDimension]).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                            </Bar>
-                            <Bar dataKey="keyTwo" name="KEY TWO" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
-                              {((partnerDayOfWeekData[selectedPartner || ""] || partnerDayOfWeekData.default)[partnerDtDimension]).map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="mt-4 flex items-center justify-center gap-6">
-                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-bold uppercase text-[#757575]">Key One</span></div>
-                        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-bold uppercase text-[#757575]">Key Two</span></div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="mt-4 max-h-[500px] overflow-y-auto">
-                      <table className="w-full text-left text-sm">
-                        <thead className="sticky top-0 bg-white">
-                          <tr className="border-b border-border">
-                            <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">{partnerDtDimension === "Day of week" ? "Day" : "Hour"}</th>
-                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Key One <ArrowDownUp className="size-3" /></span></th>
-                            <th className="px-4 py-3 text-xs font-medium text-[#212be9]">Key Two</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {((partnerDayOfWeekData[selectedPartner || ""] || partnerDayOfWeekData.default)[partnerDtDimension]).map((row) => (
-                            <tr key={row.category} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                              <td className="py-3 pr-4 font-medium text-[#171417]">{row.category}</td>
-                              <td className="px-4 py-3 tabular-nums font-semibold text-[#171417]">{row.keyOne}</td>
-                              <td className="px-4 py-3 tabular-nums font-semibold text-[#171417]">{row.keyTwo}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
-              ) : null}
             </div>
           </>
         ) : (
@@ -2279,7 +1995,7 @@ function CampaignDetailPageContent() {
                   return (
                   <button
                     key={item.label}
-                    onClick={() => { setActiveSidebarItem(item.label); if (item.label === "User Cohort") setCohortChartKey((k) => k + 1); if (item.label === "Demographic") setDemoChartKey((k) => k + 1); if (item.label === "Geography") setGeoChartKey((k) => k + 1); }}
+                    onClick={() => { setActiveSidebarItem(item.label); }}
                     title={sidebarExpanded ? undefined : item.label}
                     className={`btn-press group/item relative flex items-center gap-2.5 rounded-md px-2 py-1.5 transition-all duration-200 ${
                       isActive
@@ -2318,523 +2034,6 @@ function CampaignDetailPageContent() {
             </aside>
 
         {/* Content + Panel */}
-        {activeSidebarItem === "User Cohort" ? (
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-            <div className="shrink-0 px-8 py-6">
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  QSR Q2 2026 Campaign Overview
-                </h1>
-                <button onClick={() => setKpiExpanded(!kpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
-                  <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${kpiExpanded ? "" : "-rotate-90"}`} />
-                </button>
-              </div>
-              {kpiExpanded && (
-                <div className="mt-5 flex gap-3">
-                  {metrics.map((m, i) => (
-                    <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="shrink-0 border-t border-border" />
-            <div className="px-8 py-6">
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-[#171417]">User Cohort</h2>
-                <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
-                <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
-              </div>
-              <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-[#171417]">Index by Visit</h3>
-                    <Info className="size-3.5 text-muted-foreground/60" />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {cohortView === "chart" && (
-                      <div className="flex items-center gap-0.5 rounded-md border border-border bg-white p-0.5">
-                        {(["Flight", "Weekly", "Monthly"] as const).map((t) => (
-                          <button
-                            key={t}
-                            onClick={() => { setCohortTimeRange(t); setCohortChartKey((k) => k + 1); }}
-                            className={`rounded px-3 py-1 text-xs font-medium transition-all duration-200 ${cohortTimeRange === t ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                      <button onClick={() => setCohortView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${cohortView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
-                      <button onClick={() => setCohortView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${cohortView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
-                    </div>
-                  </div>
-                </div>
-                {cohortView === "chart" ? (
-                  <>
-                    <div className="mt-6 h-[380px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart key={cohortChartKey} data={userCohortData[cohortTimeRange]} barGap={4} barCategoryGap="20%">
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                          <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "AGE", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "INDEX", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={50} />
-                          <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
-                          <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
-                          <Bar dataKey="impressionIndex" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
-                            {userCohortData[cohortTimeRange].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                          <Bar dataKey="bvrLiftIndex" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
-                            {userCohortData[cohortTimeRange].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="mt-4 flex items-center justify-center gap-6">
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="mt-4">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">Cohort</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Impression Index <ArrowDownUp className="size-3" /></span></th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">BVR Lift Index</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">CVR</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {cohortTableData.map((row) => (
-                          <tr key={row.cohort} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                            <td className="py-4 pr-4 font-medium text-[#171417]">{row.cohort}</td>
-                            <td className="px-4 py-4 tabular-nums text-[#171417]">{row.impressionIndex}</td>
-                            <td className="px-4 py-4">
-                              <div className="flex items-center gap-2">
-                                <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-[#4250E0]" style={{ width: `${Math.min(100, row.bvrLiftIndex * 10)}%` }} /></div>
-                                <span className="tabular-nums text-[#171417]">{row.bvrLiftIndex}%</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 tabular-nums text-[#171417]">{row.cvr}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : activeSidebarItem === "Demographic" ? (
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-            <div className="shrink-0 px-8 py-6">
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  QSR Q2 2026 Campaign Overview
-                </h1>
-                <button onClick={() => setKpiExpanded(!kpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
-                  <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${kpiExpanded ? "" : "-rotate-90"}`} />
-                </button>
-              </div>
-              {kpiExpanded && (
-                <div className="mt-5 flex gap-3">
-                  {metrics.map((m, i) => (
-                    <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="shrink-0 border-t border-border" />
-            <div className="px-8 py-6">
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-[#171417]">Demographics</h2>
-                <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
-                <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
-              </div>
-
-              {/* Age Chart */}
-              <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-[#171417]">Age</h3>
-                    <Info className="size-3.5 text-muted-foreground/60" />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {demoAgeView === "chart" && (
-                      <div className="flex items-center gap-0.5 rounded-md border border-border bg-white p-0.5">
-                        {(["Flight", "Weekly", "Monthly"] as const).map((t) => (
-                          <button
-                            key={t}
-                            onClick={() => { setDemoAgeTimeRange(t); setDemoChartKey((k) => k + 1); }}
-                            className={`rounded px-3 py-1 text-xs font-medium transition-all duration-200 ${demoAgeTimeRange === t ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                      <button onClick={() => setDemoAgeView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${demoAgeView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
-                      <button onClick={() => setDemoAgeView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${demoAgeView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
-                    </div>
-                  </div>
-                </div>
-                {demoAgeView === "chart" ? (
-                  <>
-                    <div className="mt-6 h-[320px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart key={`age-${demoChartKey}`} data={demoAgeData[demoAgeTimeRange]} barGap={4} barCategoryGap="20%">
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                          <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "AGE", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "IMPRESSION", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={60} />
-                          <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
-                          <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
-                          <Bar dataKey="impressionIndex" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
-                            {demoAgeData[demoAgeTimeRange].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                          <Bar dataKey="bvrLiftIndex" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
-                            {demoAgeData[demoAgeTimeRange].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="mt-4 flex items-center justify-center gap-6">
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="mt-4">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">Age</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Impression Index <ArrowDownUp className="size-3" /></span></th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">BVR Lift Index</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">CVR</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {demoAgeTableData.map((row) => (
-                          <tr key={row.age} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                            <td className="py-4 pr-4 font-medium text-[#171417]">{row.age}</td>
-                            <td className="px-4 py-4 tabular-nums text-[#171417]">{row.impressionIndex}</td>
-                            <td className="px-4 py-4">
-                              <div className="flex items-center gap-2">
-                                <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-[#4250E0]" style={{ width: `${Math.min(100, row.bvrLiftIndex * 10)}%` }} /></div>
-                                <span className="tabular-nums text-[#171417]">{row.bvrLiftIndex}%</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 tabular-nums text-[#171417]">{row.cvr}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-
-              {/* Gender Chart */}
-              <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-[#171417]">Gender</h3>
-                    <Info className="size-3.5 text-muted-foreground/60" />
-                  </div>
-                  <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                    <button onClick={() => setDemoGenderView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${demoGenderView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
-                    <button onClick={() => setDemoGenderView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${demoGenderView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
-                  </div>
-                </div>
-                {demoGenderView === "chart" ? (
-                  <>
-                    <div className="mt-6 h-[320px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart key={`gender-${demoChartKey}`} data={demoGenderData} barGap={4} barCategoryGap="30%">
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                          <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "GENDER", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "IMPRESSION", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={60} />
-                          <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
-                          <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
-                          <Bar dataKey="keyOne" name="KEY ONE" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={56} isAnimationActive animationDuration={800} animationEasing="ease-out">
-                            {demoGenderData.map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                          <Bar dataKey="keyTwo" name="KEY TWO" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={56} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
-                            {demoGenderData.map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="mt-4 flex items-center justify-center gap-6">
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">KEY ONE</span></div>
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">KEY TWO</span></div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="mt-4">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">Gender</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Impression Index <ArrowDownUp className="size-3" /></span></th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">BVR Lift Index</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">CVR</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {demoGenderTableData.map((row) => (
-                          <tr key={row.gender} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                            <td className="py-4 pr-4 font-medium text-[#171417]">{row.gender}</td>
-                            <td className="px-4 py-4 tabular-nums text-[#171417]">{row.impressionIndex}</td>
-                            <td className="px-4 py-4">
-                              <div className="flex items-center gap-2">
-                                <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-[#4250E0]" style={{ width: `${Math.min(100, row.bvrLiftIndex * 10)}%` }} /></div>
-                                <span className="tabular-nums text-[#171417]">{row.bvrLiftIndex}%</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 tabular-nums text-[#171417]">{row.cvr}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : activeSidebarItem === "Geography" ? (
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-            <div className="shrink-0 px-8 py-6">
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  QSR Q2 2026 Campaign Overview
-                </h1>
-                <button onClick={() => setKpiExpanded(!kpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
-                  <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${kpiExpanded ? "" : "-rotate-90"}`} />
-                </button>
-              </div>
-              {kpiExpanded && (
-                <div className="mt-5 flex gap-3">
-                  {metrics.map((m, i) => (
-                    <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="shrink-0 border-t border-border" />
-            <div className="px-8 py-6">
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-[#171417]">Geography</h2>
-                <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
-                <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
-              </div>
-
-              <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-[#171417]">Geography Overview</h3>
-                    <div className="group relative">
-                      <Info className="size-3.5 text-muted-foreground/60" />
-                      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-border bg-[#171417] px-3 py-1.5 text-xs text-white shadow-lg group-hover:block">
-                        Analyze geographic distribution of your campaign performance across
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {geoView === "chart" && (
-                      <div className="flex items-center gap-0.5 rounded-md border border-border bg-white p-0.5">
-                        {(["Flight", "Weekly", "Monthly"] as const).map((t) => (
-                          <button
-                            key={t}
-                            onClick={() => { setGeoTimeRange(t); setGeoChartKey((k) => k + 1); }}
-                            className={`rounded px-3 py-1 text-xs font-medium transition-all duration-200 ${geoTimeRange === t ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                      <button onClick={() => setGeoView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${geoView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
-                      <button onClick={() => setGeoView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${geoView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
-                    </div>
-                  </div>
-                </div>
-
-                {geoView === "chart" ? (
-                  <div className="relative mt-6">
-                    <div className="absolute left-0 top-8 flex flex-col items-center gap-1">
-                      <div className="h-24 w-3 rounded-sm" style={{ background: "linear-gradient(to bottom, rgb(30,50,205), rgb(100,130,235), rgb(180,200,255), rgb(220,225,255))" }} />
-                      <span className="text-[10px] tabular-nums text-muted-foreground">200</span>
-                      <div className="h-4" />
-                      <span className="text-[10px] tabular-nums text-muted-foreground">100</span>
-                    </div>
-                    <div key={geoChartKey} className="ml-10">
-                      <div className="grid grid-cols-11 gap-1">
-                        {geoStateData[geoTimeRange]
-                          .sort((a, b) => a.state.localeCompare(b.state))
-                          .map((s, i) => (
-                          <div
-                            key={s.abbr}
-                            onMouseEnter={() => setHoveredState(s.abbr)}
-                            onMouseLeave={() => setHoveredState(null)}
-                            className="group relative flex aspect-square items-center justify-center rounded-md text-[10px] font-semibold transition-all duration-300 hover:scale-110 hover:shadow-lg hover:z-10"
-                            style={{
-                              backgroundColor: getGeoColor(s.index),
-                              color: s.index > 150 ? "white" : "#171417",
-                              opacity: hoveredState && hoveredState !== s.abbr ? 0.5 : 1,
-                              animationDelay: `${i * 20}ms`,
-                            }}
-                          >
-                            {s.abbr}
-                            <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 rounded-lg border border-border bg-white px-3 py-2 shadow-lg group-hover:block">
-                              <p className="whitespace-nowrap text-xs font-semibold text-[#171417]">{s.state}</p>
-                              <p className="whitespace-nowrap text-[10px] text-muted-foreground">Index: <span className="font-semibold tabular-nums text-[#171417]">{s.index}</span></p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-4 max-h-[500px] overflow-y-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="sticky top-0 bg-white">
-                        <tr className="border-b border-border">
-                          <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">State</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Index <ArrowDownUp className="size-3" /></span></th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">Performance</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[...geoStateData[geoTimeRange]].sort((a, b) => b.index - a.index).map((row) => (
-                          <tr key={row.abbr} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                            <td className="py-3 pr-4">
-                              <span className="font-medium text-[#171417]">{row.state}</span>
-                              <span className="ml-1.5 text-xs text-muted-foreground">({row.abbr})</span>
-                            </td>
-                            <td className="px-4 py-3 tabular-nums font-semibold text-[#171417]">{row.index}</td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                <div className="h-2 w-28 overflow-hidden rounded-full bg-gray-100">
-                                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (row.index / 220) * 100)}%`, backgroundColor: getGeoColor(row.index) }} />
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : activeSidebarItem === "Date and Time" ? (
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-            <div className="shrink-0 px-8 py-6">
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  QSR Q2 2026 Campaign Overview
-                </h1>
-                <button onClick={() => setKpiExpanded(!kpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
-                  <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${kpiExpanded ? "" : "-rotate-90"}`} />
-                </button>
-              </div>
-              {kpiExpanded && (
-                <div className="mt-5 flex gap-3">
-                  {metrics.map((m, i) => (
-                    <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="shrink-0 border-t border-border" />
-            <div className="px-8 py-6">
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-[#171417]">Date and Time</h2>
-                <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
-                <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
-              </div>
-
-              <div className="mt-6 rounded-2xl border border-border bg-white px-4 py-3 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <h3 className="text-base font-semibold text-[#171417]">Date and Time</h3>
-                    <div className="group relative">
-                      <Info className="size-4 text-muted-foreground/60" />
-                      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-[#202020] px-4 py-2 text-xs text-white shadow-lg group-hover:block">
-                        Review campaign performance over time and identify optimal timing.
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <select
-                      value={dtDimension}
-                      onChange={(e) => { setDtDimension(e.target.value as "Day of week" | "Hour of day"); setDtChartKey((k) => k + 1); }}
-                      className="rounded-md border border-[#f0f0f0] bg-[#fcfcfc] px-3 py-2 text-xs text-[#171417] outline-none focus:border-[#212be9] min-w-[160px]"
-                    >
-                      <option value="Day of week">Day of week</option>
-                      <option value="Hour of day">Hour of day</option>
-                    </select>
-                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                      <button onClick={() => setDtView("chart")} className={`flex size-7 items-center justify-center rounded transition-all duration-200 ${dtView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-4" /></button>
-                      <button onClick={() => setDtView("table")} className={`flex size-7 items-center justify-center rounded transition-all duration-200 ${dtView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-4" /></button>
-                    </div>
-                  </div>
-                </div>
-
-                {dtView === "chart" ? (
-                  <>
-                    <div className="mt-6 h-[380px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart key={dtChartKey} data={dayOfWeekData[dtDimension]} barGap={4} barCategoryGap="20%">
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                          <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "DAY OF WEEK", position: "insideBottom", offset: -4, fontSize: 11, fill: "#757575", fontWeight: 700 }} height={50} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "INDEX", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#757575", fontWeight: 700 }} width={50} />
-                          <RechartsTooltip content={<DateTimeChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
-                          <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
-                          <Bar dataKey="keyOne" name="KEY ONE" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
-                            {dayOfWeekData[dtDimension].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                          <Bar dataKey="keyTwo" name="KEY TWO" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
-                            {dayOfWeekData[dtDimension].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="mt-4 flex items-center justify-center gap-6">
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-bold uppercase text-[#757575]">Key One</span></div>
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-bold uppercase text-[#757575]">Key Two</span></div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="mt-4 max-h-[500px] overflow-y-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="sticky top-0 bg-white">
-                        <tr className="border-b border-border">
-                          <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">{dtDimension === "Day of week" ? "Day" : "Hour"}</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Key One <ArrowDownUp className="size-3" /></span></th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">Key Two</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dayOfWeekData[dtDimension].map((row) => (
-                          <tr key={row.category} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                            <td className="py-3 pr-4 font-medium text-[#171417]">{row.category}</td>
-                            <td className="px-4 py-3 tabular-nums font-semibold text-[#171417]">{row.keyOne}</td>
-                            <td className="px-4 py-3 tabular-nums font-semibold text-[#171417]">{row.keyTwo}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
 
           {/* Full-width top section: Title + KPIs */}
@@ -2917,6 +2116,7 @@ function CampaignDetailPageContent() {
                         ) : (
                           <div className="animate-slide-in-left">
                             <TypewriterMessage content={msg.content} title={msg.title} />
+                            {msg.chartType && <div className="mt-2"><InlineChart type={msg.chartType} /></div>}
                           </div>
                         )}
                       </div>
@@ -3014,8 +2214,8 @@ function CampaignDetailPageContent() {
                       <div key={i} className="animate-prompt-cascade group flex items-start gap-2 rounded-lg border border-border bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#212be9]/30 hover:shadow-md" style={{ animationDelay: `${i * 40}ms` }}>
                         <button onClick={() => handlePromptClick(prompt)} className="btn-press flex min-w-0 flex-1 items-start gap-2.5 text-left">
                           <svg className="mt-0.5 size-3.5 shrink-0 text-muted-foreground group-hover:text-[#212be9] transition-colors" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                            <path d="M4.5 8L7 10.5L11.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M2 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M8 14h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                           </svg>
                           <span className="text-xs leading-4 text-[#171417] group-hover:text-[#212be9] transition-colors">{prompt}</span>
                         </button>
@@ -3036,7 +2236,6 @@ function CampaignDetailPageContent() {
             )}
           </div>
         </div>
-        )}
           </>
         )}
       </div>
