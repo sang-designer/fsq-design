@@ -43,7 +43,7 @@ type Campaign = {
 };
 
 const INITIAL_CAMPAIGNS: Campaign[] = [
-  { id: 0, name: "McDonalds Q1-Q2 2025", slug: "mcdonalds-q1-q2-2025", logo: "M", logoColor: "#FFC72C", advertiser: "Google 360", status: "Pending", startDate: "1/6/2025", endDate: "6/30/2025" },
+  { id: 0, name: "QSR Q2 2026 Campaign", slug: "qsr-q2-2026", logo: "QS", logoColor: "#6366f1", advertiser: "Google 360", status: "Pending", startDate: "4/1/2026", endDate: "6/30/2026" },
   { id: 1, name: "Circle K Campaign Q1-Q4 etc", slug: "circle-k-q1-q4", logo: "CK", logoColor: "#ee2e24", advertiser: "Google 360", status: "Pending", startDate: "1/20/2025", endDate: "1/20/2025" },
   { id: 2, name: "McDonald's Q3 Fall Campaign", slug: "mcdonalds-q3-fall", logo: "M", logoColor: "#FFC72C", advertiser: "Google 360", status: "In Progress", startDate: "7/1/2025", endDate: "9/25/2025" },
   { id: 3, name: "Mcdonald's Summer Campaign", slug: "mcdonalds-summer", logo: "M", logoColor: "#FFC72C", advertiser: "Google 360", status: "Completed", startDate: "1/20/2025", endDate: "1/20/2025" },

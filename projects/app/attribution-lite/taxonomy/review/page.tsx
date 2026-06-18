@@ -29,15 +29,15 @@ const CAMPAIGN_DETAILS = [
   { label: "Geographical Location", value: "National: All US Markets" },
   { label: "Media Types", values: [{ text: "Display", count: 13 }, { text: "Online Video", count: 8 }, { text: "Audio", count: 2 }] },
   { label: "Conversion type", value: "Visits and Sales Impact" },
-  { label: "Total Est. Ad Spend", value: "$30,000,000" },
+  { label: "Total Est. Ad Spend", value: "$420,000" },
   { label: "Total Est. Impressions", value: "240,000,000" },
   { label: "Number of Partners", value: "12" },
   { label: "Salesforce Opportunity ID Link", link: { text: "P12345678", href: "#" } },
 ];
 
 const MEDIA_PARTNERS = [
-  { name: "VIANT", fundingSource: "Starcom", fundingEmail: "starcom@email...", mediaType: "Display +4", conversionType: "Visits and Sales...", startDate: "01/15/2025", endDate: "06/30/2025" },
-  { name: "Adtheorent", fundingSource: "Adtheorent LTD", fundingEmail: "starcom@email...", mediaType: "CTV", conversionType: "Visits and Sales...", startDate: "02/01/2025", endDate: "05/31/2025" },
+  { name: "VIANT", fundingSource: "Starcom", fundingEmail: "starcom@email...", mediaType: "Display +4", conversionType: "Visits and Sales...", startDate: "01/15/2025", endDate: "06/30/2025", adSpend: "$250,000" },
+  { name: "Adtheorent", fundingSource: "Adtheorent LTD", fundingEmail: "starcom@email...", mediaType: "CTV", conversionType: "Visits and Sales...", startDate: "02/01/2025", endDate: "05/31/2025", adSpend: "$170,000" },
 ];
 
 export default function ReviewPage() {
@@ -322,6 +322,7 @@ export default function ReviewPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-[#64748b]">Funding Sourc...</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-[#64748b]">Media Type</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-[#64748b]">Conversion Type</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-[#64748b]">Ad Spend</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-[#64748b]">Start Date</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-[#64748b]">End Date</th>
                   </tr>
@@ -334,6 +335,7 @@ export default function ReviewPage() {
                       <td className="px-4 py-3 text-sm text-[#757575]">{partner.fundingEmail}</td>
                       <td className="px-4 py-3 text-sm text-[#020617]">{partner.mediaType}</td>
                       <td className="px-4 py-3 text-sm text-[#020617]">{partner.conversionType}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-[#020617]">{partner.adSpend}</td>
                       <td className="px-4 py-3 text-sm text-[#020617]">{partner.startDate}</td>
                       <td className="px-4 py-3 text-sm text-[#020617]">{partner.endDate}</td>
                     </tr>

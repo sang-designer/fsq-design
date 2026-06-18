@@ -3,25 +3,18 @@
 import {
   ChevronRight,
   ChevronDown,
-  ChevronUp,
   Info,
   MoreVertical,
   Share2,
   Download,
   ArrowUp,
-  ArrowLeft,
-  ArrowLeftToLine,
   ArrowDownToLine,
   ExternalLink,
   Reply,
   OctagonAlert,
   Loader2,
   Lightbulb,
-  Gauge,
-  Eye,
-  Users,
-  MapPinned,
-  CalendarClock,
+  Brain,
   Settings,
   Grid3X3,
   CircleAlert,
@@ -31,23 +24,27 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Bookmark,
-  FileChartLine,
   ChartColumn,
-  Table2,
-  ArrowDownUp,
   LogOut,
+  RefreshCw,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Tooltip as KpiTooltip,
+  TooltipContent as KpiTooltipContent,
+  TooltipProvider,
+  TooltipTrigger as KpiTooltipTrigger,
+} from "@/components/ui/tooltip";
 import Link from "next/link";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend, Cell } from "recharts";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, useEffect, useRef, useCallback } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ReferenceLine, Legend, Cell } from "recharts";
 
 const sidebarItems = [
-  { icon: Gauge, label: "Campaign Overview" },
-  { icon: Eye, label: "User Cohort" },
-  { icon: Users, label: "Demographic" },
-  { icon: MapPinned, label: "Geography" },
-  { icon: CalendarClock, label: "Date and Time" },
-  { icon: Settings, label: "Settings" },
+  { icon: Brain, label: "Campaign Overview" },
 ];
 
 const metrics = [
@@ -60,6 +57,62 @@ const metrics = [
   { label: "Cost per Store Visits", value: "$0.92" },
 ];
 
+const KPI_TOOLTIPS: Record<string, string> = {
+  Impressions:
+    "Total ad impressions delivered during the campaign flight across all partners, tactics, and measured geographies.",
+  Reach: "Estimated count of unique users who received at least one impression from this campaign during the flight.",
+  Frequency: "Average number of impressions per reached user. Higher values can signal saturation for some cohorts.",
+  Spend: "Total media spend attributed to this campaign in the reporting window, before fees unless otherwise noted.",
+  "Store Visits":
+    "Attributed physical visits to measured store locations tied to exposed users, using the attribution model configured for this study.",
+  "Conversion rate":
+    "Share of exposed users who completed a store visit after impression delivery, based on the campaign attribution window.",
+  "Cost per Store Visits":
+    "Spend divided by attributed store visits (CPSV). Use this to compare efficiency across partners, geographies, and time periods.",
+};
+
+function KpiMetricCard({
+  label,
+  value,
+  animationDelayMs,
+}: {
+  label: string;
+  value: string;
+  animationDelayMs?: number;
+}) {
+  const description = KPI_TOOLTIPS[label] ?? `${label} for the selected reporting period.`;
+  return (
+    <div
+      data-kpi-metric-card
+      className={cn(
+        "hover-lift animate-kpi-entrance w-[172px] rounded-lg border border-border bg-white p-3 text-left shadow-sm outline-none",
+        "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+      )}
+      style={animationDelayMs != null ? { animationDelay: `${animationDelayMs}ms` } : undefined}
+    >
+      <div className="flex items-center justify-between gap-1 text-xs text-muted-foreground">
+        <span>{label}</span>
+        <KpiTooltip>
+          <KpiTooltipTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground/80 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+              aria-label={`${label}: more info`}
+            >
+              <Info className="size-3 shrink-0" aria-hidden />
+            </button>
+          </KpiTooltipTrigger>
+          <KpiTooltipContent side="top" className="max-w-[260px]">
+            <p className="text-xs font-semibold leading-snug text-foreground">{label}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
+          </KpiTooltipContent>
+        </KpiTooltip>
+      </div>
+      <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{value}</p>
+    </div>
+  );
+}
+
 const suggestedPrompts = [
   "What is the overall campaign performance insights?",
   "Which specific pockets\u2014including partners, tactics, audiences, or geographies\u2014are showing positive lift with \u226560% confidence but are currently underweighted in our delivery?",
@@ -71,21 +124,27 @@ const suggestedPrompts = [
   "Show me key optimization opportunities.",
   "Show me campaign performance by cohort.",
   "Show me partner performance comparison.",
+  "Show me the partner summary report.",
+  "Show me all partners performance metrics table.",
+  "Show me Pandora performance.",
+  "Show me Snap performance.",
   "Key Insight & Recommendations.",
 ];
 
-const partners = [
-  "AdTheorent",
-  "Nexxen",
-  "Settings",
-  "Teads",
-  "Pandora",
-  "Zeta",
-  "Epsilon",
-  "Snap",
+
+const campaignPerformanceData: { partner: string; impressions: number }[] = [
+  { partner: "Snap", impressions: 68 },
+  { partner: "iHeartRadio", impressions: 8 },
+  { partner: "Spotify", impressions: 6 },
+  { partner: "Pandora", impressions: 12 },
+  { partner: "Yelp", impressions: 5 },
+  { partner: "AdTheorent", impressions: 42 },
+  { partner: "Nexxen", impressions: 22 },
+  { partner: "Teads", impressions: 15 },
+  { partner: "Zeta", impressions: 18 },
+  { partner: "Epsilon", impressions: 10 },
 ];
 
-const partnerTabs = ["Overview", "User Cohort", "Demographics", "Geography", "Date and Time"];
 
 const partnerMetrics: Record<string, { label: string; value: string }[]> = {
   AdTheorent: [
@@ -144,15 +203,6 @@ Ad Frequency Sweet Spot:
    - Campaigns without lift: 11.2 avg frequency
    - Optimal range: 3-5 exposures`,
 };
-
-const partnerPrompts = [
-  "Show me the geography analysis.",
-  "Show me the demographics analysis.",
-  "Show me the date and time analysis.",
-  "Show me key optimization opportunities.",
-  "Show me campaign performance by cohort.",
-  "Key Insight & Recommendations.",
-];
 
 const initialSummary = `**QSR Brand Q2 2026 Media Reality**: Your media is fundamentally about driving visit frequency among existing high-frequenting customers (72.3% of all lift), NOT acquiring new or lapsed customers (2-5% lift presence). Partners and ad frequency must be optimized accordingly.
 
@@ -436,7 +486,7 @@ const promptResponses: Record<string, { title: string; content: string }> = {
 3. Use High Frequenter campaigns as the benchmark for partner evaluation`,
   },
   "Show me partner performance comparison.": {
-    title: "Partner Performance Comparison",
+    title: "Partner Performance Analysis",
     content: `**Partner Ranking by Lift Effectiveness**
 
 **Tier 1 \u2013 Scale (High lift, high confidence)**
@@ -465,6 +515,10 @@ const promptResponses: Record<string, { title: string; content: string }> = {
    - Optimized weighted CPLV: $10.20
    - Projected savings per flight: ~$245K at same visit volume`,
   },
+  "Show me the partner summary report.": {
+    title: "Partner Summary Report",
+    content: "__PARTNER_SUMMARY_TABLE__",
+  },
   "Key Insight & Recommendations.": {
     title: "Key Insights & Recommendations",
     content: `**Executive Summary**
@@ -491,13 +545,124 @@ Your QSR Brand Q2 2026 Campaign reached 22.6M users with 98.2M impressions, gene
    - Additional lift visits per flight: +1,840
    - Annual budget savings at current volume: ~$980K`,
   },
+  "Show me all partners performance metrics table.": {
+    title: "All Partners Performance Metrics",
+    content: `**Campaign Performance Metrics by Partner**
+
+| Rank | Partner | Spend | Store Visits | CPSV | Lift Rate |
+|------|---------|-------|--------------|------|-----------|
+| 1 | The Trade Desk | $105,000 | 98,450 | $1.07 | **5.1%** |
+| 2 | Viant | $84,000 | 89,240 | $0.94 | **4.8%** |
+| 3 | DV360 | $98,000 | 92,180 | $1.06 | **4.6%** |
+| 4 | Adtheorent | $70,000 | 72,836 | $0.96 | **3.2%** |
+| 5 | Amazon DSP | $63,000 | 68,920 | **$0.91** | **2.9%** |
+| **—** | **TOTAL** | **$420,000** | **421,626** | **$0.996** | **4.12%** |
+
+**Performance Insights:**
+
+🏆 **Top Performer:** The Trade Desk leads with 5.1% lift rate  
+💰 **Best Efficiency:** Amazon DSP delivers lowest CPSV at $0.91  
+📈 **Balanced Excellence:** Viant combines strong lift (4.8%) with competitive efficiency  
+⚠️ **Optimization Target:** Adtheorent shows potential for lift rate improvement  
+
+**Key Recommendations:**
+✅ **Scale Up:** Increase The Trade Desk allocation (+10-15%)  
+✅ **Maintain:** Hold Viant and DV360 at current performance levels  
+💡 **Optimize:** Test Amazon DSP creative refresh to boost incrementality  
+🎯 **Monitor:** Review Adtheorent frequency caps and targeting precision`,
+  },
 };
 
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   title?: string;
+  tableType?: "partnerSummary";
+  chartType?: "userCohort" | "demographic" | "geography" | "dateTime" | "campaignPerformance";
 };
+
+type PartnerSummaryRow = {
+  name: string;
+  spend: string;
+  impressions: string;
+  reach: string;
+  frequency: string;
+  cvr: string;
+  visits: string;
+  cpsv: string;
+  bvrLift: string;
+  liftVisits: string;
+  cplv: string;
+};
+
+const partnerSummaryData: PartnerSummaryRow[] = [
+  { name: "AdTheorent", spend: "$72,300", impressions: "23,408,453", reach: "6,335,380", frequency: "3.70", cvr: "3.08%", visits: "92,464", cpsv: "$0.78", bvrLift: "5.24%", liftVisits: "3,420", cplv: "$21.14" },
+  { name: "Pandora", spend: "$48,200", impressions: "14,204,322", reach: "4,102,440", frequency: "3.46", cvr: "3.12%", visits: "62,338", cpsv: "$0.77", bvrLift: "4.82%", liftVisits: "2,840", cplv: "$16.97" },
+  { name: "Snap", spend: "$62,400", impressions: "18,580,110", reach: "5,240,800", frequency: "3.55", cvr: "2.88%", visits: "78,420", cpsv: "$0.80", bvrLift: "3.41%", liftVisits: "2,190", cplv: "$28.49" },
+  { name: "Nexxen", spend: "$44,600", impressions: "12,640,800", reach: "3,820,100", frequency: "3.31", cvr: "2.94%", visits: "54,120", cpsv: "$0.82", bvrLift: "4.18%", liftVisits: "2,260", cplv: "$19.73" },
+  { name: "iHeartRadio", spend: "$35,800", impressions: "10,840,600", reach: "3,420,200", frequency: "3.17", cvr: "2.64%", visits: "44,280", cpsv: "$0.81", bvrLift: "2.98%", liftVisits: "1,540", cplv: "$23.25" },
+  { name: "Spotify", spend: "$52,600", impressions: "16,320,450", reach: "4,860,320", frequency: "3.36", cvr: "3.04%", visits: "68,940", cpsv: "$0.76", bvrLift: "4.12%", liftVisits: "2,620", cplv: "$20.08" },
+  { name: "Yelp", spend: "$28,400", impressions: "8,440,220", reach: "2,680,400", frequency: "3.15", cvr: "3.28%", visits: "38,520", cpsv: "$0.74", bvrLift: "5.14%", liftVisits: "1,980", cplv: "$14.34" },
+  { name: "Teads", spend: "$38,200", impressions: "11,420,380", reach: "3,640,600", frequency: "3.14", cvr: "2.72%", visits: "48,640", cpsv: "$0.79", bvrLift: "3.64%", liftVisits: "1,770", cplv: "$21.58" },
+  { name: "Zeta", spend: "$31,500", impressions: "9,280,440", reach: "2,940,800", frequency: "3.16", cvr: "2.86%", visits: "40,120", cpsv: "$0.78", bvrLift: "3.92%", liftVisits: "1,620", cplv: "$19.44" },
+  { name: "Epsilon", spend: "$26,800", impressions: "7,840,200", reach: "2,480,600", frequency: "3.16", cvr: "2.58%", visits: "34,280", cpsv: "$0.78", bvrLift: "2.84%", liftVisits: "1,340", cplv: "$20.00" },
+];
+
+function PartnerSummaryReportTable({ onPartnerClick }: { onPartnerClick?: (name: string) => void }) {
+  return (
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <h3 className="text-base font-semibold text-[#171417]">Summary Report</h3>
+        <span className="flex size-5 items-center justify-center rounded-full border border-border text-muted-foreground">
+          <Info className="size-3" />
+        </span>
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="w-full min-w-[900px] text-left text-sm">
+          <thead>
+            <tr className="border-b border-border bg-white">
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Report Name</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Spend</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Impressions</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Reach</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Frequency</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">CVR</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Visits</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">CPSV</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">BVR Lift</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Lift Visits</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">CPLV</th>
+            </tr>
+          </thead>
+          <tbody>
+            {partnerSummaryData.map((row) => (
+              <tr key={row.name} className="border-b border-border last:border-0 hover:bg-gray-50/50">
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm font-medium">
+                  <button
+                    onClick={() => onPartnerClick?.(row.name)}
+                    className="text-[#212be9] hover:underline transition-colors"
+                  >
+                    {row.name}
+                  </button>
+                </td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.spend}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.impressions}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.reach}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.frequency}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.cvr}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.visits}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.cpsv}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.bvrLift}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.liftVisits}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.cplv}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 function useTypewriter(text: string, speed: number = 8) {
   const [displayed, setDisplayed] = useState("");
@@ -584,7 +749,7 @@ function TypewriterMessage({ content, title, onComplete }: { content: string; ti
   return (
     <div>
       {title && <h3 className="mb-2 text-base font-semibold text-[#171417]">{title}</h3>}
-      <div className="rounded-lg border border-border bg-[#fafafa] p-5 transition-shadow duration-300 hover:shadow-md">
+      <div>
         <MarkdownRenderer text={displayed} />
         {!isComplete && <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[#212be9]" />}
       </div>
@@ -703,27 +868,6 @@ const demoGenderData = [
   { category: "Female", keyOne: 34, keyTwo: 72 },
 ];
 
-const demoAgeTableData = [
-  { age: "18 - 24", impressionIndex: 193, bvrLiftIndex: 6.22, cvr: 9.33 },
-  { age: "25 - 34", impressionIndex: 176, bvrLiftIndex: 6.22, cvr: 9.33 },
-  { age: "35 - 44", impressionIndex: 115, bvrLiftIndex: 6.22, cvr: 9.33 },
-  { age: "45 - 54", impressionIndex: 58, bvrLiftIndex: 6.22, cvr: 9.33 },
-  { age: "> 54", impressionIndex: 57, bvrLiftIndex: 6.22, cvr: 9.33 },
-];
-
-const demoGenderTableData = [
-  { gender: "Male", impressionIndex: 193, bvrLiftIndex: 6.22, cvr: 9.33 },
-  { gender: "Female", impressionIndex: 176, bvrLiftIndex: 6.22, cvr: 9.33 },
-];
-
-const cohortTableData = [
-  { cohort: "Not a customer", impressionIndex: 212, bvrLiftIndex: 4.18, cvr: 7.62 },
-  { cohort: "High", impressionIndex: 156, bvrLiftIndex: 8.44, cvr: 12.10 },
-  { cohort: "Medium", impressionIndex: 188, bvrLiftIndex: 6.92, cvr: 9.85 },
-  { cohort: "Low", impressionIndex: 142, bvrLiftIndex: 5.31, cvr: 8.47 },
-  { cohort: "Other", impressionIndex: 68, bvrLiftIndex: 3.55, cvr: 6.21 },
-];
-
 const geoStateData: Record<"Flight" | "Weekly" | "Monthly", { state: string; abbr: string; index: number }[]> = {
   Flight: [
     { state: "Alabama", abbr: "AL", index: 145 }, { state: "Alaska", abbr: "AK", index: 80 }, { state: "Arizona", abbr: "AZ", index: 110 },
@@ -793,25 +937,262 @@ function getGeoColor(index: number) {
   return `rgb(${r},${g},${b})`;
 }
 
-export default function CampaignDetailPage() {
+function InlineCohortChart() {
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-[#171417]">User Cohort — Index by Visit</h3>
+      </div>
+      <div className="h-[280px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={userCohortData["Flight"]} barGap={4} barCategoryGap="20%">
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+            <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} dy={8} height={40} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} domain={[0, 160]} width={40} />
+            <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+            <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
+            <Bar dataKey="impressionIndex" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={36} isAnimationActive animationDuration={800} animationEasing="ease-out" />
+            <Bar dataKey="bvrLiftIndex" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={36} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-3 flex items-center justify-center gap-6">
+        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
+        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
+      </div>
+    </div>
+  );
+}
+
+function InlineDemoChart() {
+  return (
+    <div className="mt-4 space-y-4">
+      <div className="rounded-lg border border-border bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-[#171417]">Demographics — Age</h3>
+        </div>
+        <div className="h-[260px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={demoAgeData["Flight"]} barGap={4} barCategoryGap="20%">
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} dy={8} height={40} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} domain={[0, 160]} width={40} />
+              <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+              <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
+              <Bar dataKey="impressionIndex" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={36} isAnimationActive animationDuration={800} />
+              <Bar dataKey="bvrLiftIndex" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={36} isAnimationActive animationDuration={800} animationBegin={200} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="mt-3 flex items-center justify-center gap-6">
+          <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
+          <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
+        </div>
+      </div>
+      <div className="rounded-lg border border-border bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-[#171417]">Demographics — Gender</h3>
+        </div>
+        <div className="h-[200px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={demoGenderData} barGap={4} barCategoryGap="30%">
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} dy={8} height={40} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} domain={[0, 160]} width={40} />
+              <RechartsTooltip content={<DateTimeChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+              <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
+              <Bar dataKey="keyOne" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={48} isAnimationActive animationDuration={800} />
+              <Bar dataKey="keyTwo" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={48} isAnimationActive animationDuration={800} animationBegin={200} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="mt-3 flex items-center justify-center gap-6">
+          <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
+          <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InlineGeoChart() {
+  const topStates = geoStateData["Flight"].sort((a, b) => b.index - a.index).slice(0, 10);
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-[#171417]">Geography — Top 10 States by Index</h3>
+      </div>
+      <div className="h-[320px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={topStates} layout="vertical" barCategoryGap="16%">
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
+            <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} domain={[0, 220]} />
+            <YAxis type="category" dataKey="state" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} width={100} />
+            <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
+            <ReferenceLine x={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
+            <Bar dataKey="index" fill="#4250E0" radius={[0, 3, 3, 0]} maxBarSize={24} isAnimationActive animationDuration={800} animationEasing="ease-out">
+              {topStates.map((entry, i) => (
+                <Cell key={i} fill={getGeoColor(entry.index)} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function InlineDateTimeChart() {
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-[#171417]">Date & Time — Day of Week</h3>
+      </div>
+      <div className="h-[280px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={dayOfWeekData["Day of week"]} barGap={4} barCategoryGap="20%">
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+            <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} dy={8} height={40} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} domain={[0, 180]} width={40} />
+            <RechartsTooltip content={<DateTimeChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+            <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
+            <Bar dataKey="keyOne" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={36} isAnimationActive animationDuration={800} />
+            <Bar dataKey="keyTwo" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={36} isAnimationActive animationDuration={800} animationBegin={200} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-3 flex items-center justify-center gap-6">
+        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
+        <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
+      </div>
+    </div>
+  );
+}
+
+function InlineChart({ type }: { type: "userCohort" | "demographic" | "geography" | "dateTime" | "campaignPerformance" }) {
+  switch (type) {
+    case "userCohort": return <InlineCohortChart />;
+    case "demographic": return <InlineDemoChart />;
+    case "geography": return <InlineGeoChart />;
+    case "dateTime": return <InlineDateTimeChart />;
+    case "campaignPerformance": return <CampaignPerformanceChart />;
+  }
+}
+
+function CampaignPerformanceChart() {
+  const [selectedPartners, setSelectedPartners] = useState<Set<string>>(new Set());
+  const allPartnerNames = campaignPerformanceData.map((d) => d.partner);
+  const isShowAll = selectedPartners.size === 0;
+  const filteredData = isShowAll ? campaignPerformanceData : campaignPerformanceData.filter((d) => selectedPartners.has(d.partner));
+
+  const togglePartner = (name: string) => {
+    setSelectedPartners((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
+  return (
+    <div className="rounded-lg border border-border bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-[#171417]">Campaign Performance</h3>
+        </div>
+        <button className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-gray-100">
+          <MoreVertical className="size-4" />
+        </button>
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => setSelectedPartners(new Set())}
+          className={`text-xs font-medium transition-all duration-200 ${isShowAll ? "text-[#171417]" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          Show all partners
+        </button>
+        <div className="h-4 w-px bg-border" />
+        {allPartnerNames.map((name) => (
+          <button
+            key={name}
+            onClick={() => togglePartner(name)}
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition-all duration-200 ${selectedPartners.has(name) ? "border-[#171417] text-[#171417]" : "border-border text-muted-foreground hover:border-gray-300 hover:text-foreground"}`}
+          >
+            {name}
+          </button>
+        ))}
+      </div>
+      <p className="mt-4 text-xs text-muted-foreground">Impressions (%)</p>
+      <div className="mt-2 h-[260px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={filteredData} barCategoryGap="40%">
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+            <XAxis dataKey="partner" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} width={35} />
+            <RechartsTooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
+            <Bar dataKey="impressions" fill="#212be9" radius={[3, 3, 0, 0]} maxBarSize={56} isAnimationActive animationDuration={600} animationEasing="ease-out" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function CampaignSystemError() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleRetry = () => {
+    router.replace(pathname);
+    router.refresh();
+  };
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="w-full max-w-lg border-border shadow-md">
+        <CardHeader>
+          <CardTitle className="text-lg">We couldn&apos;t load this campaign</CardTitle>
+          <CardDescription>
+            The attribution workspace is temporarily unavailable. Your data is safe; please try again shortly.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <Alert variant="destructive">
+            <OctagonAlert />
+            <AlertTitle>System error</AlertTitle>
+            <AlertDescription>
+              The analysis service did not respond. Check your network connection. If this keeps happening, contact
+              your Foursquare representative with the time you saw this message.
+            </AlertDescription>
+          </Alert>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" asChild>
+              <Link href="/attribution">Back to campaigns</Link>
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              onClick={handleRetry}
+              className="gap-2 bg-[#212be9] text-white hover:bg-[#1a22c4] hover:shadow-lg hover:shadow-[#212be9]/20"
+            >
+              <RefreshCw className="size-4" aria-hidden />
+              Try again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function CampaignDetailPageContent() {
+  const searchParams = useSearchParams();
+  const systemUnavailable = searchParams.get("system_error") === "1";
+
   const THINKING_DURATION = 3000;
   const [initialPhase, setInitialPhase] = useState<"thinking" | "typing" | "done">("thinking");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [activeSidebarItem, setActiveSidebarItem] = useState("Campaign Overview");
-  const [cohortTimeRange, setCohortTimeRange] = useState<"Flight" | "Weekly" | "Monthly">("Flight");
-  const [cohortChartKey, setCohortChartKey] = useState(0);
-  const [demoAgeTimeRange, setDemoAgeTimeRange] = useState<"Flight" | "Weekly" | "Monthly">("Flight");
-  const [demoChartKey, setDemoChartKey] = useState(0);
-  const [demoAgeView, setDemoAgeView] = useState<"chart" | "table">("chart");
-  const [demoGenderView, setDemoGenderView] = useState<"chart" | "table">("chart");
-  const [cohortView, setCohortView] = useState<"chart" | "table">("chart");
-  const [geoTimeRange, setGeoTimeRange] = useState<"Flight" | "Weekly" | "Monthly">("Flight");
-  const [geoView, setGeoView] = useState<"chart" | "table">("chart");
-  const [geoChartKey, setGeoChartKey] = useState(0);
-  const [hoveredState, setHoveredState] = useState<string | null>(null);
-  const [dtDimension, setDtDimension] = useState<"Day of week" | "Hour of day">("Day of week");
-  const [dtView, setDtView] = useState<"chart" | "table">("chart");
-  const [dtChartKey, setDtChartKey] = useState(0);
   const [promptsPanelOpen, setPromptsPanelOpen] = useState(true);
   const [kpiExpanded, setKpiExpanded] = useState(true);
   const [promptTab, setPromptTab] = useState<"default" | "saved">("default");
@@ -820,20 +1201,11 @@ export default function CampaignDetailPage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isResponding, setIsResponding] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const [partnerOpen, setPartnerOpen] = useState(false);
-  const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
-  const [partnerTab, setPartnerTab] = useState("Overview");
-  const [partnerPhase, setPartnerPhase] = useState<"thinking" | "typing" | "done">("thinking");
-  const [partnerChatMessages, setPartnerChatMessages] = useState<ChatMessage[]>([]);
-  const [partnerIsResponding, setPartnerIsResponding] = useState(false);
-  const [partnerInputValue, setPartnerInputValue] = useState("");
   const [reportMenuOpen, setReportMenuOpen] = useState(false);
   const [downloadsOpen, setDownloadsOpen] = useState(false);
   const [reportFiles, setReportFiles] = useState<ReportFile[]>([]);
   const [reportToast, setReportToast] = useState<{ type: "success" | "error"; visible: boolean }>({ type: "success", visible: false });
   const scrollRef = useRef<HTMLDivElement>(null);
-  const partnerRef = useRef<HTMLDivElement>(null);
-  const partnerScrollRef = useRef<HTMLDivElement>(null);
   const reportMenuRef = useRef<HTMLDivElement>(null);
   const downloadsRef = useRef<HTMLDivElement>(null);
 
@@ -841,17 +1213,6 @@ export default function CampaignDetailPage() {
     const t = window.setTimeout(() => setInitialPhase("typing"), THINKING_DURATION);
     return () => clearTimeout(t);
   }, []);
-
-  useEffect(() => {
-    if (!partnerOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (partnerRef.current && !partnerRef.current.contains(e.target as Node)) {
-        setPartnerOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [partnerOpen]);
 
   useEffect(() => {
     if (!reportMenuOpen) return;
@@ -871,7 +1232,14 @@ export default function CampaignDetailPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, [downloadsOpen]);
 
+  useEffect(() => {
+    if (!systemUnavailable) return;
+    setReportMenuOpen(false);
+    setDownloadsOpen(false);
+  }, [systemUnavailable]);
+
   const generateReport = useCallback((format: "pdf" | "xlsx") => {
+    if (systemUnavailable) return;
     setReportMenuOpen(false);
     const name = `QSR_Q2_2026_Report.${format}`;
     const newFile: ReportFile = { name, format, status: "generating", progress: 0 };
@@ -897,7 +1265,7 @@ export default function CampaignDetailPage() {
         );
       }
     }, 600);
-  }, []);
+  }, [systemUnavailable]);
 
   const { displayed: initialDisplayed, isComplete: initialComplete } = useTypewriter(
     initialPhase !== "thinking" ? initialSummary : "",
@@ -912,90 +1280,107 @@ export default function CampaignDetailPage() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [initialDisplayed, chatMessages, isResponding]);
 
-  // Reset partner view state when partner changes
-  useEffect(() => {
-    if (selectedPartner) {
-      setPartnerPhase("thinking");
-      setPartnerChatMessages([]);
-      setPartnerInputValue("");
-      setPartnerTab("Overview");
-      const t = window.setTimeout(() => setPartnerPhase("typing"), THINKING_DURATION);
-      return () => clearTimeout(t);
-    }
-  }, [selectedPartner]);
-
-  const partnerSummaryText = selectedPartner
-    ? (partnerSummaries[selectedPartner] || partnerSummaries.default)
-    : "";
-  const { displayed: partnerDisplayed, isComplete: partnerSummaryComplete } = useTypewriter(
-    partnerPhase !== "thinking" ? partnerSummaryText : "",
-    6
-  );
-
-  useEffect(() => {
-    if (partnerSummaryComplete && partnerPhase === "typing") setPartnerPhase("done");
-  }, [partnerSummaryComplete, partnerPhase]);
-
-  useEffect(() => {
-    if (partnerScrollRef.current) partnerScrollRef.current.scrollTop = partnerScrollRef.current.scrollHeight;
-  }, [partnerDisplayed, partnerChatMessages, partnerIsResponding]);
-
-  const submitPartnerPrompt = useCallback((text: string) => {
-    if (!text.trim() || partnerIsResponding) return;
-    const query = text.trim();
-    const userMsg: ChatMessage = { role: "user", content: query };
-    const resp = promptResponses[query];
-    const name = selectedPartner || "Partner";
-
-    const customResp = `Based on ${name} campaign data, here is an analysis for your query:
-
-**Analysis: "${query}"**
-
-**${name} Performance Data**
-   - **Impressions:** ${partnerMetrics[name]?.[0]?.value || "18.2M"} across all DMAs
-   - **Lift Presence:** 93% among High Frequenters
-   - **CVR Pattern:** Positive correlation \u2013 high CVR signals genuine engagement
-
-**Findings**
-   - High Frequenters respond best at 4-6 ad exposures (sweet spot)
-   - Mid-week lunch/dinner dayparts drive 72% of ${name} lift
-   - Top DMAs: Chicago (5.1% lift), Atlanta (4.8%), Dallas (4.3%)
-
-**Summary**
-1. ${name} is a top-tier partner for driving High Frequenter visits
-2. Frequency management is critical \u2013 cap at 6 exposures per user
-3. Recommend scaling ${name} budget from current allocation to 15-18% of total
-
-**Next Steps**
-   - Compare ${name} performance across cohorts in the User Cohort tab
-   - Review geographic distribution for budget reallocation opportunities`;
-
-    const assistantMsg: ChatMessage = {
-      role: "assistant",
-      content: resp?.content || customResp,
-      title: resp?.title || `${name} Analysis`,
-    };
-    setPartnerChatMessages((prev) => [...prev, userMsg]);
-    setPartnerIsResponding(true);
-    window.setTimeout(() => {
-      setPartnerChatMessages((prev) => [...prev, assistantMsg]);
-      setPartnerIsResponding(false);
-    }, 1500);
-    setPartnerInputValue("");
-  }, [partnerIsResponding, selectedPartner]);
-
-  const handlePartnerKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      submitPartnerPrompt(partnerInputValue);
-    }
-  };
-
   const submitPrompt = useCallback((text: string) => {
     if (!text.trim() || isResponding) return;
     const query = text.trim();
+    const queryLower = query.toLowerCase();
     const userMsg: ChatMessage = { role: "user", content: query };
     const resp = promptResponses[query];
+
+    const isPartnerSummary = !resp && /partner\s*summary\s*report/i.test(query);
+    const matchedResp = resp || (isPartnerSummary ? promptResponses["Show me the partner summary report."] : undefined);
+
+    const partnerNames = partnerSummaryData.map((r) => r.name);
+    const normalizedQuery = queryLower.replace(/[\[\]]/g, "");
+    const matchedPartner = partnerNames.find((name) =>
+      normalizedQuery.includes(name.toLowerCase())
+    );
+
+    let chartType: ChatMessage["chartType"] = undefined;
+    let chartSummary = "";
+
+    if (queryLower.includes("cohort") || queryLower.includes("user cohort")) {
+      chartType = "userCohort";
+      chartSummary = `**User Cohort Analysis**
+
+The chart below shows the Impression Index and BVR Lift Index across customer cohorts for the full flight period.
+
+**Key Findings**
+   - **Low Frequenters** show the highest BVR Lift Index (142), indicating strong incremental visit behavior
+   - **Medium Frequenters** are well-balanced with 88 impression index and 113 lift index
+   - **High Frequenters** have low impression share (35) but solid lift (72) — efficient targeting
+   - **Non-customers** show high impression delivery (112) but below-average lift (78)
+
+**Recommendation**
+1. Shift more impressions toward Low and Medium Frequenters where lift is strongest
+2. Reduce non-customer delivery where efficiency is lowest`;
+    } else if (queryLower.includes("demographic") || queryLower.includes("demographics") || queryLower.includes("demo")) {
+      chartType = "demographic";
+      chartSummary = `**Demographics Analysis**
+
+Below are the age and gender breakdowns for Impression Index and BVR Lift Index.
+
+**Age Insights**
+   - **45-54** age group dominates lift performance (148 BVR Lift Index)
+   - **18-24** has high impression delivery (112) but below-average lift (78)
+   - **35-44** shows balanced performance with growing lift (110)
+
+**Gender Insights**
+   - **Male** over-indexes on impressions (108) but under-indexes on lift (76)
+   - **Female** under-indexes on impressions (34) but delivers strong lift (72)
+
+**Recommendation**
+1. Increase budget allocation toward 35-54 age cohorts
+2. Explore female-skewed creative to capitalize on higher lift efficiency`;
+    } else if (queryLower.includes("geography") || queryLower.includes("geo") || queryLower.includes("state") || queryLower.includes("dma")) {
+      chartType = "geography";
+      chartSummary = `**Geography Analysis**
+
+The chart below shows the top 10 states ranked by BVR Lift Index for the full flight.
+
+**Key Findings**
+   - **North Dakota** leads with 210 index — small market but highly efficient
+   - **Nebraska** (200) and **Kansas** (195) round out the top 3
+   - **New York** (190) and **Illinois** (185) show strong performance in major metros
+   - Mid-size states consistently outperform mega-markets
+
+**Recommendation**
+1. Consider reallocating geo-targeting weight toward high-index midwestern states
+2. Test incremental budget in North Dakota, Nebraska, and Kansas corridors
+3. Major metros (NY, IL, CA) justify continued spend but at lower efficiency`;
+    } else if (queryLower.includes("date") || queryLower.includes("time") || queryLower.includes("day of week") || queryLower.includes("hour")) {
+      chartType = "dateTime";
+      chartSummary = `**Date & Time Analysis**
+
+The chart below shows Impression Index and BVR Lift Index by day of week.
+
+**Key Findings**
+   - **Thursday** is the top-performing day with 148 impression index and 108 lift index
+   - **Wednesday** shows balanced delivery (110) and strong lift (112)
+   - **Monday and Friday** are the weakest days — low on both metrics
+   - Mid-week dayparts consistently drive the most efficient visits
+
+**Recommendation**
+1. Concentrate delivery on Wednesday-Thursday for maximum lift
+2. Reduce Monday/Friday delivery or test different creative for those days
+3. Consider daypart optimization: lunch (11am-1pm) and dinner (5pm-7pm) windows`;
+    } else if (queryLower.includes("campaign performance") || queryLower.includes("partner performance") || queryLower.includes("performance insight") || queryLower.includes("overall performance") || queryLower.includes("impressions by partner")) {
+      chartType = "campaignPerformance";
+      chartSummary = `**Campaign Performance by Partner**
+
+The chart below shows impression share (%) across all media partners for the full flight.
+
+**Key Findings**
+   - **Snap** dominates impression delivery at 68% — highest reach partner
+   - **AdTheorent** is second at 42% with strong programmatic scale
+   - **Nexxen** (22%) and **Zeta** (18%) deliver mid-tier volume
+   - Long-tail partners (iHeartRadio, Spotify, Yelp) each contribute <10%
+
+**Recommendation**
+1. Evaluate whether Snap's dominance is intentional or over-concentrated
+2. Consider rebalancing toward mid-tier partners showing higher lift efficiency
+3. Use the partner filter to compare specific partners head-to-head`;
+    }
 
     const customResponse = `Based on the current campaign data for QSR Brand Q2 2026 Campaign, here is an analysis for your query:
 
@@ -1021,10 +1406,38 @@ export default function CampaignDetailPage() {
    - Consider drilling into specific partner or DMA breakdowns for deeper analysis
    - Use the suggested prompts on the right for pre-built analytical views`;
 
+    let partnerResponse = "";
+    if (matchedPartner && !matchedResp && !chartType) {
+      const pData = partnerSummaryData.find((r) => r.name === matchedPartner)!;
+      const pMetrics = partnerMetrics[matchedPartner] || partnerMetrics.default;
+      const pSummary = partnerSummaries[matchedPartner] || partnerSummaries.default;
+      partnerResponse = `**${matchedPartner} — QSR Q2 2026 Performance**
+
+**Key Metrics**
+   - **Spend:** ${pData.spend}
+   - **Impressions:** ${pData.impressions}
+   - **Reach:** ${pData.reach}
+   - **Frequency:** ${pData.frequency}
+   - **CVR:** ${pData.cvr}
+   - **Store Visits:** ${pData.visits}
+   - **Cost per Store Visit:** ${pData.cpsv}
+   - **BVR Lift:** ${pData.bvrLift}
+   - **Lift Visits:** ${pData.liftVisits}
+   - **Cost per Lift Visit:** ${pData.cplv}
+
+${pSummary}
+
+**Next Steps**
+   - Ask about user cohorts, demographics, geography, or date/time for detailed charts
+   - Type "Show me the partner summary report" for a full comparison table`;
+    }
+
     const assistantMsg: ChatMessage = {
       role: "assistant",
-      content: resp?.content || customResponse,
-      title: resp?.title || "Campaign Analysis",
+      content: matchedResp?.content === "__PARTNER_SUMMARY_TABLE__" ? "__PARTNER_SUMMARY_TABLE__" : chartType ? chartSummary : partnerResponse || (matchedResp?.content || customResponse),
+      title: matchedResp?.content === "__PARTNER_SUMMARY_TABLE__" ? "Partner Summary Report" : chartType ? undefined : partnerResponse ? `${matchedPartner} Performance` : (matchedResp?.title || "Campaign Analysis"),
+      ...(matchedResp?.content === "__PARTNER_SUMMARY_TABLE__" ? { tableType: "partnerSummary" as const } : {}),
+      chartType,
     };
     setChatMessages((prev) => [...prev, userMsg]);
     setIsResponding(true);
@@ -1055,6 +1468,7 @@ export default function CampaignDetailPage() {
   };
 
   return (
+    <TooltipProvider delayDuration={250}>
     <div className="flex h-screen flex-col bg-white font-sans">
       {/* Masthead */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-white px-12">
@@ -1127,52 +1541,10 @@ export default function CampaignDetailPage() {
           <ChevronRight className="size-3.5 text-muted-foreground" />
           <span className="flex items-center gap-1.5 font-medium text-[#171417]">
             <span className="flex size-5 items-center justify-center rounded bg-[#6366f1] text-[7px] font-bold text-white">QS</span>
-            {selectedPartner ? (
-              <button onClick={() => setSelectedPartner(null)} className="hover:text-[#212be9] transition-colors">
-                QSR Q2 2026 Campaign
-              </button>
-            ) : (
-              <>QSR Q2 2026 Campaign</>
-            )}
+            QSR Q2 2026 Campaign
           </span>
           <span className="ml-2 text-xs text-muted-foreground">Visits + Sales Impact</span>
           <span className="ml-2 animate-pulse rounded-full bg-[#dbeafe] px-2.5 py-0.5 text-xs font-medium text-[#2563eb]">In progress</span>
-          <div ref={partnerRef} className="relative ml-3">
-            <button
-              onClick={() => setPartnerOpen(!partnerOpen)}
-              className={`btn-press flex items-center gap-1 rounded-md border bg-white px-3 py-1 text-sm transition-all duration-200 ${partnerOpen ? "border-[#212be9] shadow-[0_0_0_1px_#212be9]" : "border-input hover:bg-[#f9f9f9]"}`}
-            >
-              <span className={selectedPartner ? "text-[#171417] font-medium" : "text-muted-foreground"}>
-                {selectedPartner || "Select a specific partner"}
-              </span>
-              {partnerOpen ? (
-                <ChevronUp className="size-3.5 text-muted-foreground transition-transform duration-200" />
-              ) : (
-                <ChevronDown className="size-3.5 text-muted-foreground transition-transform duration-200" />
-              )}
-            </button>
-            {partnerOpen && (
-              <div className="animate-slide-in-up absolute left-0 top-full z-50 mt-1 w-[200px] rounded-md border border-border bg-white py-1 shadow-md">
-                {selectedPartner && (
-                  <button
-                    onClick={() => { setSelectedPartner(null); setPartnerOpen(false); }}
-                    className="flex w-full items-center px-3 py-2 text-left text-sm text-muted-foreground transition-colors duration-150 hover:bg-[#f5f5ff] hover:text-[#212be9]"
-                  >
-                    All partners
-                  </button>
-                )}
-                {partners.map((partner) => (
-                  <button
-                    key={partner}
-                    onClick={() => { setSelectedPartner(partner); setPartnerOpen(false); }}
-                    className={`flex w-full items-center px-3 py-2 text-left text-sm transition-colors duration-150 hover:bg-[#f5f5ff] hover:text-[#212be9] ${selectedPartner === partner ? "bg-[#f5f5ff] font-medium text-[#212be9]" : "text-[#171417]"}`}
-                  >
-                    {partner}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
         <div className="flex items-center gap-2">
           <button className="btn-press flex size-8 items-center justify-center rounded-md text-muted-foreground transition-all duration-200 hover:scale-110 hover:bg-gray-50"><MoreVertical className="size-4" /></button>
@@ -1194,7 +1566,20 @@ export default function CampaignDetailPage() {
                 <div className="max-h-[240px] overflow-y-auto">
                   {reportFiles.length === 0 && (
                     <div className="px-4 py-5 text-center text-xs text-muted-foreground">
-                      No reports yet. Click <button onClick={() => { setDownloadsOpen(false); setReportMenuOpen(true); }} className="font-medium text-[#212be9] underline underline-offset-2">&apos;Generate Report&apos;</button> to get started.
+                      No reports yet. Click{" "}
+                      <button
+                        type="button"
+                        disabled={systemUnavailable}
+                        onClick={() => {
+                          if (systemUnavailable) return;
+                          setDownloadsOpen(false);
+                          setReportMenuOpen(true);
+                        }}
+                        className={`font-medium underline underline-offset-2 ${systemUnavailable ? "cursor-not-allowed text-muted-foreground no-underline opacity-50" : "text-[#212be9]"}`}
+                      >
+                        &apos;Generate Report&apos;
+                      </button>{" "}
+                      to get started.
                     </div>
                   )}
                   {reportFiles.map((file, i) => (
@@ -1226,7 +1611,12 @@ export default function CampaignDetailPage() {
                         </button>
                       )}
                       {file.status === "error" && (
-                        <button onClick={() => generateReport(file.format)} className="btn-press flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:text-[#212be9]">
+                        <button
+                          type="button"
+                          disabled={systemUnavailable}
+                          onClick={() => generateReport(file.format)}
+                          className={`btn-press flex size-6 shrink-0 items-center justify-center rounded transition-colors ${systemUnavailable ? "cursor-not-allowed text-muted-foreground opacity-40" : "text-muted-foreground hover:text-[#212be9]"}`}
+                        >
                           <Reply className="size-3.5" />
                         </button>
                       )}
@@ -1251,14 +1641,24 @@ export default function CampaignDetailPage() {
           {/* Generate Report Button + Dropdown */}
           <div ref={reportMenuRef} className="relative ml-1">
             <button
-              onClick={() => setReportMenuOpen(!reportMenuOpen)}
-              className="btn-press inline-flex items-center gap-1.5 rounded-md bg-[#212be9] px-4 py-1.5 text-sm font-medium text-white transition-all duration-200 hover:bg-[#1a22c4] hover:shadow-lg hover:shadow-[#212be9]/20"
+              type="button"
+              disabled={systemUnavailable}
+              onClick={() => {
+                if (systemUnavailable) return;
+                setReportMenuOpen(!reportMenuOpen);
+              }}
+              className={`btn-press inline-flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
+                systemUnavailable
+                  ? "cursor-not-allowed bg-muted text-muted-foreground opacity-60"
+                  : "bg-[#212be9] text-white hover:bg-[#1a22c4] hover:shadow-lg hover:shadow-[#212be9]/20"
+              }`}
             >
               Generate report <ChevronDown className={`size-3.5 transition-transform duration-200 ${reportMenuOpen ? "rotate-180" : ""}`} />
             </button>
-            {reportMenuOpen && (
+            {reportMenuOpen && !systemUnavailable && (
               <div className="animate-slide-in-up absolute right-0 top-full z-50 mt-1 w-[180px] rounded-md border border-border bg-white py-1 shadow-md">
                 <button
+                  type="button"
                   onClick={() => generateReport("pdf")}
                   className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#171417] transition-colors duration-150 hover:bg-[#f5f5ff] hover:text-[#212be9]"
                 >
@@ -1266,6 +1666,7 @@ export default function CampaignDetailPage() {
                   Generate as PDF
                 </button>
                 <button
+                  type="button"
                   onClick={() => generateReport("xlsx")}
                   className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#171417] transition-colors duration-150 hover:bg-[#f5f5ff] hover:text-[#212be9]"
                 >
@@ -1279,7 +1680,7 @@ export default function CampaignDetailPage() {
       </div>
 
       {/* Report Toast Notification */}
-      {reportToast.visible && (
+      {reportToast.visible && !systemUnavailable && (
         <div className={`animate-slide-in-up fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 rounded-lg px-5 py-3 shadow-lg ${reportToast.type === "success" ? "border border-[#212be9]/20 bg-white text-[#171417]" : "border border-red-200 bg-red-50 text-red-700"}`}>
           <div className="flex items-center gap-2.5 text-sm font-medium">
             {reportToast.type === "success" ? (
@@ -1292,208 +1693,10 @@ export default function CampaignDetailPage() {
       )}
 
       {/* Main Area */}
+      {systemUnavailable ? (
+        <CampaignSystemError />
+      ) : (
       <div className="flex min-h-0 flex-1">
-        {selectedPartner ? (
-          <>
-            {/* Partner Detail: sidebar */}
-            <aside className={`group/sidebar flex shrink-0 flex-col border-r border-border bg-white transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarExpanded ? "w-[220px]" : "w-12"}`}>
-              <div className="flex flex-1 flex-col gap-1 overflow-hidden px-1.5 py-3">
-                <button
-                  onClick={() => setSelectedPartner(null)}
-                  title={sidebarExpanded ? undefined : "Back to Campaign Overview"}
-                  className={`btn-press group/item relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-muted-foreground transition-all duration-200 hover:bg-gray-50 hover:text-foreground ${sidebarExpanded ? "" : "justify-center"}`}
-                >
-                  <ArrowLeft className="size-4 shrink-0" />
-                  {sidebarExpanded && <span className="truncate text-sm">Back to Campaign Overview</span>}
-                  {!sidebarExpanded && (
-                    <span className="pointer-events-none absolute left-full ml-2 z-50 hidden whitespace-nowrap rounded-md bg-[#171417] px-2.5 py-1.5 text-xs text-white shadow-md group-hover/item:block">Back to Campaign Overview</span>
-                  )}
-                </button>
-                <button
-                  title={sidebarExpanded ? undefined : "Partner Report"}
-                  className={`btn-press group/item relative flex items-center gap-2.5 rounded-md px-2 py-1.5 bg-[#f0f0ff] text-[#212be9] transition-all duration-200 ${sidebarExpanded ? "" : "justify-center"}`}
-                >
-                  <FileChartLine className="size-4 shrink-0" />
-                  {sidebarExpanded && <span className="truncate text-sm font-medium">Partner Report</span>}
-                  {!sidebarExpanded && (
-                    <span className="pointer-events-none absolute left-full ml-2 z-50 hidden whitespace-nowrap rounded-md bg-[#171417] px-2.5 py-1.5 text-xs text-white shadow-md group-hover/item:block">Partner Report</span>
-                  )}
-                </button>
-              </div>
-              <div className="flex flex-col gap-1 border-t border-border px-1.5 py-2">
-                <button
-                  onClick={() => setSidebarExpanded(!sidebarExpanded)}
-                  title={sidebarExpanded ? "Minimize" : "Expand"}
-                  className={`btn-press group/item relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-muted-foreground transition-all duration-200 hover:bg-gray-50 hover:text-foreground ${sidebarExpanded ? "" : "justify-center"}`}
-                >
-                  <ArrowLeftToLine className={`size-4 shrink-0 transition-transform duration-300 ${sidebarExpanded ? "" : "rotate-180"}`} />
-                  {sidebarExpanded && <span className="truncate text-sm">Minimize</span>}
-                  {!sidebarExpanded && (
-                    <span className="pointer-events-none absolute left-full ml-2 z-50 hidden whitespace-nowrap rounded-md bg-[#171417] px-2.5 py-1.5 text-xs text-white shadow-md group-hover/item:block">Expand</span>
-                  )}
-                </button>
-              </div>
-            </aside>
-
-            {/* Partner Detail: content area */}
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col animate-slide-in-right">
-              {/* Partner tabs */}
-              <div className="flex shrink-0 items-center border-b border-border bg-white px-6">
-                {partnerTabs.map((tab) => (
-                  <button key={tab} onClick={() => setPartnerTab(tab)} className={`px-4 py-2.5 text-sm transition-all duration-200 ${partnerTab === tab ? "border-b-2 border-[#212be9] font-medium text-[#212be9]" : "text-muted-foreground hover:text-foreground"}`}>{tab}</button>
-                ))}
-              </div>
-
-              {/* Partner Title + KPIs */}
-              <div className="shrink-0 px-8 py-6">
-                <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  {selectedPartner}: QSR Q2 2026 Overview
-                </h1>
-                <div className="mt-5 grid grid-cols-7 gap-3">
-                  {(partnerMetrics[selectedPartner] || partnerMetrics.default).map((m, i) => (
-                    <div key={m.label} className="hover-lift animate-kpi-entrance rounded-lg border border-border bg-white p-3 shadow-sm" style={{ animationDelay: `${i * 60}ms` }}>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">{m.label}<Info className="size-3 text-muted-foreground/60" /></div>
-                      <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{m.value}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="shrink-0 border-t border-border" />
-
-              {/* Partner Chat + Prompts */}
-              <div className="flex min-h-0 flex-1">
-                {/* Partner chat area */}
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                  <div ref={partnerScrollRef} className="flex-1 overflow-y-auto scroll-smooth">
-                    <div className="px-8 py-6">
-                      <div className="space-y-6">
-                        {partnerChatMessages.length === 0 && (
-                          <div>
-                            <h2 className="mb-3 text-base font-semibold text-[#171417]">Campaign Summary</h2>
-                            <div className="rounded-lg border border-border bg-[#fafafa] p-5">
-                              {partnerPhase === "thinking" && (
-                                <div className="flex items-center gap-3">
-                                  <div className="flex gap-1">
-                                    <span className="size-2 animate-bounce rounded-full bg-[#212be9] [animation-delay:0ms]" />
-                                    <span className="size-2 animate-bounce rounded-full bg-[#212be9] [animation-delay:150ms]" />
-                                    <span className="size-2 animate-bounce rounded-full bg-[#212be9] [animation-delay:300ms]" />
-                                  </div>
-                                  <SummarizingDots />
-                                </div>
-                              )}
-                              {partnerPhase !== "thinking" && (
-                                <div className="relative">
-                                  <MarkdownRenderer text={partnerDisplayed} />
-                                  {partnerPhase === "typing" && <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[#212be9]" />}
-                                </div>
-                              )}
-                            </div>
-                            {partnerPhase === "done" && (
-                              <p className="mt-4 text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                Ask a question about <em>this partner campaign report</em>, or select a suggested prompt on the left to get started.
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        {partnerChatMessages.map((msg, i) => (
-                          <div key={i}>
-                            {msg.role === "user" ? (
-                              <div className="animate-slide-in-right flex justify-end">
-                                <div className="group/bubble relative inline-flex max-w-[80%] items-center gap-2">
-                                  <button
-                                    onClick={() => toggleSavePrompt(msg.content)}
-                                    title={savedPrompts.has(msg.content) ? "Unsave" : "Save prompt"}
-                                    className={`btn-press flex size-6 shrink-0 items-center justify-center rounded-md transition-all ${savedPrompts.has(msg.content) ? "opacity-100 text-[#555]" : "opacity-0 text-muted-foreground hover:text-[#555] group-hover/bubble:opacity-100"}`}
-                                  >
-                                    <Bookmark className={`size-3.5 transition-all ${savedPrompts.has(msg.content) ? "fill-[#555] text-[#555]" : "fill-none"}`} />
-                                  </button>
-                                  <div className="rounded-full bg-[#f0f0f0] px-5 py-2.5 text-sm text-[#171417] transition-shadow duration-200 hover:shadow-md">
-                                    {msg.content}
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="animate-slide-in-left">
-                                <TypewriterMessage content={msg.content} title={msg.title} />
-                              </div>
-                            )}
-                          </div>
-                        ))}
-
-                        {partnerIsResponding && (
-                          <div className="animate-slide-in-up flex items-center gap-3 py-2">
-                            <div className="flex gap-1">
-                              <span className="size-2 animate-bounce rounded-full bg-[#212be9] [animation-delay:0ms]" />
-                              <span className="size-2 animate-bounce rounded-full bg-[#212be9] [animation-delay:150ms]" />
-                              <span className="size-2 animate-bounce rounded-full bg-[#212be9] [animation-delay:300ms]" />
-                            </div>
-                            <SummarizingDots />
-                          </div>
-                        )}
-
-                        {partnerChatMessages.length > 0 && !partnerIsResponding && partnerChatMessages[partnerChatMessages.length - 1].role === "assistant" && (
-                          <p className="text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            Ask a question about <em>this partner campaign report</em>, or select a suggested prompt on the left to get started.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Partner chat input */}
-                  <div className="shrink-0 border-t border-border bg-white px-8 py-4">
-                    <div className="relative">
-                      <textarea
-                        placeholder="Ask anything about this campaign"
-                        rows={2}
-                        value={partnerInputValue}
-                        onChange={(e) => setPartnerInputValue(e.target.value)}
-                        onKeyDown={handlePartnerKeyDown}
-                        className="w-full resize-none rounded-lg border border-border bg-white px-4 py-3 pr-12 text-sm leading-5 placeholder:text-muted-foreground transition-all duration-300 focus:border-[#212be9] focus:outline-none focus:ring-2 focus:ring-[#212be9]/20 focus:shadow-[0_0_20px_rgba(33,43,233,0.08)]"
-                      />
-                      <button
-                        onClick={() => submitPartnerPrompt(partnerInputValue)}
-                        disabled={!partnerInputValue.trim() || partnerIsResponding}
-                        className={`btn-press absolute bottom-3 right-3 flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-all duration-200 hover:bg-[#212be9] hover:text-white hover:border-[#212be9] hover:shadow-lg hover:shadow-[#212be9]/25 disabled:opacity-40 disabled:hover:shadow-none ${partnerInputValue.trim() && !partnerIsResponding ? "bg-[#212be9] text-white border-[#212be9] shadow-md shadow-[#212be9]/20" : "bg-white"}`}
-                      >
-                        <ArrowUp className="size-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Partner suggested prompts */}
-                <div className="flex w-[300px] shrink-0 flex-col border-l border-border bg-white animate-slide-in-right">
-                  <div className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-[#171417]">
-                    <Lightbulb className="size-4" />
-                    Suggested Prompts
-                  </div>
-                  <div className="flex-1 overflow-y-auto px-4 pb-4">
-                    <div className="flex flex-col gap-2">
-                      {partnerPrompts.map((prompt, i) => (
-                        <div key={i} className="animate-prompt-cascade group flex items-start gap-2 rounded-lg border border-border bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#212be9]/30 hover:shadow-md" style={{ animationDelay: `${i * 40}ms` }}>
-                          <button onClick={() => submitPartnerPrompt(prompt)} className="btn-press flex min-w-0 flex-1 items-start gap-2.5 text-left">
-                            <svg className="mt-0.5 size-3.5 shrink-0 text-muted-foreground group-hover:text-[#212be9] transition-colors" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                              <path d="M4.5 8L7 10.5L11.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <span className="text-xs leading-4 text-[#171417] group-hover:text-[#212be9] transition-colors">{prompt}</span>
-                          </button>
-                          <button onClick={() => toggleSavePrompt(prompt)} title={savedPrompts.has(prompt) ? "Unsave" : "Save"} className="mt-0.5 flex size-4 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-[#555]">
-                            <Bookmark className={`size-3.5 transition-all ${savedPrompts.has(prompt) ? "fill-[#555] text-[#555]" : "fill-none"}`} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
             {/* Campaign View: sidebar */}
             <aside className={`group/sidebar flex shrink-0 flex-col border-r border-border bg-white transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarExpanded ? "w-[200px]" : "w-12"}`}>
               <div className="flex flex-1 flex-col gap-3 overflow-hidden px-2 pt-3">
@@ -1502,7 +1705,7 @@ export default function CampaignDetailPage() {
                   return (
                   <button
                     key={item.label}
-                    onClick={() => { setActiveSidebarItem(item.label); if (item.label === "User Cohort") setCohortChartKey((k) => k + 1); if (item.label === "Demographic") setDemoChartKey((k) => k + 1); if (item.label === "Geography") setGeoChartKey((k) => k + 1); }}
+                    onClick={() => { setActiveSidebarItem(item.label); }}
                     title={sidebarExpanded ? undefined : item.label}
                     className={`btn-press group/item relative flex items-center gap-2.5 rounded-md px-2 py-1.5 transition-all duration-200 ${
                       isActive
@@ -1541,535 +1744,6 @@ export default function CampaignDetailPage() {
             </aside>
 
         {/* Content + Panel */}
-        {activeSidebarItem === "User Cohort" ? (
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-            <div className="shrink-0 px-8 py-6">
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  QSR Q2 2026 Campaign Overview
-                </h1>
-                <button onClick={() => setKpiExpanded(!kpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
-                  <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${kpiExpanded ? "" : "-rotate-90"}`} />
-                </button>
-              </div>
-              {kpiExpanded && (
-                <div className="mt-5 grid grid-cols-7 gap-3">
-                  {metrics.map((m, i) => (
-                    <div key={m.label} className="hover-lift animate-kpi-entrance rounded-lg border border-border bg-white p-3 shadow-sm" style={{ animationDelay: `${i * 60}ms` }}>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">{m.label}<Info className="size-3 text-muted-foreground/60" /></div>
-                      <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{m.value}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="shrink-0 border-t border-border" />
-            <div className="px-8 py-6">
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-[#171417]">User Cohort</h2>
-                <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
-                <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
-              </div>
-              <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-[#171417]">Index by Visit</h3>
-                    <Info className="size-3.5 text-muted-foreground/60" />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {cohortView === "chart" && (
-                      <div className="flex items-center gap-0.5 rounded-md border border-border bg-white p-0.5">
-                        {(["Flight", "Weekly", "Monthly"] as const).map((t) => (
-                          <button
-                            key={t}
-                            onClick={() => { setCohortTimeRange(t); setCohortChartKey((k) => k + 1); }}
-                            className={`rounded px-3 py-1 text-xs font-medium transition-all duration-200 ${cohortTimeRange === t ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                      <button onClick={() => setCohortView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${cohortView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
-                      <button onClick={() => setCohortView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${cohortView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
-                    </div>
-                  </div>
-                </div>
-                {cohortView === "chart" ? (
-                  <>
-                    <div className="mt-6 h-[380px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart key={cohortChartKey} data={userCohortData[cohortTimeRange]} barGap={4} barCategoryGap="20%">
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                          <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "AGE", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "INDEX", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={50} />
-                          <Tooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
-                          <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
-                          <Bar dataKey="impressionIndex" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
-                            {userCohortData[cohortTimeRange].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                          <Bar dataKey="bvrLiftIndex" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
-                            {userCohortData[cohortTimeRange].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="mt-4 flex items-center justify-center gap-6">
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="mt-4">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">Cohort</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Impression Index <ArrowDownUp className="size-3" /></span></th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">BVR Lift Index</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">CVR</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {cohortTableData.map((row) => (
-                          <tr key={row.cohort} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                            <td className="py-4 pr-4 font-medium text-[#171417]">{row.cohort}</td>
-                            <td className="px-4 py-4 tabular-nums text-[#171417]">{row.impressionIndex}</td>
-                            <td className="px-4 py-4">
-                              <div className="flex items-center gap-2">
-                                <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-[#4250E0]" style={{ width: `${Math.min(100, row.bvrLiftIndex * 10)}%` }} /></div>
-                                <span className="tabular-nums text-[#171417]">{row.bvrLiftIndex}%</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 tabular-nums text-[#171417]">{row.cvr}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : activeSidebarItem === "Demographic" ? (
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-            <div className="shrink-0 px-8 py-6">
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  QSR Q2 2026 Campaign Overview
-                </h1>
-                <button onClick={() => setKpiExpanded(!kpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
-                  <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${kpiExpanded ? "" : "-rotate-90"}`} />
-                </button>
-              </div>
-              {kpiExpanded && (
-                <div className="mt-5 grid grid-cols-7 gap-3">
-                  {metrics.map((m, i) => (
-                    <div key={m.label} className="hover-lift animate-kpi-entrance rounded-lg border border-border bg-white p-3 shadow-sm" style={{ animationDelay: `${i * 60}ms` }}>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">{m.label}<Info className="size-3 text-muted-foreground/60" /></div>
-                      <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{m.value}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="shrink-0 border-t border-border" />
-            <div className="px-8 py-6">
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-[#171417]">Demographics</h2>
-                <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
-                <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
-              </div>
-
-              {/* Age Chart */}
-              <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-[#171417]">Age</h3>
-                    <Info className="size-3.5 text-muted-foreground/60" />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {demoAgeView === "chart" && (
-                      <div className="flex items-center gap-0.5 rounded-md border border-border bg-white p-0.5">
-                        {(["Flight", "Weekly", "Monthly"] as const).map((t) => (
-                          <button
-                            key={t}
-                            onClick={() => { setDemoAgeTimeRange(t); setDemoChartKey((k) => k + 1); }}
-                            className={`rounded px-3 py-1 text-xs font-medium transition-all duration-200 ${demoAgeTimeRange === t ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                      <button onClick={() => setDemoAgeView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${demoAgeView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
-                      <button onClick={() => setDemoAgeView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${demoAgeView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
-                    </div>
-                  </div>
-                </div>
-                {demoAgeView === "chart" ? (
-                  <>
-                    <div className="mt-6 h-[320px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart key={`age-${demoChartKey}`} data={demoAgeData[demoAgeTimeRange]} barGap={4} barCategoryGap="20%">
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                          <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "AGE", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "IMPRESSION", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={60} />
-                          <Tooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
-                          <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
-                          <Bar dataKey="impressionIndex" name="IMPRESSION INDEX" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
-                            {demoAgeData[demoAgeTimeRange].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                          <Bar dataKey="bvrLiftIndex" name="BVR LIFT INDEX" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
-                            {demoAgeData[demoAgeTimeRange].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="mt-4 flex items-center justify-center gap-6">
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">IMPRESSION INDEX</span></div>
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">BVR LIFT INDEX</span></div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="mt-4">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">Age</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Impression Index <ArrowDownUp className="size-3" /></span></th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">BVR Lift Index</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">CVR</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {demoAgeTableData.map((row) => (
-                          <tr key={row.age} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                            <td className="py-4 pr-4 font-medium text-[#171417]">{row.age}</td>
-                            <td className="px-4 py-4 tabular-nums text-[#171417]">{row.impressionIndex}</td>
-                            <td className="px-4 py-4">
-                              <div className="flex items-center gap-2">
-                                <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-[#4250E0]" style={{ width: `${Math.min(100, row.bvrLiftIndex * 10)}%` }} /></div>
-                                <span className="tabular-nums text-[#171417]">{row.bvrLiftIndex}%</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 tabular-nums text-[#171417]">{row.cvr}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-
-              {/* Gender Chart */}
-              <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-[#171417]">Gender</h3>
-                    <Info className="size-3.5 text-muted-foreground/60" />
-                  </div>
-                  <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                    <button onClick={() => setDemoGenderView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${demoGenderView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
-                    <button onClick={() => setDemoGenderView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${demoGenderView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
-                  </div>
-                </div>
-                {demoGenderView === "chart" ? (
-                  <>
-                    <div className="mt-6 h-[320px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart key={`gender-${demoChartKey}`} data={demoGenderData} barGap={4} barCategoryGap="30%">
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                          <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "GENDER", position: "insideBottom", offset: -4, fontSize: 11, fill: "#868384", fontWeight: 500 }} height={50} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "IMPRESSION", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#868384", fontWeight: 500 }} width={60} />
-                          <Tooltip content={<CohortChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
-                          <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
-                          <Bar dataKey="keyOne" name="KEY ONE" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={56} isAnimationActive animationDuration={800} animationEasing="ease-out">
-                            {demoGenderData.map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                          <Bar dataKey="keyTwo" name="KEY TWO" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={56} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
-                            {demoGenderData.map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="mt-4 flex items-center justify-center gap-6">
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-medium text-muted-foreground">KEY ONE</span></div>
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-medium text-muted-foreground">KEY TWO</span></div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="mt-4">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">Gender</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Impression Index <ArrowDownUp className="size-3" /></span></th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">BVR Lift Index</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">CVR</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {demoGenderTableData.map((row) => (
-                          <tr key={row.gender} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                            <td className="py-4 pr-4 font-medium text-[#171417]">{row.gender}</td>
-                            <td className="px-4 py-4 tabular-nums text-[#171417]">{row.impressionIndex}</td>
-                            <td className="px-4 py-4">
-                              <div className="flex items-center gap-2">
-                                <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-[#4250E0]" style={{ width: `${Math.min(100, row.bvrLiftIndex * 10)}%` }} /></div>
-                                <span className="tabular-nums text-[#171417]">{row.bvrLiftIndex}%</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 tabular-nums text-[#171417]">{row.cvr}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : activeSidebarItem === "Geography" ? (
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-            <div className="shrink-0 px-8 py-6">
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  QSR Q2 2026 Campaign Overview
-                </h1>
-                <button onClick={() => setKpiExpanded(!kpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
-                  <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${kpiExpanded ? "" : "-rotate-90"}`} />
-                </button>
-              </div>
-              {kpiExpanded && (
-                <div className="mt-5 grid grid-cols-7 gap-3">
-                  {metrics.map((m, i) => (
-                    <div key={m.label} className="hover-lift animate-kpi-entrance rounded-lg border border-border bg-white p-3 shadow-sm" style={{ animationDelay: `${i * 60}ms` }}>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">{m.label}<Info className="size-3 text-muted-foreground/60" /></div>
-                      <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{m.value}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="shrink-0 border-t border-border" />
-            <div className="px-8 py-6">
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-[#171417]">Geography</h2>
-                <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
-                <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
-              </div>
-
-              <div className="mt-6 rounded-lg border border-border bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-[#171417]">Geography Overview</h3>
-                    <div className="group relative">
-                      <Info className="size-3.5 text-muted-foreground/60" />
-                      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-border bg-[#171417] px-3 py-1.5 text-xs text-white shadow-lg group-hover:block">
-                        Analyze geographic distribution of your campaign performance across
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {geoView === "chart" && (
-                      <div className="flex items-center gap-0.5 rounded-md border border-border bg-white p-0.5">
-                        {(["Flight", "Weekly", "Monthly"] as const).map((t) => (
-                          <button
-                            key={t}
-                            onClick={() => { setGeoTimeRange(t); setGeoChartKey((k) => k + 1); }}
-                            className={`rounded px-3 py-1 text-xs font-medium transition-all duration-200 ${geoTimeRange === t ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                      <button onClick={() => setGeoView("chart")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${geoView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-3.5" /></button>
-                      <button onClick={() => setGeoView("table")} className={`flex size-6 items-center justify-center rounded transition-all duration-200 ${geoView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-3.5" /></button>
-                    </div>
-                  </div>
-                </div>
-
-                {geoView === "chart" ? (
-                  <div className="relative mt-6">
-                    <div className="absolute left-0 top-8 flex flex-col items-center gap-1">
-                      <div className="h-24 w-3 rounded-sm" style={{ background: "linear-gradient(to bottom, rgb(30,50,205), rgb(100,130,235), rgb(180,200,255), rgb(220,225,255))" }} />
-                      <span className="text-[10px] tabular-nums text-muted-foreground">200</span>
-                      <div className="h-4" />
-                      <span className="text-[10px] tabular-nums text-muted-foreground">100</span>
-                    </div>
-                    <div key={geoChartKey} className="ml-10">
-                      <div className="grid grid-cols-11 gap-1">
-                        {geoStateData[geoTimeRange]
-                          .sort((a, b) => a.state.localeCompare(b.state))
-                          .map((s, i) => (
-                          <div
-                            key={s.abbr}
-                            onMouseEnter={() => setHoveredState(s.abbr)}
-                            onMouseLeave={() => setHoveredState(null)}
-                            className="group relative flex aspect-square items-center justify-center rounded-md text-[10px] font-semibold transition-all duration-300 hover:scale-110 hover:shadow-lg hover:z-10"
-                            style={{
-                              backgroundColor: getGeoColor(s.index),
-                              color: s.index > 150 ? "white" : "#171417",
-                              opacity: hoveredState && hoveredState !== s.abbr ? 0.5 : 1,
-                              animationDelay: `${i * 20}ms`,
-                            }}
-                          >
-                            {s.abbr}
-                            <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 rounded-lg border border-border bg-white px-3 py-2 shadow-lg group-hover:block">
-                              <p className="whitespace-nowrap text-xs font-semibold text-[#171417]">{s.state}</p>
-                              <p className="whitespace-nowrap text-[10px] text-muted-foreground">Index: <span className="font-semibold tabular-nums text-[#171417]">{s.index}</span></p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-4 max-h-[500px] overflow-y-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="sticky top-0 bg-white">
-                        <tr className="border-b border-border">
-                          <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">State</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Index <ArrowDownUp className="size-3" /></span></th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">Performance</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[...geoStateData[geoTimeRange]].sort((a, b) => b.index - a.index).map((row) => (
-                          <tr key={row.abbr} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                            <td className="py-3 pr-4">
-                              <span className="font-medium text-[#171417]">{row.state}</span>
-                              <span className="ml-1.5 text-xs text-muted-foreground">({row.abbr})</span>
-                            </td>
-                            <td className="px-4 py-3 tabular-nums font-semibold text-[#171417]">{row.index}</td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                <div className="h-2 w-28 overflow-hidden rounded-full bg-gray-100">
-                                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (row.index / 220) * 100)}%`, backgroundColor: getGeoColor(row.index) }} />
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : activeSidebarItem === "Date and Time" ? (
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-            <div className="shrink-0 px-8 py-6">
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                  QSR Q2 2026 Campaign Overview
-                </h1>
-                <button onClick={() => setKpiExpanded(!kpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
-                  <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${kpiExpanded ? "" : "-rotate-90"}`} />
-                </button>
-              </div>
-              {kpiExpanded && (
-                <div className="mt-5 grid grid-cols-7 gap-3">
-                  {metrics.map((m, i) => (
-                    <div key={m.label} className="hover-lift animate-kpi-entrance rounded-lg border border-border bg-white p-3 shadow-sm" style={{ animationDelay: `${i * 60}ms` }}>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">{m.label}<Info className="size-3 text-muted-foreground/60" /></div>
-                      <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{m.value}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="shrink-0 border-t border-border" />
-            <div className="px-8 py-6">
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-[#171417]">Date and Time</h2>
-                <span className="text-xs text-muted-foreground">Last updated: <strong className="font-semibold text-[#171417]">Updated 3 minutes ago</strong></span>
-                <span className="text-xs text-muted-foreground">Visits through: <strong className="font-semibold text-[#171417]">01/11/25</strong></span>
-              </div>
-
-              <div className="mt-6 rounded-2xl border border-border bg-white px-4 py-3 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <h3 className="text-base font-semibold text-[#171417]">Date and Time</h3>
-                    <div className="group relative">
-                      <Info className="size-4 text-muted-foreground/60" />
-                      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-[#202020] px-4 py-2 text-xs text-white shadow-lg group-hover:block">
-                        Review campaign performance over time and identify optimal timing.
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <select
-                      value={dtDimension}
-                      onChange={(e) => { setDtDimension(e.target.value as "Day of week" | "Hour of day"); setDtChartKey((k) => k + 1); }}
-                      className="rounded-md border border-[#f0f0f0] bg-[#fcfcfc] px-3 py-2 text-xs text-[#171417] outline-none focus:border-[#212be9] min-w-[160px]"
-                    >
-                      <option value="Day of week">Day of week</option>
-                      <option value="Hour of day">Hour of day</option>
-                    </select>
-                    <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
-                      <button onClick={() => setDtView("chart")} className={`flex size-7 items-center justify-center rounded transition-all duration-200 ${dtView === "chart" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><ChartColumn className="size-4" /></button>
-                      <button onClick={() => setDtView("table")} className={`flex size-7 items-center justify-center rounded transition-all duration-200 ${dtView === "table" ? "bg-gray-200 text-[#171417] shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Table2 className="size-4" /></button>
-                    </div>
-                  </div>
-                </div>
-
-                {dtView === "chart" ? (
-                  <>
-                    <div className="mt-6 h-[380px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart key={dtChartKey} data={dayOfWeekData[dtDimension]} barGap={4} barCategoryGap="20%">
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                          <XAxis dataKey="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} dy={8} label={{ value: "DAY OF WEEK", position: "insideBottom", offset: -4, fontSize: 11, fill: "#757575", fontWeight: 700 }} height={50} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#555" }} domain={[0, 160]} ticks={[0, 25, 50, 75, 100, 125, 150]} label={{ value: "INDEX", angle: -90, position: "insideLeft", offset: 10, fontSize: 11, fill: "#757575", fontWeight: 700 }} width={50} />
-                          <Tooltip content={<DateTimeChartTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)", radius: 4 }} />
-                          <ReferenceLine y={100} stroke="#868384" strokeDasharray="6 4" strokeWidth={1} />
-                          <Bar dataKey="keyOne" name="KEY ONE" fill="#4250E0" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out">
-                            {dayOfWeekData[dtDimension].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                          <Bar dataKey="keyTwo" name="KEY TWO" fill="#97DAF8" radius={[3, 3, 0, 0]} maxBarSize={44} isAnimationActive animationDuration={800} animationEasing="ease-out" animationBegin={200}>
-                            {dayOfWeekData[dtDimension].map((_, i) => (<Cell key={i} className="transition-opacity duration-200 hover:opacity-80" />))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="mt-4 flex items-center justify-center gap-6">
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#4250E0]" /><span className="text-xs font-bold uppercase text-[#757575]">Key One</span></div>
-                      <div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#97DAF8]" /><span className="text-xs font-bold uppercase text-[#757575]">Key Two</span></div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="mt-4 max-h-[500px] overflow-y-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="sticky top-0 bg-white">
-                        <tr className="border-b border-border">
-                          <th className="py-3 pr-4 text-xs font-medium text-[#212be9]">{dtDimension === "Day of week" ? "Day" : "Hour"}</th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]"><span className="inline-flex items-center gap-1">Key One <ArrowDownUp className="size-3" /></span></th>
-                          <th className="px-4 py-3 text-xs font-medium text-[#212be9]">Key Two</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dayOfWeekData[dtDimension].map((row) => (
-                          <tr key={row.category} className="border-b border-border last:border-0 transition-colors hover:bg-gray-50/50">
-                            <td className="py-3 pr-4 font-medium text-[#171417]">{row.category}</td>
-                            <td className="px-4 py-3 tabular-nums font-semibold text-[#171417]">{row.keyOne}</td>
-                            <td className="px-4 py-3 tabular-nums font-semibold text-[#171417]">{row.keyTwo}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
 
           {/* Full-width top section: Title + KPIs */}
@@ -2084,12 +1758,9 @@ export default function CampaignDetailPage() {
             </div>
 
             {kpiExpanded && (
-              <div className="mt-5 grid grid-cols-7 gap-3">
+              <div className="mt-5 flex gap-3">
                 {metrics.map((m, i) => (
-                  <div key={m.label} className="hover-lift animate-kpi-entrance rounded-lg border border-border bg-white p-3 shadow-sm" style={{ animationDelay: `${i * 60}ms` }}>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">{m.label}<Info className="size-3 text-muted-foreground/60" /></div>
-                    <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{m.value}</p>
-                  </div>
+                  <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
                 ))}
               </div>
             )}
@@ -2109,7 +1780,7 @@ export default function CampaignDetailPage() {
                     {chatMessages.length === 0 && (
                       <div>
                         <h2 className="mb-3 text-base font-semibold text-[#171417]">Campaign Summary</h2>
-                        <div className="rounded-lg border border-border bg-[#fafafa] p-5">
+                        <div>
                           {initialPhase === "thinking" && (
                             <div className="flex items-center gap-3">
                               <div className="flex gap-1">
@@ -2154,7 +1825,14 @@ export default function CampaignDetailPage() {
                           </div>
                         ) : (
                           <div className="animate-slide-in-left">
-                            <TypewriterMessage content={msg.content} title={msg.title} />
+                            {msg.tableType === "partnerSummary" ? (
+                              <PartnerSummaryReportTable onPartnerClick={(name) => submitPrompt(`Show me ${name} performance.`)} />
+                            ) : (
+                              <>
+                                <TypewriterMessage content={msg.content} title={msg.title} />
+                                {msg.chartType && <div className="mt-2"><InlineChart type={msg.chartType} /></div>}
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
@@ -2252,8 +1930,8 @@ export default function CampaignDetailPage() {
                       <div key={i} className="animate-prompt-cascade group flex items-start gap-2 rounded-lg border border-border bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#212be9]/30 hover:shadow-md" style={{ animationDelay: `${i * 40}ms` }}>
                         <button onClick={() => handlePromptClick(prompt)} className="btn-press flex min-w-0 flex-1 items-start gap-2.5 text-left">
                           <svg className="mt-0.5 size-3.5 shrink-0 text-muted-foreground group-hover:text-[#212be9] transition-colors" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                            <path d="M4.5 8L7 10.5L11.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M2 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M8 14h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                           </svg>
                           <span className="text-xs leading-4 text-[#171417] group-hover:text-[#212be9] transition-colors">{prompt}</span>
                         </button>
@@ -2274,10 +1952,23 @@ export default function CampaignDetailPage() {
             )}
           </div>
         </div>
-        )}
-          </>
-        )}
       </div>
+      )}
     </div>
+    </TooltipProvider>
+  );
+}
+
+export default function CampaignDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen flex-col items-center justify-center bg-background font-sans text-sm text-muted-foreground">
+          Loading campaign…
+        </div>
+      }
+    >
+      <CampaignDetailPageContent />
+    </Suspense>
   );
 }
