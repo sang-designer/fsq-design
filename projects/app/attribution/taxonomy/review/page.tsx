@@ -22,25 +22,25 @@ const STEP_ROUTES = [
 ];
 
 const CAMPAIGN_DETAILS = [
-  { label: "Campaign Name", value: "McDonalds Q1-Q2 2025" },
-  { label: "Advertiser", value: "McDonalds" },
+  { label: "Campaign Name", value: "QSR Q2 2026 Campaign" },
+  { label: "Advertiser", value: "QSR Brand" },
   { label: "Agency", value: "Starcom Worldwide" },
   { label: "Flight Date", value: "01/15/2025 - 06/30/2025" },
-  { label: "Store chains to be measured", value: "McDonalds US" },
+  { label: "Store chains to be measured", value: "QSR US" },
   { label: "Country", value: "United States" },
   { label: "Geographical Location", value: "National: All US Markets" },
   { label: "Media Types", values: [{ text: "Display", count: 13 }, { text: "Online Video", count: 8 }, { text: "Audio", count: 2 }] },
   { label: "Conversion type", value: "Visits and Sales Impact" },
   { label: "Ad Server", value: "CM360, DV360" },
-  { label: "Total Est. Ad Spend", value: "$30,000,000" },
+  { label: "Total Est. Ad Spend", value: "$380,000" },
   { label: "Total Est. Impressions", value: "240,000,000" },
   { label: "Number of Partners", value: "12" },
   { label: "Salesforce Opportunity ID Link", link: { text: "P12345678", href: "#" } },
 ];
 
 const MEDIA_PARTNERS = [
-  { name: "VIANT", fundingSource: "Starcom", fundingEmail: "starcom@email...", mediaType: "Display +4", conversionType: "Visits and Sales...", startDate: "01/15/2025", endDate: "06/30/2025" },
-  { name: "Adtheorent", fundingSource: "Adtheorent LTD", fundingEmail: "starcom@email...", mediaType: "CTV", conversionType: "Visits and Sales...", startDate: "02/01/2025", endDate: "05/31/2025" },
+  { name: "VIANT", fundingSource: "Starcom", fundingEmail: "starcom@email...", mediaType: "Display +4", conversionType: "Visits and Sales...", startDate: "01/15/2025", endDate: "06/30/2025", adSpend: "$220,000" },
+  { name: "Adtheorent", fundingSource: "Adtheorent LTD", fundingEmail: "starcom@email...", mediaType: "CTV", conversionType: "Visits and Sales...", startDate: "02/01/2025", endDate: "05/31/2025", adSpend: "$160,000" },
 ];
 
 export default function ReviewPage() {
@@ -99,10 +99,10 @@ export default function ReviewPage() {
         <div className="flex items-center justify-between px-12 py-2.5">
           <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight text-[#020617]">McDonalds Q1-Q2 2025</h1>
+              <h1 className="text-2xl font-semibold tracking-tight text-[#020617]">QSR Q2 2026 Campaign</h1>
               <span className="rounded-full bg-[#ebf1ff] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[#212be9]">{progressPercent}%</span>
               {submitted && (
-                <button onClick={() => router.push("/attribution?submitted=mcdonalds-q1-q2-2025")} className="rounded-md bg-[#212be9] px-3 py-1 text-sm font-medium text-white hover:bg-[#1a22c4] transition-colors">Back to Main</button>
+                <button onClick={() => router.push("/attribution?submitted=qsr-q2-2026")} className="rounded-md bg-[#212be9] px-3 py-1 text-sm font-medium text-white hover:bg-[#1a22c4] transition-colors">Back to Main</button>
               )}
             </div>
             {!submitted && (
@@ -326,6 +326,7 @@ export default function ReviewPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-[#64748b]">Funding Sourc...</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-[#64748b]">Media Type</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-[#64748b]">Conversion Type</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-[#64748b]">Ad Spend</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-[#64748b]">Start Date</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-[#64748b]">End Date</th>
                   </tr>
@@ -338,6 +339,7 @@ export default function ReviewPage() {
                       <td className="px-4 py-3 text-sm text-[#757575]">{partner.fundingEmail}</td>
                       <td className="px-4 py-3 text-sm text-[#020617]">{partner.mediaType}</td>
                       <td className="px-4 py-3 text-sm text-[#020617]">{partner.conversionType}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-[#020617]">{partner.adSpend}</td>
                       <td className="px-4 py-3 text-sm text-[#020617]">{partner.startDate}</td>
                       <td className="px-4 py-3 text-sm text-[#020617]">{partner.endDate}</td>
                     </tr>
@@ -403,7 +405,7 @@ export default function ReviewPage() {
           ) : (
             <div className="flex items-center py-4">
               <button
-                onClick={() => router.push("/attribution?submitted=mcdonalds-q1-q2-2025")}
+                onClick={() => router.push("/attribution?submitted=qsr-q2-2026")}
                 className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
               >
                 Back to Main

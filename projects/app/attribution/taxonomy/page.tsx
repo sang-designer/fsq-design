@@ -234,7 +234,7 @@ export default function TaxonomyPage() {
         <div className="flex items-center justify-between px-12 py-2.5">
           <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight text-[#020617]">McDonalds Q1-Q2 2025</h1>
+              <h1 className="text-2xl font-semibold tracking-tight text-[#020617]">QSR Q2 2026 Campaign</h1>
               <span className="rounded-full bg-[#ebf1ff] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[#212be9]">{completionPercent}%</span>
             </div>
             <div className="flex items-center gap-4">

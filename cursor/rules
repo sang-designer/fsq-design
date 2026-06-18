@@ -1,0 +1,36 @@
+# Stack
+Use Next.js App Router
+Use TypeScript
+Use Tailwind CSS for styling
+
+# UI Components
+Use shadcn/ui components for all UI
+Import UI components from @/components/ui
+Do not introduce other UI libraries
+Prefer using existing components before creating custom ones
+
+# UX / Interactions 
+Follow ux best practices 
+
+# Code Style
+Prefer functional React components
+Write readable, simple, maintainable code
+Add comments only for complex logic
+Avoid unnecessary abstractions or over-engineering
+
+# File Organization
+Follow standard Next.js file structure:
+- pages or app directory for routes
+- components for reusable UI
+- hooks for custom hooks
+- utils for helper functions
+
+# API & Backend
+Use Next.js API routes where applicable
+Keep API logic clean and modular
+Do not mix backend frameworks
+
+# Best Practices
+Follow consistent naming conventions
+Keep components small and focused
+Reuse components wherever possible
