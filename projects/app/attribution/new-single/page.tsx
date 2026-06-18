@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "../_components/campaign-header";
-import { SelectField, DateField, InputField, BrandSearchSelect, PartnerSearchSelect } from "../_components/form-fields";
+import { SelectField, DateField, InputField, BrandSearchSelect } from "../_components/form-fields";
 import { CampaignSidebar } from "../_components/campaign-sidebar";
 
 type Step = "campaign" | "pixel" | "placement" | "review";
@@ -54,7 +54,6 @@ function SinglePartnerCampaignContent() {
   const [campaignName, setCampaignName] = useState("");
   const [measurementBudget, setMeasurementBudget] = useState("");
   const [metric, setMetric] = useState("");
-  const [selectedPartner, setSelectedPartner] = useState("");
   const [partnerData, setPartnerData] = useState<Record<string, string>>({});
   const [fundingVisits, setFundingVisits] = useState("");
   const [fundingSalesImpact, setFundingSalesImpact] = useState("");
@@ -353,8 +352,6 @@ function SinglePartnerCampaignContent() {
               onMeasurementBudgetChange={setMeasurementBudget}
               metric={metric}
               onMetricChange={setMetric}
-              partner={selectedPartner}
-              onPartnerChange={setSelectedPartner}
               showForm={showForm}
               onShowForm={() => setShowForm(true)}
               onUpload={handleCampaignUpload}
@@ -373,7 +370,7 @@ function SinglePartnerCampaignContent() {
           )}
           {currentStep === "placement" && (
             <PlacementDetailsStep
-              partnerName={selectedPartner || partnerData["Partner/Platform Name"] || ""}
+              partnerName={partnerData["Partner/Platform Name"] || ""}
               hasUploadedFile={hasUploadedFile}
               hasReuploaded={hasReuploaded}
               isUploading={isUploading}
@@ -385,7 +382,7 @@ function SinglePartnerCampaignContent() {
           )}
           {currentStep === "pixel" && (
             <DataIngestionStep
-              partnerName={selectedPartner || partnerData["Partner/Platform Name"] || ""}
+              partnerName={partnerData["Partner/Platform Name"] || ""}
               onBack={() => goToStep("placement")}
               onContinue={() => goToStep("review")}
             />
@@ -395,7 +392,7 @@ function SinglePartnerCampaignContent() {
               campaignName={campaignName}
               measurementBudget={measurementBudget}
               metric={metric}
-              partnerName={selectedPartner || partnerData["Partner/Platform Name"] || ""}
+              partnerName={partnerData["Partner/Platform Name"] || ""}
               partnerData={partnerData}
               fundingVisits={fundingVisits}
               fundingSalesImpact={fundingSalesImpact}
@@ -635,11 +632,10 @@ function SingleInlineUploadedCard({ fileName, delimiters, onDelimitersChange, on
 
 // === STEP COMPONENTS ===
 
-function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBudget, onMeasurementBudgetChange, metric, onMetricChange, partner, onPartnerChange, showForm, onShowForm, onUpload, onFileDrop, hasUploadedFile, hasReuploaded, isUploading, delimiters, onDelimitersChange, isReparsing, reparseError, onRetryReparse, onContinue, onValidChange }: {
+function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBudget, onMeasurementBudgetChange, metric, onMetricChange, showForm, onShowForm, onUpload, onFileDrop, hasUploadedFile, hasReuploaded, isUploading, delimiters, onDelimitersChange, isReparsing, reparseError, onRetryReparse, onContinue, onValidChange }: {
   campaignName: string; onCampaignNameChange: (v: string) => void;
   measurementBudget: string; onMeasurementBudgetChange: (v: string) => void;
   metric: string; onMetricChange: (v: string) => void;
-  partner: string; onPartnerChange: (v: string) => void;
   showForm: boolean; onShowForm: () => void;
   onUpload: () => void; onFileDrop: (name: string) => void;
   hasUploadedFile: boolean; hasReuploaded?: boolean; isUploading: boolean;
@@ -726,10 +722,6 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
   };
 
   useEffect(() => {
-    if (partner) setAgencyName(partner);
-  }, [partner]);
-
-  useEffect(() => {
     if (hasUploadedFile) {
       setAdvertiser("McDonalds");
       setStartDate("2025-01-15");
@@ -757,7 +749,7 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
     }
   }, [hasUploadedFile]);
 
-  const isStepValid = sfValidated && !!brand.trim() && !!partner.trim() && !!measurementBudget.trim() && !!metric.trim() && (
+  const isStepValid = sfValidated && !!brand.trim() && !!measurementBudget.trim() && !!metric.trim() && (
     hasUploadedFile || (
       !!campaignName.trim() && !!advertiser.trim() && !!startDate && !!endDate && !!agencyName.trim() && !!country.trim() && !!storeChains.trim()
     )
@@ -850,7 +842,6 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
               </div>
             )}
           </div>
-          <PartnerSearchSelect value={partner} onChange={onPartnerChange} required />
           <div className="flex flex-1 flex-col gap-1.5">
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-[#1f2430]">Measurement Budget <span className="text-[#dc2626]">*</span></label>
@@ -1693,19 +1684,19 @@ function MapTaxonomiesSubStep({ onBack, onContinue }: { onBack: () => void; onCo
 }
 
 type ApplyRow = {
-  id: string; status: "error" | "resolved" | "parsed";
+  id: string; status: "low" | "medium" | "high";
   subPlacement: string; channel: string; publisher: string;
-  audience: string; adSize: string; creative: string; language: string; geography: string;
+  audience: string; adSize: string; creative: string; mediaCpm: string; language: string; geography: string;
 };
 
 const APPLY_ROWS: ApplyRow[] = [
-  { id: "HKE239J", status: "error", subPlacement: "Pandora_2025_Display_Q1", channel: "", publisher: "Google_DV360", audience: "Audience_Seg_01", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "New_York" },
-  { id: "HKE239K", status: "resolved", subPlacement: "Pandora_2025_Mobile_Q1", channel: "Display", publisher: "Google_DV360", audience: "Audience_Seg_02", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "Los_Angeles" },
-  { id: "HKE240J", status: "parsed", subPlacement: "Soundwave_2025_Audio_Q2", channel: "Audio", publisher: "Amazon_DSP", audience: "Audience_Seg_05", adSize: "320x50", creative: "Rich_Media", language: "English", geography: "Chicago" },
-  { id: "HKE241J", status: "resolved", subPlacement: "Streamline_2025_Video_Q1", channel: "Video", publisher: "TradeDesk", audience: "Audience_Seg_08", adSize: "728x90", creative: "Video_Pre_Roll", language: "English", geography: "Houston" },
-  { id: "HKE242J", status: "parsed", subPlacement: "FitTrack_2025_Mobile_Q2", channel: "Mobile", publisher: "Meta_Ads", audience: "Audience_Seg_12", adSize: "300x600", creative: "Interactive", language: "Spanish", geography: "San_Antonio" },
-  { id: "HKE243J", status: "error", subPlacement: "", channel: "Display", publisher: "", audience: "Audience_Seg_03", adSize: "300x250", creative: "Standard_Banner", language: "English", geography: "" },
-  { id: "HKE244J", status: "parsed", subPlacement: "TechSavvy_2025_Display_Q1", channel: "Display", publisher: "Google_DV360", audience: "Audience_Seg_15", adSize: "300x600", creative: "Native_Content", language: "English", geography: "San_Francisco" },
+  { id: "HKE239J", status: "medium", subPlacement: "Pandora_2025_Display_Q1", channel: "", publisher: "Google_DV360", audience: "Audience_Seg_01", adSize: "300x50", creative: "Standard_Banner", mediaCpm: "$12.50", language: "English", geography: "New_York" },
+  { id: "HKE239K", status: "high", subPlacement: "Pandora_2025_Mobile_Q1", channel: "Display", publisher: "Google_DV360", audience: "Audience_Seg_02", adSize: "300x50", creative: "Standard_Banner", mediaCpm: "$8.20", language: "English", geography: "Los_Angeles" },
+  { id: "HKE240J", status: "high", subPlacement: "Soundwave_2025_Audio_Q2", channel: "Audio", publisher: "Amazon_DSP", audience: "Audience_Seg_05", adSize: "320x50", creative: "Rich_Media", mediaCpm: "$15.00", language: "English", geography: "Chicago" },
+  { id: "HKE241J", status: "high", subPlacement: "Streamline_2025_Video_Q1", channel: "Video", publisher: "TradeDesk", audience: "Audience_Seg_08", adSize: "728x90", creative: "Video_Pre_Roll", mediaCpm: "$22.40", language: "English", geography: "Houston" },
+  { id: "HKE242J", status: "medium", subPlacement: "FitTrack_2025_Mobile_Q2", channel: "Mobile", publisher: "Meta_Ads", audience: "Audience_Seg_12", adSize: "300x600", creative: "Interactive", mediaCpm: "$18.75", language: "Spanish", geography: "" },
+  { id: "HKE243J", status: "low", subPlacement: "", channel: "Display", publisher: "", audience: "Audience_Seg_03", adSize: "300x250", creative: "Standard_Banner", mediaCpm: "$9.80", language: "English", geography: "" },
+  { id: "HKE244J", status: "medium", subPlacement: "TechSavvy_2025_Display_Q1", channel: "Display", publisher: "Google_DV360", audience: "Audience_Seg_15", adSize: "300x600", creative: "Native_Content", mediaCpm: "$14.30", language: "English", geography: "" },
 ];
 
 const AP_CHANNEL_OPTS = ["Display", "Mobile", "Video", "Audio", "CTV", "Social", "Native"];
@@ -1801,7 +1792,7 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded, onValidChan
   const [panelOpen, setPanelOpen] = useState(false);
   const [editingCell, setEditingCell] = useState<{ rowIdx: number; field: keyof ApplyRow } | null>(null);
 
-  const errorCount = rows.filter((r) => r.status === "error").length;
+  const errorCount = rows.filter((r) => r.status === "low").length;
   const isValid = errorCount === 0;
 
   useEffect(() => {
@@ -1814,9 +1805,10 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded, onValidChan
 
   const recomputeStatus = (row: ApplyRow): ApplyRow["status"] => {
     const required: (keyof ApplyRow)[] = ["subPlacement", "channel", "publisher", "geography"];
-    const hasEmpty = required.some((f) => !row[f]);
-    if (hasEmpty) return "error";
-    return "resolved";
+    const filledCount = required.filter((f) => !!row[f]).length;
+    if (filledCount === required.length) return "high";
+    if (filledCount >= 2) return "medium";
+    return "low";
   };
 
   const updateCell = (origIdx: number, field: keyof ApplyRow, value: string) => {
@@ -1887,9 +1879,9 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded, onValidChan
           <p className="text-xs text-[#6b7280]">Uploaded by Sang Yeo</p>
         </div>
         <div className="flex items-center gap-5">
-          <span className="flex items-center gap-1 text-sm"><Check className="size-4 text-[#16a34a]" /><span className="font-medium text-[#16a34a]">{rows.filter((r) => r.status === "resolved").length + 103} Mapped</span></span>
-          <span className="flex items-center gap-1 text-sm"><CircleAlert className="size-4 text-[#f59e0b]" /><span className="font-medium text-[#f59e0b]">{rows.filter((r) => r.status === "parsed").length} Needs Review</span></span>
-          <span className="flex items-center gap-1 text-sm"><CircleAlert className="size-4 text-[#dc2626]" /><span className="font-medium text-[#dc2626]">{rows.filter((r) => r.status === "error").length} Missing Fields</span></span>
+          <span className="flex items-center gap-1 text-sm"><Check className="size-4 text-[#16a34a]" /><span className="font-medium text-[#16a34a]">{rows.filter((r) => r.status === "high").length + 103} High</span></span>
+          <span className="flex items-center gap-1 text-sm"><CircleAlert className="size-4 text-[#f59e0b]" /><span className="font-medium text-[#f59e0b]">{rows.filter((r) => r.status === "medium").length} Medium</span></span>
+          <span className="flex items-center gap-1 text-sm"><CircleAlert className="size-4 text-[#dc2626]" /><span className="font-medium text-[#dc2626]">{rows.filter((r) => r.status === "low").length} Low</span></span>
           <span className="text-sm font-semibold text-[#1f2430]">{rows.length + 106} Total Placements</span>
         </div>
       </div>
@@ -1928,6 +1920,7 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded, onValidChan
               <SortHdr field="audience" label="Audience" />
               <SortHdr field="adSize" label="Ad Size" />
               <SortHdr field="creative" label="Creative" />
+              <SortHdr field="mediaCpm" label="Media CPM" />
               <SortHdr field="language" label="Language" />
               <SortHdr field="geography" label="Geography" />
               <th className="px-3 py-3 text-left text-sm font-medium text-[#64748b]">Action</th>
@@ -1943,6 +1936,7 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded, onValidChan
                 { field: "audience", options: AP_AUDIENCE_OPTS },
                 { field: "adSize", options: AP_ADSIZE_OPTS },
                 { field: "creative", options: AP_CREATIVE_OPTS },
+                { field: "mediaCpm" },
                 { field: "language", options: AP_LANG_OPTS },
                 { field: "geography", options: AP_GEO_OPTS },
               ];
@@ -1950,7 +1944,7 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded, onValidChan
                 <tr key={row.id} className={`border-b border-border ${selectedRows.has(origIdx) ? "bg-[#f8f9ff]" : ""}`}>
                   <td className="w-10 px-3 py-3"><input type="checkbox" checked={selectedRows.has(origIdx)} onChange={() => toggleRowSelect(origIdx)} className="size-4 rounded border-gray-300 accent-[#2d46f6]" /></td>
                   <td className="px-3 py-3">
-                    {row.status === "error" ? <Badge className="bg-red-50 text-[#dc2626]">Missing Field</Badge> : row.status === "resolved" ? <Badge className="bg-green-50 text-[#389e45]">Resolved</Badge> : <Badge className="bg-orange-50 text-[#f59e0b]">Needs Review</Badge>}
+                    {row.status === "low" ? <Badge className="bg-red-50 text-[#dc2626]">Low</Badge> : row.status === "high" ? <Badge className="bg-green-50 text-[#389e45]">High</Badge> : <Badge className="bg-orange-50 text-[#f59e0b]">Medium</Badge>}
                   </td>
                   {editable.map(({ field, maxW, options }) => {
                     const isEditing = editingCell?.rowIdx === origIdx && editingCell?.field === field;
@@ -2009,7 +2003,7 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded, onValidChan
             {isEditMode && editForm && (
               <div className="flex items-center gap-2.5">
                 <h3 className="text-base font-semibold text-[#1f2430]">Edit Placement</h3>
-                {editForm.status === "error" ? <Badge className="bg-red-50 text-[#dc2626]">Missing Field</Badge> : editForm.status === "resolved" ? <Badge className="bg-green-50 text-[#389e45]">Resolved</Badge> : <Badge className="bg-orange-50 text-[#f59e0b]">Needs Review</Badge>}
+                {editForm.status === "low" ? <Badge className="bg-red-50 text-[#dc2626]">Low</Badge> : editForm.status === "high" ? <Badge className="bg-green-50 text-[#389e45]">High</Badge> : <Badge className="bg-orange-50 text-[#f59e0b]">Medium</Badge>}
               </div>
             )}
             {isBulkMode && <h3 className="text-base font-semibold text-[#1f2430]">Bulk Edit ({selectedRows.size})</h3>}
@@ -2025,11 +2019,20 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded, onValidChan
                 { label: "Audience", field: "audience" as const, options: AP_AUDIENCE_OPTS, editOnly: false },
                 { label: "Ad Size", field: "adSize" as const, options: AP_ADSIZE_OPTS, editOnly: false },
                 { label: "Creative", field: "creative" as const, options: AP_CREATIVE_OPTS, editOnly: false },
+                { label: "Media CPM", field: "mediaCpm" as const, options: [] as string[], editOnly: true },
                 { label: "Language", field: "language" as const, options: AP_LANG_OPTS, editOnly: false },
                 { label: "Geography", field: "geography" as const, options: AP_GEO_OPTS, editOnly: false },
               ] as const).map(({ label, field, options, editOnly }) => {
                 if (isBulkMode && editOnly) return null;
                 if (isEditMode && editForm) {
+                  if (options.length === 0) {
+                    return (
+                      <div key={field} className="flex flex-col gap-1.5">
+                        <label className="text-sm font-medium text-[#1f2430]">{label}</label>
+                        <input type="text" value={editForm[field]} onChange={(e) => setEditForm({ ...editForm, [field]: e.target.value })} className="w-full rounded-md border border-border bg-white py-2 pl-3 pr-3 text-sm text-[#1f2430] outline-none focus:border-[#2d46f6]" placeholder={`Enter ${label.toLowerCase()}...`} />
+                      </div>
+                    );
+                  }
                   return (
                     <div key={field} className="flex flex-col gap-1.5">
                       <label className="text-sm font-medium text-[#1f2430]">{label}</label>
@@ -2148,7 +2151,7 @@ function SingleMultiSelectDropdown({ options, selected, onChange, placeholder, h
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className={`flex min-h-[36px] min-w-[220px] max-w-[340px] items-center justify-between rounded-md border bg-white px-3 py-1.5 text-left text-sm transition-colors ${hasWarning && selected.length === 0 ? "border-[#f59e0b]" : open ? "border-[#212be9] ring-1 ring-[#212be9]" : "border-[#e2e8f0]"}`}
+        className={`flex min-h-[36px] min-w-[220px] max-w-[340px] items-center justify-between rounded-md border bg-white px-3 py-1.5 text-left text-sm transition-colors ${hasWarning && selected.length === 0 ? "border-[#ef4444]" : open ? "border-[#212be9] ring-1 ring-[#212be9]" : "border-[#e2e8f0]"}`}
       >
         {selected.length === 0 ? (
           <span className="text-[#94a3b8]">{placeholder}</span>
@@ -2348,7 +2351,7 @@ function DataIngestionStep({ partnerName, onBack, onContinue }: {
                   </td>
                   <td className="px-4 py-4">
                     <Select value={tracking || undefined} onValueChange={setTracking}>
-                      <SelectTrigger className={`w-[120px] ${tracking ? "" : "border-[#f59e0b]"}`} size="sm"><SelectValue placeholder="Select..." /></SelectTrigger>
+                      <SelectTrigger className={`w-[120px] ${tracking ? "" : "border-[#ef4444]"}`} size="sm"><SelectValue placeholder="Select..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Partner">Partner</SelectItem>
                         <SelectItem value="Agency">Agency</SelectItem>

@@ -3,14 +3,11 @@
 import {
   ChevronRight,
   ChevronDown,
-  ChevronUp,
   Info,
   MoreVertical,
   Share2,
   Download,
   ArrowUp,
-  ArrowLeft,
-  ArrowLeftToLine,
   ArrowDownToLine,
   ExternalLink,
   Reply,
@@ -27,7 +24,6 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Bookmark,
-  FileChartLine,
   ChartColumn,
   LogOut,
   RefreshCw,
@@ -130,19 +126,11 @@ const suggestedPrompts = [
   "Show me partner performance comparison.",
   "Show me the partner summary report.",
   "Show me all partners performance metrics table.",
+  "Show me Pandora performance.",
+  "Show me Snap performance.",
   "Key Insight & Recommendations.",
 ];
 
-const partners = [
-  "AdTheorent",
-  "Nexxen",
-  "Settings",
-  "Teads",
-  "Pandora",
-  "Zeta",
-  "Epsilon",
-  "Snap",
-];
 
 const campaignPerformanceData: { partner: string; impressions: number }[] = [
   { partner: "Snap", impressions: 68 },
@@ -215,16 +203,6 @@ Ad Frequency Sweet Spot:
    - Campaigns without lift: 11.2 avg frequency
    - Optimal range: 3-5 exposures`,
 };
-
-
-const partnerPrompts = [
-  "Show me the geography analysis.",
-  "Show me the demographics analysis.",
-  "Show me the date and time analysis.",
-  "Show me key optimization opportunities.",
-  "Show me campaign performance by cohort.",
-  "Key Insight & Recommendations.",
-];
 
 const initialSummary = `**QSR Brand Q2 2026 Media Reality**: Your media is fundamentally about driving visit frequency among existing high-frequenting customers (72.3% of all lift), NOT acquiring new or lapsed customers (2-5% lift presence). Partners and ad frequency must be optimized accordingly.
 
@@ -618,14 +596,19 @@ type PartnerSummaryRow = {
 };
 
 const partnerSummaryData: PartnerSummaryRow[] = [
+  { name: "AdTheorent", spend: "$72,300", impressions: "23,408,453", reach: "6,335,380", frequency: "3.70", cvr: "3.08%", visits: "92,464", cpsv: "$0.78", bvrLift: "5.24%", liftVisits: "3,420", cplv: "$21.14" },
   { name: "Pandora", spend: "$48,200", impressions: "14,204,322", reach: "4,102,440", frequency: "3.46", cvr: "3.12%", visits: "62,338", cpsv: "$0.77", bvrLift: "4.82%", liftVisits: "2,840", cplv: "$16.97" },
   { name: "Snap", spend: "$62,400", impressions: "18,580,110", reach: "5,240,800", frequency: "3.55", cvr: "2.88%", visits: "78,420", cpsv: "$0.80", bvrLift: "3.41%", liftVisits: "2,190", cplv: "$28.49" },
+  { name: "Nexxen", spend: "$44,600", impressions: "12,640,800", reach: "3,820,100", frequency: "3.31", cvr: "2.94%", visits: "54,120", cpsv: "$0.82", bvrLift: "4.18%", liftVisits: "2,260", cplv: "$19.73" },
   { name: "iHeartRadio", spend: "$35,800", impressions: "10,840,600", reach: "3,420,200", frequency: "3.17", cvr: "2.64%", visits: "44,280", cpsv: "$0.81", bvrLift: "2.98%", liftVisits: "1,540", cplv: "$23.25" },
   { name: "Spotify", spend: "$52,600", impressions: "16,320,450", reach: "4,860,320", frequency: "3.36", cvr: "3.04%", visits: "68,940", cpsv: "$0.76", bvrLift: "4.12%", liftVisits: "2,620", cplv: "$20.08" },
   { name: "Yelp", spend: "$28,400", impressions: "8,440,220", reach: "2,680,400", frequency: "3.15", cvr: "3.28%", visits: "38,520", cpsv: "$0.74", bvrLift: "5.14%", liftVisits: "1,980", cplv: "$14.34" },
+  { name: "Teads", spend: "$38,200", impressions: "11,420,380", reach: "3,640,600", frequency: "3.14", cvr: "2.72%", visits: "48,640", cpsv: "$0.79", bvrLift: "3.64%", liftVisits: "1,770", cplv: "$21.58" },
+  { name: "Zeta", spend: "$31,500", impressions: "9,280,440", reach: "2,940,800", frequency: "3.16", cvr: "2.86%", visits: "40,120", cpsv: "$0.78", bvrLift: "3.92%", liftVisits: "1,620", cplv: "$19.44" },
+  { name: "Epsilon", spend: "$26,800", impressions: "7,840,200", reach: "2,480,600", frequency: "3.16", cvr: "2.58%", visits: "34,280", cpsv: "$0.78", bvrLift: "2.84%", liftVisits: "1,340", cplv: "$20.00" },
 ];
 
-function PartnerSummaryReportTable() {
+function PartnerSummaryReportTable({ onPartnerClick }: { onPartnerClick?: (name: string) => void }) {
   return (
     <div>
       <div className="mb-3 flex items-center gap-2">
@@ -654,7 +637,14 @@ function PartnerSummaryReportTable() {
           <tbody>
             {partnerSummaryData.map((row) => (
               <tr key={row.name} className="border-b border-border last:border-0 hover:bg-gray-50/50">
-                <td className="whitespace-nowrap px-4 py-3.5 text-sm font-medium text-[#212be9]">{row.name}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm font-medium">
+                  <button
+                    onClick={() => onPartnerClick?.(row.name)}
+                    className="text-[#212be9] hover:underline transition-colors"
+                  >
+                    {row.name}
+                  </button>
+                </td>
                 <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.spend}</td>
                 <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.impressions}</td>
                 <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.reach}</td>
@@ -1211,24 +1201,11 @@ function CampaignDetailPageContent() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isResponding, setIsResponding] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const [partnerOpen, setPartnerOpen] = useState(false);
-  const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
-  const [partnerDtView, setPartnerDtView] = useState<"chart" | "table">("chart");
-  const [partnerDtDimension, setPartnerDtDimension] = useState<"Day of week" | "Hour of day">("Day of week");
-  const [partnerHoveredState, setPartnerHoveredState] = useState<string | null>(null);
-  const [partnerKpiExpanded, setPartnerKpiExpanded] = useState(true);
-  const [partnerPromptTab, setPartnerPromptTab] = useState<"default" | "saved">("default");
-  const [partnerPhase, setPartnerPhase] = useState<"thinking" | "typing" | "done">("thinking");
-  const [partnerChatMessages, setPartnerChatMessages] = useState<ChatMessage[]>([]);
-  const [partnerIsResponding, setPartnerIsResponding] = useState(false);
-  const [partnerInputValue, setPartnerInputValue] = useState("");
   const [reportMenuOpen, setReportMenuOpen] = useState(false);
   const [downloadsOpen, setDownloadsOpen] = useState(false);
   const [reportFiles, setReportFiles] = useState<ReportFile[]>([]);
   const [reportToast, setReportToast] = useState<{ type: "success" | "error"; visible: boolean }>({ type: "success", visible: false });
   const scrollRef = useRef<HTMLDivElement>(null);
-  const partnerRef = useRef<HTMLDivElement>(null);
-  const partnerScrollRef = useRef<HTMLDivElement>(null);
   const reportMenuRef = useRef<HTMLDivElement>(null);
   const downloadsRef = useRef<HTMLDivElement>(null);
 
@@ -1236,17 +1213,6 @@ function CampaignDetailPageContent() {
     const t = window.setTimeout(() => setInitialPhase("typing"), THINKING_DURATION);
     return () => clearTimeout(t);
   }, []);
-
-  useEffect(() => {
-    if (!partnerOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (partnerRef.current && !partnerRef.current.contains(e.target as Node)) {
-        setPartnerOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [partnerOpen]);
 
   useEffect(() => {
     if (!reportMenuOpen) return;
@@ -1314,105 +1280,6 @@ function CampaignDetailPageContent() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [initialDisplayed, chatMessages, isResponding]);
 
-  // Reset partner view state when partner changes
-  useEffect(() => {
-    if (selectedPartner) {
-      setPartnerPhase("thinking");
-      setPartnerChatMessages([]);
-      setPartnerInputValue("");
-      const t = window.setTimeout(() => setPartnerPhase("typing"), THINKING_DURATION);
-      return () => clearTimeout(t);
-    }
-  }, [selectedPartner]);
-
-  const partnerSummaryText = selectedPartner
-    ? (partnerSummaries[selectedPartner] || partnerSummaries.default)
-    : "";
-  const { displayed: partnerDisplayed, isComplete: partnerSummaryComplete } = useTypewriter(
-    partnerPhase !== "thinking" ? partnerSummaryText : "",
-    6
-  );
-
-  useEffect(() => {
-    if (partnerSummaryComplete && partnerPhase === "typing") setPartnerPhase("done");
-  }, [partnerSummaryComplete, partnerPhase]);
-
-  useEffect(() => {
-    if (partnerScrollRef.current) partnerScrollRef.current.scrollTop = partnerScrollRef.current.scrollHeight;
-  }, [partnerDisplayed, partnerChatMessages, partnerIsResponding]);
-
-  const submitPartnerPrompt = useCallback((text: string) => {
-    if (!text.trim() || partnerIsResponding) return;
-    const query = text.trim();
-    const userMsg: ChatMessage = { role: "user", content: query };
-    const resp = promptResponses[query];
-    const name = selectedPartner || "Partner";
-
-    const lowerQ = query.toLowerCase();
-    let chartType: ChatMessage["chartType"] = undefined;
-    let intentContent = "";
-
-    if (/cohort|new.*(vs|versus).*existing|retention|frequency/i.test(lowerQ)) {
-      chartType = "userCohort";
-      intentContent = `Here's the **User Cohort** analysis for ${name}:\n\n- **New Users** make up 38% of impressions but 52% of lift\n- **High Frequenters** respond best at 4–6 exposures\n- Retention across Lapsed users shows a positive trend week-over-week\n\nThe chart below breaks down index by cohort segment.`;
-    } else if (/demograph|age|gender|income|household/i.test(lowerQ)) {
-      chartType = "demographic";
-      intentContent = `Here's the **Demographic** breakdown for ${name}:\n\n- **25–34** age group shows the highest impression index (142)\n- Female audience over-indexes at 1.3x vs male\n- HHI $75K–$100K is the strongest converting segment\n\nSee the chart below for full detail.`;
-    } else if (/geo|geography|state|dma|region|market|location/i.test(lowerQ)) {
-      chartType = "geography";
-      intentContent = `Here's the **Geography** analysis for ${name}:\n\n- **Chicago DMA** leads with 5.1% lift, followed by Atlanta (4.8%)\n- Top 10 DMAs account for 67% of total attributed visits\n- Northeast region shows strongest cost-per-visit efficiency\n\nThe chart below shows the geographic distribution.`;
-    } else if (/date|time|day.*week|hour|daypart|when|temporal/i.test(lowerQ)) {
-      chartType = "dateTime";
-      intentContent = `Here's the **Date & Time** analysis for ${name}:\n\n- **Tuesday–Thursday** drives 72% of total lift\n- Lunch daypart (11am–2pm) outperforms dinner by 1.4x\n- Weekend performance drops 35% vs weekday average\n\nThe chart below shows the temporal patterns.`;
-    } else if (/campaign performance|partner performance|performance insight|overall performance|impressions by partner/i.test(lowerQ)) {
-      chartType = "campaignPerformance";
-      intentContent = `Here's the **Campaign Performance** comparison across all partners:\n\n- **Snap** leads at 68% impression share\n- **${name}** contributes ${campaignPerformanceData.find((d) => d.partner === name)?.impressions || 15}% of total impressions\n- Use the filter pills to compare specific partners\n\nThe interactive chart below lets you select and compare partners.`;
-    }
-
-    const customResp = intentContent || `Based on ${name} campaign data, here is an analysis for your query:
-
-**Analysis: "${query}"**
-
-**${name} Performance Data**
-   - **Impressions:** ${partnerMetrics[name]?.[0]?.value || "18.2M"} across all DMAs
-   - **Lift Presence:** 93% among High Frequenters
-   - **CVR Pattern:** Positive correlation – high CVR signals genuine engagement
-
-**Findings**
-   - High Frequenters respond best at 4-6 ad exposures (sweet spot)
-   - Mid-week lunch/dinner dayparts drive 72% of ${name} lift
-   - Top DMAs: Chicago (5.1% lift), Atlanta (4.8%), Dallas (4.3%)
-
-**Summary**
-1. ${name} is a top-tier partner for driving High Frequenter visits
-2. Frequency management is critical – cap at 6 exposures per user
-3. Recommend scaling ${name} budget from current allocation to 15-18% of total
-
-**Next Steps**
-   - Ask about user cohorts, demographics, geography, or date/time for detailed charts`;
-
-    const assistantMsg: ChatMessage = {
-      role: "assistant",
-      content: resp?.content || customResp,
-      title: resp?.title || `${name} Analysis`,
-      ...(chartType && { chartType }),
-    };
-    setPartnerChatMessages((prev) => [...prev, userMsg]);
-    setPartnerIsResponding(true);
-    window.setTimeout(() => {
-      setPartnerChatMessages((prev) => [...prev, assistantMsg]);
-      setPartnerIsResponding(false);
-    }, 1500);
-    setPartnerInputValue("");
-  }, [partnerIsResponding, selectedPartner]);
-
-  const handlePartnerKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      submitPartnerPrompt(partnerInputValue);
-    }
-  };
-
   const submitPrompt = useCallback((text: string) => {
     if (!text.trim() || isResponding) return;
     const query = text.trim();
@@ -1422,6 +1289,12 @@ function CampaignDetailPageContent() {
 
     const isPartnerSummary = !resp && /partner\s*summary\s*report/i.test(query);
     const matchedResp = resp || (isPartnerSummary ? promptResponses["Show me the partner summary report."] : undefined);
+
+    const partnerNames = partnerSummaryData.map((r) => r.name);
+    const normalizedQuery = queryLower.replace(/[\[\]]/g, "");
+    const matchedPartner = partnerNames.find((name) =>
+      normalizedQuery.includes(name.toLowerCase())
+    );
 
     let chartType: ChatMessage["chartType"] = undefined;
     let chartSummary = "";
@@ -1533,10 +1406,36 @@ The chart below shows impression share (%) across all media partners for the ful
    - Consider drilling into specific partner or DMA breakdowns for deeper analysis
    - Use the suggested prompts on the right for pre-built analytical views`;
 
+    let partnerResponse = "";
+    if (matchedPartner && !matchedResp && !chartType) {
+      const pData = partnerSummaryData.find((r) => r.name === matchedPartner)!;
+      const pMetrics = partnerMetrics[matchedPartner] || partnerMetrics.default;
+      const pSummary = partnerSummaries[matchedPartner] || partnerSummaries.default;
+      partnerResponse = `**${matchedPartner} — QSR Q2 2026 Performance**
+
+**Key Metrics**
+   - **Spend:** ${pData.spend}
+   - **Impressions:** ${pData.impressions}
+   - **Reach:** ${pData.reach}
+   - **Frequency:** ${pData.frequency}
+   - **CVR:** ${pData.cvr}
+   - **Store Visits:** ${pData.visits}
+   - **Cost per Store Visit:** ${pData.cpsv}
+   - **BVR Lift:** ${pData.bvrLift}
+   - **Lift Visits:** ${pData.liftVisits}
+   - **Cost per Lift Visit:** ${pData.cplv}
+
+${pSummary}
+
+**Next Steps**
+   - Ask about user cohorts, demographics, geography, or date/time for detailed charts
+   - Type "Show me the partner summary report" for a full comparison table`;
+    }
+
     const assistantMsg: ChatMessage = {
       role: "assistant",
-      content: matchedResp?.content === "__PARTNER_SUMMARY_TABLE__" ? "__PARTNER_SUMMARY_TABLE__" : chartType ? chartSummary : (matchedResp?.content || customResponse),
-      title: matchedResp?.content === "__PARTNER_SUMMARY_TABLE__" ? "Partner Summary Report" : chartType ? undefined : (matchedResp?.title || "Campaign Analysis"),
+      content: matchedResp?.content === "__PARTNER_SUMMARY_TABLE__" ? "__PARTNER_SUMMARY_TABLE__" : chartType ? chartSummary : partnerResponse || (matchedResp?.content || customResponse),
+      title: matchedResp?.content === "__PARTNER_SUMMARY_TABLE__" ? "Partner Summary Report" : chartType ? undefined : partnerResponse ? `${matchedPartner} Performance` : (matchedResp?.title || "Campaign Analysis"),
       ...(matchedResp?.content === "__PARTNER_SUMMARY_TABLE__" ? { tableType: "partnerSummary" as const } : {}),
       chartType,
     };
@@ -1642,52 +1541,10 @@ The chart below shows impression share (%) across all media partners for the ful
           <ChevronRight className="size-3.5 text-muted-foreground" />
           <span className="flex items-center gap-1.5 font-medium text-[#171417]">
             <span className="flex size-5 items-center justify-center rounded bg-[#6366f1] text-[7px] font-bold text-white">QS</span>
-            {selectedPartner ? (
-              <button onClick={() => setSelectedPartner(null)} className="hover:text-[#212be9] transition-colors">
-                QSR Q2 2026 Campaign
-              </button>
-            ) : (
-              <>QSR Q2 2026 Campaign</>
-            )}
+            QSR Q2 2026 Campaign
           </span>
           <span className="ml-2 text-xs text-muted-foreground">Visits + Sales Impact</span>
           <span className="ml-2 animate-pulse rounded-full bg-[#dbeafe] px-2.5 py-0.5 text-xs font-medium text-[#2563eb]">In progress</span>
-          <div ref={partnerRef} className="relative ml-3">
-            <button
-              onClick={() => setPartnerOpen(!partnerOpen)}
-              className={`btn-press flex items-center gap-1 rounded-md border bg-white px-3 py-1 text-sm transition-all duration-200 ${partnerOpen ? "border-[#212be9] shadow-[0_0_0_1px_#212be9]" : "border-input hover:bg-[#f9f9f9]"}`}
-            >
-              <span className={selectedPartner ? "text-[#171417] font-medium" : "text-muted-foreground"}>
-                {selectedPartner || "Select a specific partner"}
-              </span>
-              {partnerOpen ? (
-                <ChevronUp className="size-3.5 text-muted-foreground transition-transform duration-200" />
-              ) : (
-                <ChevronDown className="size-3.5 text-muted-foreground transition-transform duration-200" />
-              )}
-            </button>
-            {partnerOpen && (
-              <div className="animate-slide-in-up absolute left-0 top-full z-50 mt-1 w-[200px] rounded-md border border-border bg-white py-1 shadow-md">
-                {selectedPartner && (
-                  <button
-                    onClick={() => { setSelectedPartner(null); setPartnerOpen(false); }}
-                    className="flex w-full items-center px-3 py-2 text-left text-sm text-muted-foreground transition-colors duration-150 hover:bg-[#f5f5ff] hover:text-[#212be9]"
-                  >
-                    All partners
-                  </button>
-                )}
-                {partners.map((partner) => (
-                  <button
-                    key={partner}
-                    onClick={() => { setSelectedPartner(partner); setPartnerOpen(false); }}
-                    className={`flex w-full items-center px-3 py-2 text-left text-sm transition-colors duration-150 hover:bg-[#f5f5ff] hover:text-[#212be9] ${selectedPartner === partner ? "bg-[#f5f5ff] font-medium text-[#212be9]" : "text-[#171417]"}`}
-                  >
-                    {partner}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
         <div className="flex items-center gap-2">
           <button className="btn-press flex size-8 items-center justify-center rounded-md text-muted-foreground transition-all duration-200 hover:scale-110 hover:bg-gray-50"><MoreVertical className="size-4" /></button>
@@ -1840,234 +1697,6 @@ The chart below shows impression share (%) across all media partners for the ful
         <CampaignSystemError />
       ) : (
       <div className="flex min-h-0 flex-1">
-        {selectedPartner ? (
-          <>
-            {/* Partner Detail: sidebar */}
-            <aside className={`group/sidebar flex shrink-0 flex-col border-r border-border bg-white transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarExpanded ? "w-[220px]" : "w-12"}`}>
-              <div className="flex flex-1 flex-col gap-1 overflow-hidden px-1.5 py-3">
-                <button
-                  onClick={() => setSelectedPartner(null)}
-                  title={sidebarExpanded ? undefined : "Back to Campaign Overview"}
-                  className={`btn-press group/item relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-muted-foreground transition-all duration-200 hover:bg-gray-50 hover:text-foreground ${sidebarExpanded ? "" : "justify-center"}`}
-                >
-                  <ArrowLeft className="size-4 shrink-0" />
-                  {sidebarExpanded && <span className="truncate text-sm">Back to Campaign Overview</span>}
-                  {!sidebarExpanded && (
-                    <span className="pointer-events-none absolute left-full ml-2 z-50 hidden whitespace-nowrap rounded-md bg-[#171417] px-2.5 py-1.5 text-xs text-white shadow-md group-hover/item:block">Back to Campaign Overview</span>
-                  )}
-                </button>
-                <button
-                  title={sidebarExpanded ? undefined : "Partner Report"}
-                  className={`btn-press group/item relative flex items-center gap-2.5 rounded-md px-2 py-1.5 bg-[#f0f0ff] text-[#212be9] transition-all duration-200 ${sidebarExpanded ? "" : "justify-center"}`}
-                >
-                  <FileChartLine className="size-4 shrink-0" />
-                  {sidebarExpanded && <span className="truncate text-sm font-medium">Partner Report</span>}
-                  {!sidebarExpanded && (
-                    <span className="pointer-events-none absolute left-full ml-2 z-50 hidden whitespace-nowrap rounded-md bg-[#171417] px-2.5 py-1.5 text-xs text-white shadow-md group-hover/item:block">Partner Report</span>
-                  )}
-                </button>
-              </div>
-              <div className="flex flex-col gap-1 border-t border-border px-1.5 py-2">
-                <button
-                  onClick={() => setSidebarExpanded(!sidebarExpanded)}
-                  title={sidebarExpanded ? "Minimize" : "Expand"}
-                  className={`btn-press group/item relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-muted-foreground transition-all duration-200 hover:bg-gray-50 hover:text-foreground ${sidebarExpanded ? "" : "justify-center"}`}
-                >
-                  <ArrowLeftToLine className={`size-4 shrink-0 transition-transform duration-300 ${sidebarExpanded ? "" : "rotate-180"}`} />
-                  {sidebarExpanded && <span className="truncate text-sm">Minimize</span>}
-                  {!sidebarExpanded && (
-                    <span className="pointer-events-none absolute left-full ml-2 z-50 hidden whitespace-nowrap rounded-md bg-[#171417] px-2.5 py-1.5 text-xs text-white shadow-md group-hover/item:block">Expand</span>
-                  )}
-                </button>
-              </div>
-            </aside>
-
-            {/* Partner Detail: content area */}
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col animate-slide-in-right">
-
-              {/* Partner Title + KPIs */}
-              <div className="shrink-0 px-8 py-6">
-                <div className="flex items-center justify-between">
-                  <h1 className="text-xl font-semibold leading-7 text-[#171417]">
-                    {selectedPartner}: QSR Q2 2026 Overview
-                  </h1>
-                  <button onClick={() => setPartnerKpiExpanded(!partnerKpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
-                    <ChevronDown className={`size-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${partnerKpiExpanded ? "" : "-rotate-90"}`} />
-                  </button>
-                </div>
-                {partnerKpiExpanded && (
-                  <div className="mt-5 flex gap-3">
-                    {(partnerMetrics[selectedPartner] || partnerMetrics.default).map((m, i) => (
-                      <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="shrink-0 border-t border-border" />
-
-              <div className="flex min-h-0 flex-1">
-                {/* Partner chat area */}
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                  <div ref={partnerScrollRef} className="flex-1 overflow-y-auto scroll-smooth">
-                    <div className="px-8 py-6">
-                      <div className="space-y-6">
-                        {partnerChatMessages.length === 0 && (
-                          <div>
-                            <h2 className="mb-3 text-base font-semibold text-[#171417]">Campaign Summary</h2>
-                            <div>
-                              {partnerPhase === "thinking" && (
-                                <div className="flex items-center gap-3">
-                                  <div className="flex gap-1">
-                                    <span className="size-2 animate-bounce rounded-full bg-[#212be9] [animation-delay:0ms]" />
-                                    <span className="size-2 animate-bounce rounded-full bg-[#212be9] [animation-delay:150ms]" />
-                                    <span className="size-2 animate-bounce rounded-full bg-[#212be9] [animation-delay:300ms]" />
-                                  </div>
-                                  <SummarizingDots />
-                                </div>
-                              )}
-                              {partnerPhase !== "thinking" && (
-                                <div className="relative">
-                                  <MarkdownRenderer text={partnerDisplayed} />
-                                  {partnerPhase === "typing" && <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[#212be9]" />}
-                                </div>
-                              )}
-                            </div>
-                            {partnerPhase === "done" && (
-                              <p className="mt-4 text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                Ask a question about <em>this partner campaign report</em>, or select a suggested prompt on the left to get started.
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        {partnerChatMessages.map((msg, i) => (
-                          <div key={i}>
-                            {msg.role === "user" ? (
-                              <div className="animate-slide-in-right flex justify-end">
-                                <div className="group/bubble relative inline-flex max-w-[80%] items-center gap-2">
-                                  <button
-                                    onClick={() => toggleSavePrompt(msg.content)}
-                                    title={savedPrompts.has(msg.content) ? "Unsave" : "Save prompt"}
-                                    className={`btn-press flex size-6 shrink-0 items-center justify-center rounded-md transition-all ${savedPrompts.has(msg.content) ? "opacity-100 text-[#555]" : "opacity-0 text-muted-foreground hover:text-[#555] group-hover/bubble:opacity-100"}`}
-                                  >
-                                    <Bookmark className={`size-3.5 transition-all ${savedPrompts.has(msg.content) ? "fill-[#555] text-[#555]" : "fill-none"}`} />
-                                  </button>
-                                  <div className="rounded-full bg-[#f0f0f0] px-5 py-2.5 text-sm text-[#171417] transition-shadow duration-200 hover:shadow-md">
-                                    {msg.content}
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="animate-slide-in-left">
-                                <TypewriterMessage content={msg.content} title={msg.title} />
-                                {msg.chartType && <div className="mt-2"><InlineChart type={msg.chartType} /></div>}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-
-                        {partnerIsResponding && (
-                          <div className="animate-slide-in-up flex items-center gap-3 py-2">
-                            <div className="flex gap-1">
-                              <span className="size-2 animate-bounce rounded-full bg-[#212be9] [animation-delay:0ms]" />
-                              <span className="size-2 animate-bounce rounded-full bg-[#212be9] [animation-delay:150ms]" />
-                              <span className="size-2 animate-bounce rounded-full bg-[#212be9] [animation-delay:300ms]" />
-                            </div>
-                            <SummarizingDots />
-                          </div>
-                        )}
-
-                        {partnerChatMessages.length > 0 && !partnerIsResponding && partnerChatMessages[partnerChatMessages.length - 1].role === "assistant" && (
-                          <p className="text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            Ask a question about <em>this partner campaign report</em>, or select a suggested prompt on the left to get started.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Partner chat input */}
-                  <div className="shrink-0 border-t border-border bg-white px-8 py-4">
-                    <div className="relative">
-                      <textarea
-                        placeholder="Ask anything about this campaign"
-                        rows={2}
-                        value={partnerInputValue}
-                        onChange={(e) => setPartnerInputValue(e.target.value)}
-                        onKeyDown={handlePartnerKeyDown}
-                        className="w-full resize-none rounded-lg border border-border bg-white px-4 py-3 pr-12 text-sm leading-5 placeholder:text-muted-foreground transition-all duration-300 focus:border-[#212be9] focus:outline-none focus:ring-2 focus:ring-[#212be9]/20 focus:shadow-[0_0_20px_rgba(33,43,233,0.08)]"
-                      />
-                      <button
-                        onClick={() => submitPartnerPrompt(partnerInputValue)}
-                        disabled={!partnerInputValue.trim() || partnerIsResponding}
-                        className={`btn-press absolute bottom-3 right-3 flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-all duration-200 hover:bg-[#212be9] hover:text-white hover:border-[#212be9] hover:shadow-lg hover:shadow-[#212be9]/25 disabled:opacity-40 disabled:hover:shadow-none ${partnerInputValue.trim() && !partnerIsResponding ? "bg-[#212be9] text-white border-[#212be9] shadow-md shadow-[#212be9]/20" : "bg-white"}`}
-                      >
-                        <ArrowUp className="size-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Partner suggested prompts */}
-                <div className="flex w-[300px] shrink-0 flex-col border-l border-border bg-white animate-slide-in-right">
-                  <div className="flex items-center justify-between border-b border-border px-4 pt-3">
-                    <div className="flex items-center gap-0">
-                      <button
-                        onClick={() => setPartnerPromptTab("default")}
-                        className={`px-3 pb-2.5 text-sm transition-all duration-200 ${partnerPromptTab === "default" ? "border-b-2 border-[#171417] font-medium text-[#171417]" : "text-muted-foreground hover:text-foreground"}`}
-                      >
-                        Default
-                      </button>
-                      <button
-                        onClick={() => setPartnerPromptTab("saved")}
-                        className={`flex items-center gap-1.5 px-3 pb-2.5 text-sm transition-all duration-200 ${partnerPromptTab === "saved" ? "border-b-2 border-[#171417] font-medium text-[#171417]" : "text-muted-foreground hover:text-foreground"}`}
-                      >
-                        Saved
-                        {savedPrompts.size > 0 && (
-                          <span className={`inline-flex size-5 items-center justify-center rounded-full text-[10px] font-medium transition-colors duration-200 ${partnerPromptTab === "saved" ? "bg-[#555] text-white" : "bg-gray-200 text-gray-600"}`}>
-                            {savedPrompts.size}
-                          </span>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-[#171417]">
-                    <Lightbulb className="size-4" />
-                    Suggested Prompts
-                  </div>
-                  <div className="flex-1 overflow-y-auto px-4 pb-4">
-                    <div className="flex flex-col gap-2">
-                      {partnerPromptTab === "saved" && savedPrompts.size === 0 && (
-                        <p className="py-6 text-center text-xs text-muted-foreground">
-                          No saved prompts yet. Click the bookmark icon on any prompt to save it.
-                        </p>
-                      )}
-                      {(partnerPromptTab === "default"
-                        ? partnerPrompts
-                        : [...savedPrompts]
-                      ).map((prompt, i) => (
-                        <div key={i} className="animate-prompt-cascade group flex items-start gap-2 rounded-lg border border-border bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#212be9]/30 hover:shadow-md" style={{ animationDelay: `${i * 40}ms` }}>
-                          <button onClick={() => submitPartnerPrompt(prompt)} className="btn-press flex min-w-0 flex-1 items-start gap-2.5 text-left">
-                            <svg className="mt-0.5 size-3.5 shrink-0 text-muted-foreground group-hover:text-[#212be9] transition-colors" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M2 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                              <path d="M8 14h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                            </svg>
-                            <span className="text-xs leading-4 text-[#171417] group-hover:text-[#212be9] transition-colors">{prompt}</span>
-                          </button>
-                          <button onClick={() => toggleSavePrompt(prompt)} title={savedPrompts.has(prompt) ? "Unsave" : "Save"} className="mt-0.5 flex size-4 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-[#555]">
-                            <Bookmark className={`size-3.5 transition-all ${savedPrompts.has(prompt) ? "fill-[#555] text-[#555]" : "fill-none"}`} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
             {/* Campaign View: sidebar */}
             <aside className={`group/sidebar flex shrink-0 flex-col border-r border-border bg-white transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarExpanded ? "w-[200px]" : "w-12"}`}>
               <div className="flex flex-1 flex-col gap-3 overflow-hidden px-2 pt-3">
@@ -2197,7 +1826,7 @@ The chart below shows impression share (%) across all media partners for the ful
                         ) : (
                           <div className="animate-slide-in-left">
                             {msg.tableType === "partnerSummary" ? (
-                              <PartnerSummaryReportTable />
+                              <PartnerSummaryReportTable onPartnerClick={(name) => submitPrompt(`Show me ${name} performance.`)} />
                             ) : (
                               <>
                                 <TypewriterMessage content={msg.content} title={msg.title} />
@@ -2323,8 +1952,6 @@ The chart below shows impression share (%) across all media partners for the ful
             )}
           </div>
         </div>
-          </>
-        )}
       </div>
       )}
     </div>
