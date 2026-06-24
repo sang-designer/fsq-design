@@ -142,7 +142,7 @@ export function BrandSearchSelect({ value, onChange, required }: { value: string
 
   return (
     <div className="relative flex flex-1 flex-col gap-1.5" ref={ref}>
-      <label className="text-sm font-medium text-[#1f2430]">Brand{required && <span className="text-[#dc2626]"> *</span>}</label>
+      <label className="text-sm font-medium text-[#1f2430]">Advertiser{required && <span className="text-[#dc2626]"> *</span>}</label>
       <button
         onClick={() => { setOpen(!open); setSearch(""); }}
         className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
