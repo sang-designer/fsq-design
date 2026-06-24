@@ -973,7 +973,6 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
                 <div className="flex flex-col gap-4">
                   <div className="flex gap-4">
                     <InputField label="Campaign Name" value={campaignName} onChange={onCampaignNameChange} required />
-                    <SelectField label="Advertiser" value={advertiser} onChange={setAdvertiser} required />
                   </div>
                   <div className="flex gap-4">
                     <DateField label="Start Date" value={startDate} onChange={setStartDate} required />

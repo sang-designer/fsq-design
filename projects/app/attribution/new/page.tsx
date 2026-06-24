@@ -202,7 +202,7 @@ function BrandSearchSelect({ value, onChange, required }: { value: string; onCha
 
   return (
     <div className="relative flex flex-1 flex-col gap-1.5" ref={ref}>
-      <label className="text-sm font-medium text-[#1f2430]">Brand{required && <span className="text-[#dc2626]"> *</span>}</label>
+      <label className="text-sm font-medium text-[#1f2430]">Advertiser{required && <span className="text-[#dc2626]"> *</span>}</label>
       <button
         onClick={() => { setOpen(!open); setSearch(""); }}
         className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -773,7 +773,6 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
               <div className="flex flex-col gap-4">
                 <div className="flex gap-4">
                   <InputField label="Campaign Name" value={campaignName} onChange={onCampaignNameChange} required />
-                  <SelectField label="Advertiser" value={advertiser} onChange={setAdvertiser} required />
                 </div>
                 <div className="flex gap-4">
                   <DateField label="Start Date" value={startDate} onChange={setStartDate} required />
@@ -1609,30 +1608,6 @@ function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue 
                   </tbody>
                 </table>
               </div>
-
-              {pixels.length > 10 && (
-              <div className="mt-6 flex items-center justify-end gap-1">
-                <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-[#64748b] hover:bg-gray-50">
-                  <ChevronLeft className="size-4" />
-                  Previous
-                </button>
-                {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <div
-                    key={n}
-                    className={`flex size-10 items-center justify-center rounded-lg text-sm font-medium ${
-                      n === 1 ? "border border-[#e2e8f0] bg-white text-[#0f172a]" : "text-[#64748b] hover:bg-gray-50"
-                    }`}
-                  >
-                    {n}
-                  </div>
-                ))}
-                <div className="flex size-10 items-center justify-center text-sm text-[#64748b]">...</div>
-                <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-[#64748b] hover:bg-gray-50">
-                  Next
-                  <ChevronRight className="size-4" />
-                </button>
-              </div>
-              )}
 
               <div className="mt-6 flex items-center justify-between">
                 <button
@@ -2552,7 +2527,7 @@ const INITIAL_TAX_CATEGORIES: TaxCategory[] = [
 ];
 
 function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean }) {
-  const [unassigned, setUnassigned] = useState<TaxToken[]>(INITIAL_TAX_TOKENS);
+  const tokens = INITIAL_TAX_TOKENS;
   const [categories, setCategories] = useState<TaxCategory[]>(INITIAL_TAX_CATEGORIES);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -2561,17 +2536,26 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
   const dragCounter = useRef<Record<string, number>>({});
   const dragGhostRef = useRef<HTMLDivElement>(null);
 
-  const allSelected = unassigned.length > 0 && selected.size === unassigned.length;
+  const assignedCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    categories.forEach((c) => c.tokens.forEach((t) => counts.set(t.id, (counts.get(t.id) || 0) + 1)));
+    return counts;
+  }, [categories]);
+
+  const [duplicateMsg, setDuplicateMsg] = useState<string | null>(null);
+  const duplicateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const allSelected = tokens.length > 0 && selected.size === tokens.length;
 
   const toggleSelect = (id: string) => setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  const toggleSelectAll = () => { if (allSelected) setSelected(new Set()); else setSelected(new Set(unassigned.map((t) => t.id))); };
+  const toggleSelectAll = () => { if (allSelected) setSelected(new Set()); else setSelected(new Set(tokens.map((t) => t.id))); };
   const toggleExpand = (id: string) => setExpanded((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   const handleDragStart = useCallback((e: DragEvent, tokenId: string) => {
     const ids = selected.has(tokenId) && selected.size > 1 ? Array.from(selected) : [tokenId];
     setDragTokenIds(ids);
     e.dataTransfer.setData("text/plain", JSON.stringify(ids));
-    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.effectAllowed = "copy";
     if (ids.length > 1 && dragGhostRef.current) {
       dragGhostRef.current.textContent = `${ids.length} items`;
       dragGhostRef.current.style.display = "flex";
@@ -2580,7 +2564,7 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
     }
   }, [selected]);
 
-  const handleDragOver = useCallback((e: DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }, []);
+  const handleDragOver = useCallback((e: DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }, []);
   const handleDragEnter = useCallback((e: DragEvent, catId: string) => { e.preventDefault(); dragCounter.current[catId] = (dragCounter.current[catId] || 0) + 1; setDragOverId(catId); }, []);
   const handleDragLeave = useCallback((catId: string) => { dragCounter.current[catId] = (dragCounter.current[catId] || 0) - 1; if (dragCounter.current[catId] <= 0) { dragCounter.current[catId] = 0; setDragOverId((p) => (p === catId ? null : p)); } }, []);
 
@@ -2591,19 +2575,30 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
     let ids: string[];
     try { ids = JSON.parse(e.dataTransfer.getData("text/plain")); } catch { ids = dragTokenIds; }
     if (!ids.length) return;
-    const dropped = unassigned.filter((t) => ids.includes(t.id));
+    const dropped = INITIAL_TAX_TOKENS.filter((t) => ids.includes(t.id));
     if (!dropped.length) return;
-    setUnassigned((prev) => prev.filter((t) => !ids.includes(t.id)));
-    setCategories((prev) => prev.map((c) => c.id === catId ? { ...c, count: c.count + dropped.length, tokens: [...c.tokens, ...dropped] } : c));
+    setCategories((prev) => {
+      const cat = prev.find((c) => c.id === catId);
+      if (!cat) return prev;
+      const existingIds = new Set(cat.tokens.map((t) => t.id));
+      const newTokens = dropped.filter((t) => !existingIds.has(t.id));
+      if (!newTokens.length) {
+        const names = dropped.length === 1 ? `"${dropped[0].name}"` : `${dropped.length} values`;
+        setDuplicateMsg(`${names} already mapped to this category.`);
+        if (duplicateTimer.current) clearTimeout(duplicateTimer.current);
+        duplicateTimer.current = setTimeout(() => setDuplicateMsg(null), 3000);
+        return prev;
+      }
+      return prev.map((c) => c.id === catId ? { ...c, count: c.count + newTokens.length, tokens: [...c.tokens, ...newTokens] } : c);
+    });
     setSelected((prev) => { const n = new Set(prev); ids.forEach((id) => n.delete(id)); return n; });
     setDragTokenIds([]);
-  }, [unassigned, dragTokenIds]);
+  }, [dragTokenIds]);
 
   const handleDragEnd = useCallback(() => { setDragTokenIds([]); setDragOverId(null); dragCounter.current = {}; }, []);
 
   const removeToken = useCallback((catId: string, token: TaxToken) => {
     setCategories((prev) => prev.map((c) => c.id === catId ? { ...c, count: c.count - 1, tokens: c.tokens.filter((t) => t.id !== token.id) } : c));
-    setUnassigned((prev) => [...prev, token]);
   }, []);
 
   return (
@@ -2618,7 +2613,14 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
 
       <PlacementSubSteps activeStep={3} hasReuploaded={hasReuploaded} />
 
-      <p className="mb-6 text-sm text-[#646464]">Drag unassigned taxonomy values on the left to the appropriate category on the right.</p>
+      <p className="mb-6 text-sm text-[#646464]">Drag unassigned taxonomy values on the left to the appropriate category on the right. Values can be mapped to multiple categories.</p>
+
+      {duplicateMsg && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-[#fde68a] bg-[#fefce8] px-4 py-2.5 text-sm text-[#92400e]">
+          <Info className="size-4 shrink-0" />
+          {duplicateMsg}
+        </div>
+      )}
 
       <div className="flex gap-4">
         <div className="flex-1">
@@ -2629,7 +2631,7 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
               <span className="text-xs text-[#6b7280]">select all ({selected.size} selected)</span>
             </div>
             <div className="max-h-[400px] overflow-y-auto">
-              {unassigned.map((token) => (
+              {tokens.map((token) => (
                 <div
                   key={token.id}
                   draggable
@@ -2639,10 +2641,10 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
                 >
                   <GripVertical className="size-4 shrink-0 text-[#9ca3af] opacity-0 transition-opacity group-hover:opacity-100" />
                   <input type="checkbox" checked={selected.has(token.id)} onChange={() => toggleSelect(token.id)} className="size-4 shrink-0 rounded border-gray-300 accent-[#212be9]" />
-                  <span className="text-[#020617]">{token.name}</span>
+                  <span className="flex-1 text-[#020617]">{token.name}</span>
+                  {assignedCounts.has(token.id) && <span className="rounded-full bg-[#f0fdf4] px-1.5 py-0.5 text-[10px] font-medium text-[#166534]">mapped to {assignedCounts.get(token.id)}</span>}
                 </div>
               ))}
-              {unassigned.length === 0 && <div className="px-4 py-8 text-center text-sm text-[#6b7280]">All values have been assigned.</div>}
             </div>
           </div>
         </div>
@@ -3502,12 +3504,26 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
 
 /* ───── ReviewContent ───── */
 
-function ReviewContent({ onBack, onSubmitted, campaignSubmitted }: { onBack: () => void; onSubmitted: () => void; campaignSubmitted: boolean }) {
+function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { onBack: () => void; onSubmitted: () => void; campaignSubmitted: boolean; goToStep: (step: Step) => void }) {
   const [authorized, setAuthorized] = useState(false);
   const [comments, setComments] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(campaignSubmitted);
   const [showToast, setShowToast] = useState(false);
+
+  type PartnerReviewRow = {
+    name: string;
+    types: string;
+    missingFields: { label: string; targetStep: Step; section?: string }[];
+  };
+
+  const [partnerRows, setPartnerRows] = useState<PartnerReviewRow[]>([
+    { name: "Viant", types: "Display, Mobile, CTV", missingFields: [] },
+    { name: "Adtheorent", types: "", missingFields: [{ label: "Media Channels", targetStep: "map-taxonomies", section: "media-types" }, { label: "Ad Run End Date", targetStep: "map-taxonomies", section: "media-types" }] },
+    { name: "The Trade Desk", types: "Display, Video", missingFields: [] },
+    { name: "Amazon DSP", types: "", missingFields: [{ label: "Media Channels", targetStep: "map-taxonomies", section: "media-types" }] },
+    { name: "DV360", types: "Display", missingFields: [] },
+  ]);
 
   type ReviewField = {
     key: string;
@@ -3695,30 +3711,37 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted }: { onBack: () 
             <thead>
               <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
                 <th className="px-4 py-2 text-xs font-semibold text-[#64748b]">Partner</th>
-                <th className="px-4 py-2 text-xs font-semibold text-[#64748b]">Media Types</th>
-                <th className="px-4 py-2 text-xs font-semibold text-[#64748b]">Ad Spend</th>
+                <th className="px-4 py-2 text-xs font-semibold text-[#64748b]">Media Channels</th>
                 <th className="px-4 py-2 text-xs font-semibold text-[#64748b]">Status</th>
+                <th className="px-4 py-2 text-xs font-semibold text-[#64748b]"></th>
               </tr>
             </thead>
             <tbody>
-              {[
-                { name: "Viant", types: "Display, Mobile, CTV", adSpend: "$76,000", status: "complete" },
-                { name: "Adtheorent", types: "Mobile, Social", adSpend: "$64,000", status: "complete" },
-                { name: "The Trade Desk", types: "Display, Video", adSpend: "$95,000", status: "complete" },
-                { name: "Amazon DSP", types: "Audio", adSpend: "$57,000", status: "complete" },
-                { name: "DV360", types: "Display", adSpend: "$88,000", status: "complete" },
-              ].map((p) => (
-                <tr key={p.name} className="border-b border-[#e2e8f0]/50">
-                  <td className="px-4 py-3 font-medium text-[#020617]">{p.name}</td>
-                  <td className="px-4 py-3 text-[#020617]">{p.types}</td>
-                  <td className="px-4 py-3 text-[#020617]">{p.adSpend}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${p.status === "complete" ? "bg-[#f0fdf4] text-[#166534]" : "bg-[#fefce8] text-[#713f12]"}`}>
-                      {p.status === "complete" ? "Complete" : "Incomplete"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {partnerRows.map((p) => {
+                const isComplete = p.missingFields.length === 0;
+                return (
+                  <tr key={p.name} className="border-b border-[#e2e8f0]/50">
+                    <td className="px-4 py-3 font-medium text-[#020617]">{p.name}</td>
+                    <td className="px-4 py-3 text-[#020617]">{p.types || <span className="text-[#9ca3af]">—</span>}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${isComplete ? "bg-[#f0fdf4] text-[#166534]" : "bg-[#fefce8] text-[#713f12]"}`}>
+                        {isComplete ? "Complete" : "Incomplete"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {!isComplete && !submitted && (
+                        <button
+                          onClick={() => goToStep(p.missingFields[0].targetStep)}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-[#212be9] hover:underline"
+                        >
+                          Complete {p.missingFields[0].label}
+                          <ArrowRight className="size-3" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -4174,16 +4197,19 @@ function NewCampaignContent() {
 
   const placementStepValid = visitedSteps.has("funding") || visitedSteps.has("pixel") || visitedSteps.has("review");
 
-  const progressPercent =
-    currentStep === "campaign" ? 0 :
-    currentStep === "placement" ? 12 :
-    currentStep === "map-partners" ? 24 :
-    currentStep === "map-taxonomies" ? 32 :
-    currentStep === "map-creatives" ? 40 :
-    currentStep === "apply-placements" ? 48 :
-    currentStep === "funding" ? 60 :
-    currentStep === "pixel" ? 72 :
-    currentStep === "review" ? (campaignSubmitted ? 100 : 84) : 0;
+  const stepProgressMap: Record<string, number> = {
+    campaign: 0,
+    placement: 12,
+    "map-partners": 24,
+    "map-taxonomies": 32,
+    "map-creatives": 40,
+    "apply-placements": 48,
+    funding: 60,
+    pixel: 72,
+    review: campaignSubmitted ? 100 : 84,
+  };
+
+  const progressPercent = Math.max(...Array.from(visitedSteps).map((s) => stepProgressMap[s] ?? 0));
 
   const displayName = campaignName.trim() || "Draft";
 
@@ -4452,6 +4478,7 @@ function NewCampaignContent() {
               onBack={() => goToStep("pixel")}
               onSubmitted={() => setCampaignSubmitted(true)}
               campaignSubmitted={campaignSubmitted}
+              goToStep={goToStep}
             />
           )}
 
