@@ -2726,8 +2726,19 @@ const INITIAL_MEDIA_TYPE_CATEGORIES: MediaTypeCategory[] = [
   { id: "mt10", name: "Linear TV Kantar Run Logs", count: 0, tokens: [] },
 ];
 
+const ALL_CREATIVE_TOKENS: CreativeToken[] = [
+  ...INITIAL_CREATIVE_TOKENS,
+  { id: "cr1", name: "Standard_Banner_300x250" }, { id: "cr2", name: "Interactive_Unit_728x90" }, { id: "cr3", name: "Native_Content_Feed" },
+  { id: "cr4", name: "Video_Pre_Roll_15s" }, { id: "cr5", name: "Mid_Roll_30s" },
+  { id: "cr7", name: "Audio_Spot_30s" }, { id: "cr8", name: "Podcast_Sponsorship_60s" },
+  { id: "cr9", name: "Paid_Search_Text_Ad" },
+  { id: "cr11", name: "Digital_Billboard_National" }, { id: "cr12", name: "Transit_Shelter_Multi" },
+  { id: "cr13", name: "Street_Furniture_NYC" },
+  { id: "cr15", name: "CTV_Spot_30s_Hulu" }, { id: "cr16", name: "CTV_Pre_Roll_15s_Peacock" },
+];
+
 function MapCreativesContent({ onBack, onContinue, hasReuploaded }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean }) {
-  const [unassigned, setUnassigned] = useState<CreativeToken[]>(INITIAL_CREATIVE_TOKENS);
+  const tokens = ALL_CREATIVE_TOKENS;
   const [categories, setCategories] = useState<MediaTypeCategory[]>(INITIAL_MEDIA_TYPE_CATEGORIES);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -2736,17 +2747,26 @@ function MapCreativesContent({ onBack, onContinue, hasReuploaded }: { onBack: ()
   const dragCounter = useRef<Record<string, number>>({});
   const dragGhostRef = useRef<HTMLDivElement>(null);
 
-  const allSelected = unassigned.length > 0 && selected.size === unassigned.length;
+  const assignedCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    categories.forEach((c) => c.tokens.forEach((t) => counts.set(t.id, (counts.get(t.id) || 0) + 1)));
+    return counts;
+  }, [categories]);
+
+  const [duplicateMsg, setDuplicateMsg] = useState<string | null>(null);
+  const duplicateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const allSelected = tokens.length > 0 && selected.size === tokens.length;
 
   const toggleSelect = (id: string) => setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  const toggleSelectAll = () => { if (allSelected) setSelected(new Set()); else setSelected(new Set(unassigned.map((t) => t.id))); };
+  const toggleSelectAll = () => { if (allSelected) setSelected(new Set()); else setSelected(new Set(tokens.map((t) => t.id))); };
   const toggleExpand = (id: string) => setExpanded((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   const handleDragStart = useCallback((e: DragEvent, tokenId: string) => {
     const ids = selected.has(tokenId) && selected.size > 1 ? Array.from(selected) : [tokenId];
     setDragTokenIds(ids);
     e.dataTransfer.setData("text/plain", JSON.stringify(ids));
-    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.effectAllowed = "copy";
     if (ids.length > 1 && dragGhostRef.current) {
       dragGhostRef.current.textContent = `${ids.length} items`;
       dragGhostRef.current.style.display = "flex";
@@ -2755,7 +2775,7 @@ function MapCreativesContent({ onBack, onContinue, hasReuploaded }: { onBack: ()
     }
   }, [selected]);
 
-  const handleDragOver = useCallback((e: DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }, []);
+  const handleDragOver = useCallback((e: DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }, []);
   const handleDragEnter = useCallback((e: DragEvent, catId: string) => { e.preventDefault(); dragCounter.current[catId] = (dragCounter.current[catId] || 0) + 1; setDragOverId(catId); }, []);
   const handleDragLeave = useCallback((catId: string) => { dragCounter.current[catId] = (dragCounter.current[catId] || 0) - 1; if (dragCounter.current[catId] <= 0) { dragCounter.current[catId] = 0; setDragOverId((p) => (p === catId ? null : p)); } }, []);
 
@@ -2766,19 +2786,30 @@ function MapCreativesContent({ onBack, onContinue, hasReuploaded }: { onBack: ()
     let ids: string[];
     try { ids = JSON.parse(e.dataTransfer.getData("text/plain")); } catch { ids = dragTokenIds; }
     if (!ids.length) return;
-    const dropped = unassigned.filter((t) => ids.includes(t.id));
+    const dropped = ALL_CREATIVE_TOKENS.filter((t) => ids.includes(t.id));
     if (!dropped.length) return;
-    setUnassigned((prev) => prev.filter((t) => !ids.includes(t.id)));
-    setCategories((prev) => prev.map((c) => c.id === catId ? { ...c, count: c.count + dropped.length, tokens: [...c.tokens, ...dropped] } : c));
+    setCategories((prev) => {
+      const cat = prev.find((c) => c.id === catId);
+      if (!cat) return prev;
+      const existingIds = new Set(cat.tokens.map((t) => t.id));
+      const newTokens = dropped.filter((t) => !existingIds.has(t.id));
+      if (!newTokens.length) {
+        const names = dropped.length === 1 ? `"${dropped[0].name}"` : `${dropped.length} values`;
+        setDuplicateMsg(`${names} already mapped to this media type.`);
+        if (duplicateTimer.current) clearTimeout(duplicateTimer.current);
+        duplicateTimer.current = setTimeout(() => setDuplicateMsg(null), 3000);
+        return prev;
+      }
+      return prev.map((c) => c.id === catId ? { ...c, count: c.count + newTokens.length, tokens: [...c.tokens, ...newTokens] } : c);
+    });
     setSelected((prev) => { const n = new Set(prev); ids.forEach((id) => n.delete(id)); return n; });
     setDragTokenIds([]);
-  }, [unassigned, dragTokenIds]);
+  }, [dragTokenIds]);
 
   const handleDragEnd = useCallback(() => { setDragTokenIds([]); setDragOverId(null); dragCounter.current = {}; }, []);
 
   const removeToken = useCallback((catId: string, token: CreativeToken) => {
     setCategories((prev) => prev.map((c) => c.id === catId ? { ...c, count: c.count - 1, tokens: c.tokens.filter((t) => t.id !== token.id) } : c));
-    setUnassigned((prev) => [...prev, token]);
   }, []);
 
   return (
@@ -2793,7 +2824,14 @@ function MapCreativesContent({ onBack, onContinue, hasReuploaded }: { onBack: ()
 
       <PlacementSubSteps activeStep={4} hasReuploaded={hasReuploaded} />
 
-      <p className="mb-6 text-sm text-[#646464]">Drag unassigned creatives on the left to the appropriate media type on the right.</p>
+      <p className="mb-6 text-sm text-[#646464]">Drag unassigned creatives on the left to the appropriate media type on the right. Creatives can be mapped to multiple media types.</p>
+
+      {duplicateMsg && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-[#fde68a] bg-[#fefce8] px-4 py-2.5 text-sm text-[#92400e]">
+          <Info className="size-4 shrink-0" />
+          {duplicateMsg}
+        </div>
+      )}
 
       <div className="flex gap-4">
         <div className="flex-1">
@@ -2804,7 +2842,7 @@ function MapCreativesContent({ onBack, onContinue, hasReuploaded }: { onBack: ()
               <span className="text-xs text-[#6b7280]">select all ({selected.size} selected)</span>
             </div>
             <div className="max-h-[400px] overflow-y-auto">
-              {unassigned.map((token) => (
+              {tokens.map((token) => (
                 <div
                   key={token.id}
                   draggable
@@ -2814,16 +2852,16 @@ function MapCreativesContent({ onBack, onContinue, hasReuploaded }: { onBack: ()
                 >
                   <GripVertical className="size-4 shrink-0 text-[#9ca3af] opacity-0 transition-opacity group-hover:opacity-100" />
                   <input type="checkbox" checked={selected.has(token.id)} onChange={() => toggleSelect(token.id)} className="size-4 shrink-0 rounded border-gray-300 accent-[#212be9]" />
-                  <span className="text-[#020617]">{token.name}</span>
+                  <span className="flex-1 text-[#020617]">{token.name}</span>
+                  {assignedCounts.has(token.id) && <span className="rounded-full bg-[#f0fdf4] px-1.5 py-0.5 text-[10px] font-medium text-[#166534]">mapped to {assignedCounts.get(token.id)}</span>}
                 </div>
               ))}
-              {unassigned.length === 0 && <div className="px-4 py-8 text-center text-sm text-[#6b7280]">All creatives have been assigned.</div>}
             </div>
           </div>
         </div>
 
         <div className="w-[420px] shrink-0">
-          <h3 className="mb-2 text-base font-semibold text-[#020617]">Assigned Media Types</h3>
+          <h3 className="mb-2 text-base font-semibold text-[#020617]">Assigned Media Channels</h3>
           <div className="rounded-lg border border-[#e2e8f0]">
             <div className="space-y-1.5 p-2">
               {categories.map((cat) => {
