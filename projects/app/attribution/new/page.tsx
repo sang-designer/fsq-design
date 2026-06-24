@@ -2861,7 +2861,7 @@ function MapCreativesContent({ onBack, onContinue, hasReuploaded }: { onBack: ()
         </div>
 
         <div className="w-[420px] shrink-0">
-          <h3 className="mb-2 text-base font-semibold text-[#020617]">Assigned Media Types</h3>
+          <h3 className="mb-2 text-base font-semibold text-[#020617]">Assigned Media Channels</h3>
           <div className="rounded-lg border border-[#e2e8f0]">
             <div className="space-y-1.5 p-2">
               {categories.map((cat) => {
