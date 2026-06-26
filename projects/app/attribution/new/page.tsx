@@ -706,6 +706,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="Visits">Visits</SelectItem>
+              <SelectItem value="Sales">Sales</SelectItem>
               <SelectItem value="Visits and Sales">Visits and Sales</SelectItem>
             </SelectContent>
           </Select>
@@ -790,7 +791,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
               <div className="flex flex-col gap-4">
                 <div className="flex gap-4">
                   <SelectField label="Agency/Partner Name" value={agencyName} onChange={setAgencyName} required />
-                  <SelectField label="Owner Type (relationship)" value={ownerType} onChange={setOwnerType} />
+                  <SelectField label="Owner Type" value={ownerType} onChange={setOwnerType} required options={["I represent an agency working with the advertiser", "I represent a partner or publisher on this campaign", "I represent the advertiser"]} />
                 </div>
                 <div className="flex gap-4">
                   <SelectField label="Agency/Partner Contact Name" value={contactName} onChange={setContactName} />
@@ -1299,6 +1300,58 @@ function MultiSelectDropdown({ options, selected, onChange, placeholder, hasWarn
   );
 }
 
+function SingleSelectDropdown({ options, value, onChange, placeholder }: {
+  options: string[];
+  value: string;
+  onChange: (val: string) => void;
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setOpen(!open)}
+        className={`flex min-h-[36px] w-full cursor-pointer items-center justify-between rounded-md border bg-white px-3 py-1.5 text-left text-sm transition-colors ${open ? "border-[#212be9] ring-1 ring-[#212be9]" : "border-[#e2e8f0]"}`}
+      >
+        {value ? (
+          <span className="text-[#020617]">{value}</span>
+        ) : (
+          <span className="text-[#94a3b8]">{placeholder}</span>
+        )}
+        <ChevronDown className={`ml-2 size-4 shrink-0 text-[#8d8d8d] transition-transform ${open ? "rotate-180" : ""}`} />
+      </div>
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-md border border-[#e2e8f0] bg-white py-1 shadow-lg">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              onClick={() => { onChange(opt); setOpen(false); }}
+              className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-[#f5f5ff] ${opt === value ? "font-medium text-[#212be9]" : "text-[#020617]"}`}
+            >
+              {opt === value && <Check className="size-3.5 text-[#212be9]" />}
+              {opt !== value && <span className="size-3.5" />}
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue }: { pixelState: PixelState; onValidChange?: (valid: boolean) => void; onBack: () => void; onContinue: () => void }) {
   const [openActionRow, setOpenActionRow] = useState<number | null>(null);
   const [showUploadBanner, setShowUploadBanner] = useState(pixelState === "empty-uploaded");
@@ -1308,7 +1361,7 @@ function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue 
   const pixelPopoverRef = useRef<HTMLDivElement>(null);
   const [activePixelSubStep, setActivePixelSubStep] = useState(1);
   const [adServers, setAdServers] = useState(
-    PIXELS.map((p) => ({ partner: p.partner, adServers: p.partner === "Kinfolk" ? [] as string[] : [p.adServer], pixelTypes: [] as string[] }))
+    PIXELS.map((p) => ({ partner: p.partner, setupMethod: "Platform-Generated Pixels" as string, adServers: p.partner === "Kinfolk" ? [] as string[] : [p.adServer], pixelTypes: [] as string[] }))
   );
 
   const generateFromSelections = () => {
@@ -1422,16 +1475,38 @@ function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue 
                 <table className="w-full table-fixed">
                   <thead>
                     <tr className="border-b border-[#e2e8f0]">
-                      <th className="w-[20%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
-                      <th className="w-[40%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
-                      <th className="w-[40%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
+                      <th className="w-[12%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
+                      <th className="w-[22%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Setup Method</th>
+                      <th className="w-[33%] px-6 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
+                      <th className="w-[33%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {adServers.map((row, i) => (
+                    {adServers.map((row, i) => {
+                      const isDisabled = row.setupMethod === "Direct Integrations" || row.setupMethod === "No Pixel Required" || row.setupMethod === "Special Pixel Setup";
+                      return (
                       <tr key={i} className="border-b border-[#e2e8f0]">
                         <td className="px-4 py-4 text-sm font-medium text-black">{row.partner}</td>
                         <td className="px-4 py-4">
+                          <SingleSelectDropdown
+                            options={["Platform-Generated Pixels", "Direct Integrations", "No Pixel Required", "Special Pixel Setup"]}
+                            value={row.setupMethod}
+                            onChange={(val) =>
+                              setAdServers((prev) =>
+                                prev.map((r, idx) => {
+                                  if (idx !== i) return r;
+                                  const disabled = val === "Direct Integrations" || val === "No Pixel Required" || val === "Special Pixel Setup";
+                                  return { ...r, setupMethod: val, adServers: disabled ? [] : r.adServers, pixelTypes: disabled ? [] : r.pixelTypes };
+                                })
+                              )
+                            }
+                            placeholder="Select setup method..."
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          {isDisabled ? (
+                            <span className="text-sm text-[#9ca3af]">—</span>
+                          ) : (
                           <MultiSelectDropdown
                             options={AD_SERVER_OPTIONS}
                             selected={row.adServers}
@@ -1443,8 +1518,12 @@ function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue 
                             placeholder="Select ad servers..."
                             hasWarning={row.adServers.length === 0}
                           />
+                          )}
                         </td>
                         <td className="px-4 py-4">
+                          {isDisabled ? (
+                            <span className="text-sm text-[#9ca3af]">—</span>
+                          ) : (
                           <MultiSelectDropdown
                             options={PIXEL_TYPE_OPTIONS}
                             selected={row.pixelTypes}
@@ -1456,9 +1535,11 @@ function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue 
                             placeholder="Select pixel types..."
                             hasWarning={row.pixelTypes.length === 0}
                           />
+                          )}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -2915,18 +2996,18 @@ function MapCreativesContent({ onBack, onContinue, hasReuploaded }: { onBack: ()
 /* ───── ApplyPlacementsContent ───── */
 
 const INITIAL_PLACEMENT_ROWS_AP = [
-  { id: "HKE239J", status: "low" as const, subPlacement: "Pandora_2025_Display_Q1", partner: "Viant", channel: "", publisher: "", audience: "Audience_Seg_01", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "", mediaCpm: "" },
-  { id: "HKE239K", status: "high" as const, subPlacement: "Pandora_2025_Mobile_Q1", partner: "Viant", channel: "Display", publisher: "Google_DV360", audience: "Audience_Seg_02", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "Los_Angeles", mediaCpm: "$3.75" },
-  { id: "HKE240J", status: "low" as const, subPlacement: "", partner: "Adtheorent", channel: "", publisher: "", audience: "Audience_Seg_05", adSize: "320x50", creative: "Rich_Media", language: "English", geography: "", mediaCpm: "" },
-  { id: "HKE241J", status: "high" as const, subPlacement: "Streamline_2025_Video_Q1", partner: "Nexxen", channel: "Video", publisher: "TradeDesk", audience: "Audience_Seg_08", adSize: "728x90", creative: "Video_Pre_Roll", language: "English", geography: "Houston", mediaCpm: "$12.00" },
-  { id: "HKE242J", status: "medium" as const, subPlacement: "FitTrack_2025_Mobile_Q2", partner: "Adtheorent", channel: "Mobile", publisher: "Meta_Ads", audience: "Audience_Seg_12", adSize: "300x600", creative: "Interactive", language: "Spanish", geography: "", mediaCpm: "" },
-  { id: "HKE243J", status: "low" as const, subPlacement: "", partner: "Viant", channel: "", publisher: "", audience: "Audience_Seg_03", adSize: "300x250", creative: "Standard_Banner", language: "English", geography: "", mediaCpm: "" },
-  { id: "HKE244J", status: "high" as const, subPlacement: "TechSavvy_2025_Display_Q1", partner: "Nexxen", channel: "Display", publisher: "Google_DV360", audience: "Audience_Seg_15", adSize: "300x600", creative: "Native_Content", language: "English", geography: "San_Francisco", mediaCpm: "$6.50" },
-  { id: "HKE245J", status: "high" as const, subPlacement: "TravelQuest_2025_CTV_Q2", partner: "Viant", channel: "CTV", publisher: "TradeDesk", audience: "Audience_Seg_20", adSize: "970x250", creative: "Rich_Media", language: "English", geography: "Seattle", mediaCpm: "$15.75" },
-  { id: "HKE246J", status: "medium" as const, subPlacement: "CulinaryDelight_2025_Social", partner: "Adtheorent", channel: "Social", publisher: "Meta_Ads", audience: "Audience_Seg_22", adSize: "300x250", creative: "Standard_Banner", language: "English", geography: "Denver", mediaCpm: "" },
-  { id: "HKE247J", status: "medium" as const, subPlacement: "HealthTech_2025_Native_Q3", partner: "Viant", channel: "Native", publisher: "TradeDesk", audience: "Audience_Seg_01", adSize: "728x90", creative: "Native_Content", language: "English", geography: "", mediaCpm: "$8.50" },
-  { id: "HKE248J", status: "low" as const, subPlacement: "SportsFan_2025_CTV_Q2", partner: "Nexxen", channel: "", publisher: "", audience: "Audience_Seg_12", adSize: "970x250", creative: "Video_Pre_Roll", language: "English", geography: "", mediaCpm: "" },
-  { id: "HKE249J", status: "medium" as const, subPlacement: "EcoLiving_2025_Display_Q1", partner: "Adtheorent", channel: "Display", publisher: "Meta_Ads", audience: "Audience_Seg_05", adSize: "300x600", creative: "Rich_Media", language: "Spanish", geography: "Dallas", mediaCpm: "" },
+  { id: "HKE239J", status: "low" as const, subPlacement: "Pandora_2025_Display_Q1", partner: "Viant", channel: "", audience: "Audience_Seg_01", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "", mediaCpm: "" },
+  { id: "HKE239K", status: "high" as const, subPlacement: "Pandora_2025_Mobile_Q1", partner: "Viant", channel: "Display", audience: "Audience_Seg_02", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "Los_Angeles", mediaCpm: "$3.75" },
+  { id: "HKE240J", status: "low" as const, subPlacement: "", partner: "Adtheorent", channel: "", audience: "Audience_Seg_05", adSize: "320x50", creative: "Rich_Media", language: "English", geography: "", mediaCpm: "" },
+  { id: "HKE241J", status: "high" as const, subPlacement: "Streamline_2025_Video_Q1", partner: "Nexxen", channel: "Video", audience: "Audience_Seg_08", adSize: "728x90", creative: "Video_Pre_Roll", language: "English", geography: "Houston", mediaCpm: "$12.00" },
+  { id: "HKE242J", status: "medium" as const, subPlacement: "FitTrack_2025_Mobile_Q2", partner: "Adtheorent", channel: "Mobile", audience: "Audience_Seg_12", adSize: "300x600", creative: "Interactive", language: "Spanish", geography: "", mediaCpm: "" },
+  { id: "HKE243J", status: "low" as const, subPlacement: "", partner: "Viant", channel: "", audience: "Audience_Seg_03", adSize: "300x250", creative: "Standard_Banner", language: "English", geography: "", mediaCpm: "" },
+  { id: "HKE244J", status: "high" as const, subPlacement: "TechSavvy_2025_Display_Q1", partner: "Nexxen", channel: "Display", audience: "Audience_Seg_15", adSize: "300x600", creative: "Native_Content", language: "English", geography: "San_Francisco", mediaCpm: "$6.50" },
+  { id: "HKE245J", status: "high" as const, subPlacement: "TravelQuest_2025_CTV_Q2", partner: "Viant", channel: "CTV", audience: "Audience_Seg_20", adSize: "970x250", creative: "Rich_Media", language: "English", geography: "Seattle", mediaCpm: "$15.75" },
+  { id: "HKE246J", status: "medium" as const, subPlacement: "CulinaryDelight_2025_Social", partner: "Adtheorent", channel: "Social", audience: "Audience_Seg_22", adSize: "300x250", creative: "Standard_Banner", language: "English", geography: "Denver", mediaCpm: "" },
+  { id: "HKE247J", status: "medium" as const, subPlacement: "HealthTech_2025_Native_Q3", partner: "Viant", channel: "Native", audience: "Audience_Seg_01", adSize: "728x90", creative: "Native_Content", language: "English", geography: "", mediaCpm: "$8.50" },
+  { id: "HKE248J", status: "low" as const, subPlacement: "SportsFan_2025_CTV_Q2", partner: "Nexxen", channel: "", audience: "Audience_Seg_12", adSize: "970x250", creative: "Video_Pre_Roll", language: "English", geography: "", mediaCpm: "" },
+  { id: "HKE249J", status: "medium" as const, subPlacement: "EcoLiving_2025_Display_Q1", partner: "Adtheorent", channel: "Display", audience: "Audience_Seg_05", adSize: "300x600", creative: "Rich_Media", language: "Spanish", geography: "Dallas", mediaCpm: "" },
 ];
 
 type PlacementRow = {
@@ -2935,7 +3016,6 @@ type PlacementRow = {
   subPlacement: string;
   partner: string;
   channel: string;
-  publisher: string;
   audience: string;
   adSize: string;
   creative: string;
@@ -2947,7 +3027,6 @@ type PlacementRow = {
 const CHANNEL_OPTIONS_AP = ["Display", "Mobile", "Video", "Audio", "CTV", "Social", "Native"];
 const SUB_PLACEMENT_OPTIONS_AP = ["Pandora_2025_Display_Q1", "Soundwave_2025_Audio_Q2", "Streamline_2025_Video_Q1", "FitTrack_2025_Mobile_Q2", "TechSavvy_2025_Display_Q1", "TravelQuest_2025_CTV_Q2", "CulinaryDelight_2025_Social", "HealthTech_2025_Native_Q3", "SportsFan_2025_CTV_Q2", "EcoLiving_2025_Display_Q1"];
 const PARTNER_OPTIONS_AP = ["Viant", "Adtheorent", "Nexxen"];
-const PUBLISHER_OPTIONS_AP = ["Google_DV360", "Meta_Ads", "Amazon_DSP", "TradeDesk"];
 const AUDIENCE_OPTIONS_AP = ["Audience_Seg_01", "Audience_Seg_02", "Audience_Seg_03", "Audience_Seg_05", "Audience_Seg_08", "Audience_Seg_12", "Audience_Seg_15", "Audience_Seg_20", "Audience_Seg_22"];
 const AD_SIZE_OPTIONS_AP = ["300x50", "300x250", "300x600", "320x50", "728x90", "970x250", "160x600"];
 const CREATIVE_OPTIONS_AP = ["Standard_Banner", "Rich_Media", "Video_Pre_Roll", "Interactive", "Native_Content"];
@@ -3045,7 +3124,7 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
   const selectedAreAllNeedsReview = isBulkMode && [...selectedRows].every((i) => rows[i].status === "medium");
 
   const recomputeStatus = (row: PlacementRow): PlacementRow["status"] => {
-    const required: (keyof PlacementRow)[] = ["subPlacement", "channel", "publisher", "geography", "mediaCpm"];
+    const required: (keyof PlacementRow)[] = ["subPlacement", "channel", "geography", "mediaCpm"];
     const filledCount = required.filter((f) => !!row[f]).length;
     if (filledCount <= 2) return "low";
     if (filledCount <= 4) return "medium";
@@ -3091,7 +3170,6 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
         const updated = { ...r };
         if (bulkForm.partner) updated.partner = bulkForm.partner;
         if (bulkForm.channel) updated.channel = bulkForm.channel;
-        if (bulkForm.publisher) updated.publisher = bulkForm.publisher;
         if (bulkForm.audience) updated.audience = bulkForm.audience;
         if (bulkForm.adSize) updated.adSize = bulkForm.adSize;
         if (bulkForm.creative) updated.creative = bulkForm.creative;
@@ -3200,7 +3278,7 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
         <div className="flex items-center gap-3">
           <p className="text-sm text-[#1f2430]">
             <span className="text-[#6b7280]">Total </span>
-            <span className="font-medium">{rows.reduce((acc, r) => acc + ["subPlacement", "channel", "publisher", "geography", "mediaCpm"].filter((f) => !!(r as Record<string, string>)[f]).length, 0)}</span>
+            <span className="font-medium">{rows.reduce((acc, r) => acc + ["subPlacement", "channel", "geography", "mediaCpm"].filter((f) => !!(r as Record<string, string>)[f]).length, 0)}</span>
             <span className="text-[#6b7280]"> fields parsed</span>
             <span className="mx-2 text-[#d1d5db]">|</span>
             <span className="text-[#6b7280]">Showing </span>
@@ -3239,9 +3317,8 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
               </th>
               <SortHeader field="status" label="Status" />
               <SortHeader field="subPlacement" label="Sub Placement" />
-              <SortHeader field="partner" label="Partner" />
+              <SortHeader field="partner" label="Media Partner" />
               <SortHeader field="channel" label="Channel" />
-              <SortHeader field="publisher" label="Publisher" />
               <SortHeader field="audience" label="Audience" />
               <SortHeader field="adSize" label="Ad Size" />
               <SortHeader field="creative" label="Creative" />
@@ -3258,7 +3335,6 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
                 { field: "subPlacement", maxW: "max-w-[160px]" },
                 { field: "partner", options: PARTNER_OPTIONS_AP },
                 { field: "channel", options: CHANNEL_OPTIONS_AP },
-                { field: "publisher", options: PUBLISHER_OPTIONS_AP },
                 { field: "audience", options: AUDIENCE_OPTIONS_AP },
                 { field: "adSize", options: AD_SIZE_OPTIONS_AP },
                 { field: "creative", options: CREATIVE_OPTIONS_AP },
@@ -3403,9 +3479,8 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
             <div className="flex flex-col gap-4">
               {([
                 { label: "Sub Placement", field: "subPlacement" as const, options: SUB_PLACEMENT_OPTIONS_AP, editOnly: true },
-                { label: "Partner", field: "partner" as const, options: PARTNER_OPTIONS_AP, editOnly: false },
+                { label: "Media Partner", field: "partner" as const, options: PARTNER_OPTIONS_AP, editOnly: false },
                 { label: "Channel", field: "channel" as const, options: CHANNEL_OPTIONS_AP, editOnly: false },
-                { label: "Publisher", field: "publisher" as const, options: PUBLISHER_OPTIONS_AP, editOnly: false },
                 { label: "Audience", field: "audience" as const, options: AUDIENCE_OPTIONS_AP, editOnly: false },
                 { label: "Ad Size", field: "adSize" as const, options: AD_SIZE_OPTIONS_AP, editOnly: false },
                 { label: "Creative", field: "creative" as const, options: CREATIVE_OPTIONS_AP, editOnly: false },
