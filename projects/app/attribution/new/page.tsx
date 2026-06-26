@@ -706,6 +706,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="Visits">Visits</SelectItem>
+              <SelectItem value="Sales">Sales</SelectItem>
               <SelectItem value="Visits and Sales">Visits and Sales</SelectItem>
             </SelectContent>
           </Select>
