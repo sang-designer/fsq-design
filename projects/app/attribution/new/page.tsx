@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, ChevronDown, ChevronUp, Calendar as CalendarIcon, CircleDashed, Check, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Search, Download, Copy, Mail, X, Loader2, GripVertical, MousePointerClick, ArrowRight, OctagonAlert, SquarePen, Trash2, FileText, Info, CircleAlert, ArrowUpDown, SlidersHorizontal, ExternalLink, ArrowLeft } from "lucide-react";
+import { Upload, ChevronDown, ChevronUp, Calendar as CalendarIcon, CircleDashed, Check, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Search, Download, Copy, Mail, X, Loader2, GripVertical, ArrowRight, OctagonAlert, SquarePen, Trash2, FileText, Info, CircleAlert, ArrowUpDown, SlidersHorizontal, ExternalLink, ArrowLeft, MousePointerClick } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useRef, useCallback, useEffect, useMemo, DragEvent, Suspense } from "react";
@@ -17,7 +17,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
-type Step = "campaign" | "placement" | "map-partners" | "map-taxonomies" | "map-creatives" | "apply-placements" | "funding" | "pixel" | "review";
+type Step = "campaign" | "placement" | "map-partners" | "map-taxonomies" | "apply-placements" | "funding" | "pixel" | "review";
 
 const SIDEBAR_STEPS = [
   { key: "campaign" as Step, label: "Campaign Details" },
@@ -1402,7 +1402,7 @@ function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue 
     setPixels((prev) => prev.map((p, i) => (i === index ? { ...p, tracking: value } : p)));
   };
 
-  const isValid = pixelState !== "populated" || pixels.every((p) => !!p.tracking);
+  const isValid = true;
 
   useEffect(() => {
     onValidChange?.(isValid);
@@ -1475,38 +1475,17 @@ function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue 
                 <table className="w-full table-fixed">
                   <thead>
                     <tr className="border-b border-[#e2e8f0]">
-                      <th className="w-[12%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
-                      <th className="w-[22%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Setup Method</th>
-                      <th className="w-[33%] px-6 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
-                      <th className="w-[33%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
+                      <th className="w-[15%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
+                      <th className="w-[42%] px-6 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
+                      <th className="w-[43%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
                     </tr>
                   </thead>
                   <tbody>
                     {adServers.map((row, i) => {
-                      const isDisabled = row.setupMethod === "Direct Integrations" || row.setupMethod === "No Pixel Required" || row.setupMethod === "Special Pixel Setup";
                       return (
                       <tr key={i} className="border-b border-[#e2e8f0]">
                         <td className="px-4 py-4 text-sm font-medium text-black">{row.partner}</td>
-                        <td className="px-4 py-4">
-                          <SingleSelectDropdown
-                            options={["Platform-Generated Pixels", "Direct Integrations", "No Pixel Required", "Special Pixel Setup"]}
-                            value={row.setupMethod}
-                            onChange={(val) =>
-                              setAdServers((prev) =>
-                                prev.map((r, idx) => {
-                                  if (idx !== i) return r;
-                                  const disabled = val === "Direct Integrations" || val === "No Pixel Required" || val === "Special Pixel Setup";
-                                  return { ...r, setupMethod: val, adServers: disabled ? [] : r.adServers, pixelTypes: disabled ? [] : r.pixelTypes };
-                                })
-                              )
-                            }
-                            placeholder="Select setup method..."
-                          />
-                        </td>
                         <td className="px-6 py-4">
-                          {isDisabled ? (
-                            <span className="text-sm text-[#9ca3af]">—</span>
-                          ) : (
                           <MultiSelectDropdown
                             options={AD_SERVER_OPTIONS}
                             selected={row.adServers}
@@ -1518,12 +1497,8 @@ function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue 
                             placeholder="Select ad servers..."
                             hasWarning={row.adServers.length === 0}
                           />
-                          )}
                         </td>
                         <td className="px-4 py-4">
-                          {isDisabled ? (
-                            <span className="text-sm text-[#9ca3af]">—</span>
-                          ) : (
                           <MultiSelectDropdown
                             options={PIXEL_TYPE_OPTIONS}
                             selected={row.pixelTypes}
@@ -1535,7 +1510,6 @@ function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue 
                             placeholder="Select pixel types..."
                             hasWarning={row.pixelTypes.length === 0}
                           />
-                          )}
                         </td>
                       </tr>
                       );
@@ -1551,13 +1525,20 @@ function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue 
                 >
                   Back to Funding Allocation
                 </button>
-                <button
-                  onClick={() => { setPixels(generateFromSelections()); setActivePixelSubStep(2); }}
-                  disabled={adServers.some((r) => r.adServers.length === 0 || r.pixelTypes.length === 0)}
-                  className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Continue to Manage Pixels
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={onContinue}
+                    className="rounded-md border border-[#212be9] bg-white px-4 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
+                  >
+                    Skip
+                  </button>
+                  <button
+                    onClick={() => { setPixels(generateFromSelections()); setActivePixelSubStep(2); }}
+                    className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
+                  >
+                    Continue to Manage Pixels
+                  </button>
+                </div>
               </div>
             </>
           ) : (
@@ -1699,8 +1680,7 @@ function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue 
                 </button>
                 <button
                   onClick={onContinue}
-                  disabled={!isValid}
-                  className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
                 >
                   Continue to Review
                 </button>
@@ -1727,8 +1707,7 @@ const PLACEMENT_SUB_STEPS = [
   { num: 1, label: "Media Plan" },
   { num: 2, label: "Map Partners" },
   { num: 3, label: "Map Taxonomies" },
-  { num: 4, label: "Map Creatives" },
-  { num: 5, label: "Apply Placements" },
+  { num: 4, label: "Apply Placements" },
 ];
 
 const PIXEL_SUB_STEPS = [
@@ -1808,10 +1787,71 @@ function PixelSubSteps({ activeStep }: { activeStep: number }) {
   );
 }
 
-function PlacementDetailsContent({ placementState, onContinueToMapPartners, onUpload, onFileDrop, hasReuploaded }: { placementState: PlacementState; onContinueToMapPartners: () => void; onUpload: () => void; onFileDrop: (name: string) => void; hasReuploaded?: boolean }) {
+function PlacementDetailsContent({ placementState, onContinueToMapTaxonomies, onUpload, onFileDrop, hasReuploaded, alreadyParsed, onAlreadyParsedChange }: { placementState: PlacementState; onContinueToMapTaxonomies: () => void; onUpload: () => void; onFileDrop: (name: string) => void; hasReuploaded?: boolean; alreadyParsed: boolean; onAlreadyParsedChange: (v: boolean) => void }) {
   const [showUploadBanner, setShowUploadBanner] = useState(placementState === "new-upload");
-
   const hasResults = placementState === "uploaded" || placementState === "new-upload";
+
+  const DETECTED_TABS = ["Media Plan Q2", "Media Plan Q3", "Budget Summary", "Placement Keys", "Campaign Overview", "Partner List"];
+
+  const [selectedMediaTabs, setSelectedMediaTabs] = useState<string[]>(hasResults ? ["Media Plan Q2"] : []);
+  const [selectedKeysTab, setSelectedKeysTab] = useState<string>("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [mediaTabsOpen, setMediaTabsOpen] = useState(false);
+  const mediaTabsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (mediaTabsRef.current && !mediaTabsRef.current.contains(e.target as Node)) {
+        setMediaTabsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const toggleMediaTab = (tab: string) => {
+    setSelectedMediaTabs((prev) =>
+      prev.includes(tab) ? prev.filter((t) => t !== tab) : [...prev, tab]
+    );
+  };
+
+  const handleContinue = () => {
+    setIsProcessing(true);
+    setTimeout(() => {
+      setIsProcessing(false);
+      onContinueToMapTaxonomies();
+    }, 1800);
+  };
+
+  if (isProcessing) {
+    return (
+      <>
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-[#020617]">Placement Details</h2>
+          <div className="mt-1 text-sm leading-5 text-[#646464]">
+            <p>Processing your media plan data...</p>
+          </div>
+        </div>
+        <PlacementSubSteps activeStep={1} hasReuploaded={hasReuploaded} />
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="relative mb-6">
+            <div className="size-16 rounded-full border-4 border-[#e2e8f0]" />
+            <div className="absolute inset-0 size-16 animate-spin rounded-full border-4 border-transparent border-t-[#212be9]" />
+          </div>
+          <h3 className="mb-2 text-lg font-semibold text-[#020617]">AI Data Parsing</h3>
+          <p className="max-w-md text-center text-sm text-[#646464]">
+            The system is automatically matching your media plan placement name taxonomy strings with the key mapping. This may take a moment...
+          </p>
+          <div className="mt-6 flex items-center gap-3">
+            <div className="h-1.5 w-48 overflow-hidden rounded-full bg-[#e2e8f0]">
+              <div className="h-full animate-pulse rounded-full bg-[#212be9]" style={{ width: "65%" }} />
+            </div>
+            <span className="text-xs text-[#646464]">Parsing...</span>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -1830,12 +1870,8 @@ function PlacementDetailsContent({ placementState, onContinueToMapPartners, onUp
               <p className="text-xs font-medium text-[#f59e0b]">Missing Information</p>
             </div>
             <div>
-              <span className="text-xs text-[#757575]">Partner Details</span>
-              <p className="text-xs font-medium text-[#16a34a]">Successfully Processed</p>
-            </div>
-            <div>
               <span className="text-xs text-[#757575]">Placement Details</span>
-              <p className="text-xs font-medium text-[#f59e0b]">Missing Information</p>
+              <p className="text-xs font-medium text-[#16a34a]">Successfully Processed</p>
             </div>
           </div>
           <button onClick={() => setShowUploadBanner(false)} className="ml-4 shrink-0 p-1 text-[#8d8d8d] hover:text-[#020617]">
@@ -1844,11 +1880,12 @@ function PlacementDetailsContent({ placementState, onContinueToMapPartners, onUp
         </div>
       )}
 
+      <div className="max-w-[960px]">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-[#020617]">Placement Details</h2>
         <div className="mt-1 text-sm leading-5 text-[#646464]">
           <p>
-            Using a campaign media plan, map any unique or incomplete placement values, and update placement data.
+            Using a campaign media plan, identify which tabs contain placement data and which tab has taxonomy keys.
           </p>
           <p>
             <span className="cursor-pointer text-[#212be9]">Learn more</span> about campaign placement details.
@@ -1860,25 +1897,54 @@ function PlacementDetailsContent({ placementState, onContinueToMapPartners, onUp
 
       {hasResults ? (
         <>
-          <div className="mb-6 text-sm leading-5 text-[#646464]">
-            <p>Your uploaded media plan has been parsed using the placement delimiters shown below. Next you&apos;ll map partners found in the placement data to your provided Media Partners.</p>
+          <div className="mb-5">
+            <p className="mb-1.5 text-sm font-semibold text-[#020617]">Processed File</p>
+            <div className="flex max-w-[480px] items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-4 py-3">
+              <span className="text-sm font-medium text-[#020617]">{hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026"}</span>
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1 text-sm">
+                  <FileText className="size-4 text-[#64748b]" />
+                  <span className="text-[#64748b]">{DETECTED_TABS.length} tabs detected</span>
+                </span>
+              </div>
+            </div>
           </div>
 
+          {/* Identify Keys Tab */}
           <div className="mb-4">
-            <p className="mb-3 text-sm font-semibold text-[#020617]">Processed Placement Data Results</p>
-            <div className="flex items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-4 py-3">
-              <span className="text-sm font-medium text-[#020617]">{hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026"}</span>
-              <div className="flex items-center gap-6">
-                <span className="flex items-center gap-1 text-sm">
-                  <Check className="size-4 text-[#16a34a]" />
-                  <span className="font-medium text-[#16a34a]">103 Mapped Values</span>
-                </span>
-                <span className="flex items-center gap-1 text-sm">
-                  <X className="size-4 text-[#dc2626]" />
-                  <span className="font-medium text-[#dc2626]">91 Unmapped Values</span>
-                </span>
-                <span className="text-sm font-medium text-[#020617]">194 Unique Values Found</span>
-              </div>
+            <p className="mb-1.5 text-sm text-[#646464]">Select the tab that contains the taxonomy &quot;Keys&quot; — the mapping reference for placement values.</p>
+            <label className="mb-1 block text-sm font-semibold text-[#020617]">Identify Keys</label>
+            <Select
+              value={selectedKeysTab}
+              onValueChange={setSelectedKeysTab}
+              disabled={alreadyParsed}
+            >
+              <SelectTrigger className={`max-w-[480px] h-11 text-base ${alreadyParsed ? "cursor-not-allowed opacity-50" : ""}`}>
+                <SelectValue placeholder="Select the keys tab..." />
+              </SelectTrigger>
+              <SelectContent>
+                {DETECTED_TABS.map((tab) => (
+                  <SelectItem key={tab} value={tab}>{tab}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Already Parsed Checkbox */}
+          <div className="mb-6 flex items-start gap-3">
+            <Checkbox
+              id="already-parsed"
+              checked={alreadyParsed}
+              onCheckedChange={(checked) => onAlreadyParsedChange(checked === true)}
+              className="mt-0.5"
+            />
+            <div>
+              <label htmlFor="already-parsed" className="cursor-pointer text-sm font-medium text-[#020617]">
+                Taxonomy values are already parsed out
+              </label>
+              <p className="mt-0.5 text-xs text-[#646464]">
+                Check this if the media plan file already has taxonomy values broken into separate columns. The Keys tab selection will be disabled.
+              </p>
             </div>
           </div>
         </>
@@ -1908,9 +1974,42 @@ function PlacementDetailsContent({ placementState, onContinueToMapPartners, onUp
           </div>
         </>
       )}
+      </div>
     </>
   );
 }
+
+
+
+/* ───── MapTaxonomiesContent (Column Header Mapping) ───── */
+
+type SystemLabel = { id: string; name: string; color: string };
+type ColumnDef = { id: string; rawName: string; sampleData: string[] };
+
+const SYSTEM_LABELS: SystemLabel[] = [
+  { id: "sl-sub-placement", name: "Sub Placement", color: "#3b82f6" },
+  { id: "sl-partner", name: "Media Partner", color: "#8b5cf6" },
+  { id: "sl-channel", name: "Channel", color: "#10b981" },
+  { id: "sl-audience", name: "Audience", color: "#06b6d4" },
+  { id: "sl-adsize", name: "Ad Size", color: "#ef4444" },
+  { id: "sl-creative", name: "Creative", color: "#f59e0b" },
+  { id: "sl-media-cpm", name: "Media CPM", color: "#f97316" },
+  { id: "sl-language", name: "Language", color: "#6366f1" },
+  { id: "sl-geography", name: "Geography", color: "#ec4899" },
+  { id: "sl-ignored", name: "Ignored", color: "#6b7280" },
+];
+
+const PARSED_COLUMNS: ColumnDef[] = [
+  { id: "col-1", rawName: "Placement_Name", sampleData: ["Pandora_2025_Display_Q1", "Streamline_2025_Video_Q1", "FitTrack_2025_Mobile_Q2", "TechSavvy_2025_Display_Q1", "TravelQuest_2025_CTV_Q2", "CulinaryDelight_2025_Social", "HealthTech_2025_Native_Q3", "SportsFan_2025_CTV_Q2", "EcoLiving_2025_Display_Q1", "AutoDrive_2025_Video_Q3", "PetCare_2025_Mobile_Q1", "FinanceHub_2025_Display_Q2", "StyleBox_2025_Social_Q1", "GameStream_2025_CTV_Q3", "WellnessPlus_2025_Native_Q2", "SmartHome_2025_Display_Q3", "FoodieApp_2025_Mobile_Q2", "TechGear_2025_Video_Q1", "TravelEasy_2025_CTV_Q1", "MusicLive_2025_Audio_Q2"] },
+  { id: "col-2", rawName: "Vendor", sampleData: ["Viant", "Nexxen", "Adtheorent", "Nexxen", "Viant", "Adtheorent", "Viant", "Nexxen", "Adtheorent", "Viant", "Nexxen", "Adtheorent", "Viant", "Nexxen", "Adtheorent", "Viant", "Nexxen", "Adtheorent", "Viant", "Nexxen"] },
+  { id: "col-3", rawName: "Media Type", sampleData: ["Display", "Video", "Mobile", "Display", "CTV", "Social", "Native", "CTV", "Display", "Video", "Mobile", "Display", "Social", "CTV", "Native", "Display", "Mobile", "Video", "CTV", "Audio"] },
+  { id: "col-4", rawName: "Target Group", sampleData: ["Audience_Seg_01", "Audience_Seg_08", "Audience_Seg_12", "Audience_Seg_15", "Audience_Seg_20", "Audience_Seg_22", "Audience_Seg_01", "Audience_Seg_12", "Audience_Seg_05", "Audience_Seg_03", "Audience_Seg_08", "Audience_Seg_15", "Audience_Seg_22", "Audience_Seg_20", "Audience_Seg_01", "Audience_Seg_05", "Audience_Seg_12", "Audience_Seg_08", "Audience_Seg_03", "Audience_Seg_15"] },
+  { id: "col-5", rawName: "Ad Unit", sampleData: ["300x50", "728x90", "320x50", "300x600", "970x250", "300x250", "728x90", "970x250", "300x600", "728x90", "320x50", "300x250", "300x600", "970x250", "728x90", "300x250", "320x50", "728x90", "970x250", "300x50"] },
+  { id: "col-6", rawName: "Creative Format", sampleData: ["Standard_Banner", "Video_Pre_Roll", "Interactive", "Native_Content", "Rich_Media", "Standard_Banner", "Native_Content", "Video_Pre_Roll", "Rich_Media", "Video_Pre_Roll", "Interactive", "Standard_Banner", "Standard_Banner", "Video_Pre_Roll", "Native_Content", "Rich_Media", "Interactive", "Video_Pre_Roll", "Rich_Media", "Audio_Spot"] },
+  { id: "col-7", rawName: "Rate", sampleData: ["$3.75", "$12.00", "", "$6.50", "$15.75", "", "$8.50", "", "", "$10.50", "$4.25", "$5.00", "", "$18.50", "$8.50", "$6.50", "", "$12.00", "$15.75", "$3.50"] },
+  { id: "col-8", rawName: "Locale", sampleData: ["English", "English", "Spanish", "English", "English", "English", "English", "English", "Spanish", "English", "English", "French", "English", "English", "English", "German", "Spanish", "English", "English", "English"] },
+  { id: "col-9", rawName: "DMA Region", sampleData: ["Los_Angeles", "Houston", "", "San_Francisco", "Seattle", "Denver", "", "", "Dallas", "New_York", "Chicago", "Philadelphia", "", "Phoenix", "", "San_Antonio", "", "Los_Angeles", "Seattle", "Houston"] },
+];
 
 type PartnerToken = { id: string; name: string };
 type AssignedPartner = { id: string; name: string; count: number; tokens: PartnerToken[] };
@@ -1982,6 +2081,7 @@ const partnerOnboardingSteps = [
     icon: "count" as const,
   },
 ];
+
 
 function PartnerOnboardingModal({ step, onNext, onSkip, onBack, onDismissPermanently }: { step: number; onNext: () => void; onSkip: () => void; onBack: () => void; onDismissPermanently: () => void }) {
   const s = partnerOnboardingSteps[step];
@@ -2139,6 +2239,8 @@ function PartnerOnboardingModal({ step, onNext, onSkip, onBack, onDismissPermane
     </div>
   );
 }
+
+
 
 function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy, hasReuploaded }: { onBackToMediaPlan: () => void; onContinueToTaxonomy: () => void; hasReuploaded?: boolean }) {
   const [showOnboarding, setShowOnboarding] = useState(() => {
@@ -2582,411 +2684,251 @@ function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy, hasReuplo
 
 /* ───── MapTaxonomiesContent ───── */
 
-type TaxToken = { id: string; name: string };
-type TaxCategory = { id: string; name: string; count: number; tokens: TaxToken[] };
-
-const INITIAL_TAX_TOKENS: TaxToken[] = [
-  { id: "tx1", name: "Brand_Awareness" }, { id: "tx2", name: "Prospecting" }, { id: "tx3", name: "Retargeting" },
-  { id: "tx4", name: "Consideration" }, { id: "tx5", name: "Conversion" }, { id: "tx6", name: "Loyalty" },
-  { id: "tx7", name: "Upper_Funnel" }, { id: "tx8", name: "Mid_Funnel" }, { id: "tx9", name: "Lower_Funnel" },
-  { id: "tx10", name: "Awareness_Video" }, { id: "tx11", name: "Direct_Response" }, { id: "tx12", name: "Engagement" },
-  { id: "tx13", name: "Reach_Extension" }, { id: "tx14", name: "Sequential_Messaging" }, { id: "tx15", name: "Contextual" },
-  { id: "tx16", name: "Behavioral" }, { id: "tx17", name: "Lookalike" }, { id: "tx18", name: "CRM_Match" },
-  { id: "tx19", name: "Geo_Targeted" }, { id: "tx20", name: "Daypart_Optimized" },
-];
-
-const INITIAL_TAX_CATEGORIES: TaxCategory[] = [
-  { id: "tc1", name: "Campaign Objective", count: 0, tokens: [] },
-  { id: "tc2", name: "Funnel Stage", count: 0, tokens: [] },
-  { id: "tc3", name: "Targeting Strategy", count: 0, tokens: [] },
-  { id: "tc4", name: "Audience Segment", count: 0, tokens: [] },
-  { id: "tc5", name: "Creative Format", count: 0, tokens: [] },
-  { id: "tc6", name: "Optimization Goal", count: 0, tokens: [] },
-  { id: "tc7", name: "Measurement Type", count: 0, tokens: [] },
-  { id: "tc9", name: "Custom", count: 0, tokens: [] },
-  { id: "tc8", name: "Ignored", count: 0, tokens: [] },
-];
 
 function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean }) {
-  const tokens = INITIAL_TAX_TOKENS;
-  const [categories, setCategories] = useState<TaxCategory[]>(INITIAL_TAX_CATEGORIES);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [dragTokenIds, setDragTokenIds] = useState<string[]>([]);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const dragCounter = useRef<Record<string, number>>({});
-  const dragGhostRef = useRef<HTMLDivElement>(null);
+  const [mappings, setMappings] = useState<Record<string, string | null>>(() => {
+    const m: Record<string, string | null> = {};
+    PARSED_COLUMNS.forEach((col) => { m[col.id] = null; });
+    return m;
+  });
+  const [draggingLabel, setDraggingLabel] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 15;
+  const totalRows = PARSED_COLUMNS[0].sampleData.length;
+  const totalPages = Math.ceil(totalRows / PAGE_SIZE);
+  const startIdx = (currentPage - 1) * PAGE_SIZE;
+  const endIdx = Math.min(startIdx + PAGE_SIZE, totalRows);
 
-  const assignedCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    categories.forEach((c) => c.tokens.forEach((t) => counts.set(t.id, (counts.get(t.id) || 0) + 1)));
-    return counts;
-  }, [categories]);
-
-  const [duplicateMsg, setDuplicateMsg] = useState<string | null>(null);
-  const duplicateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const allSelected = tokens.length > 0 && selected.size === tokens.length;
-
-  const toggleSelect = (id: string) => setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  const toggleSelectAll = () => { if (allSelected) setSelected(new Set()); else setSelected(new Set(tokens.map((t) => t.id))); };
-  const toggleExpand = (id: string) => setExpanded((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-
-  const handleDragStart = useCallback((e: DragEvent, tokenId: string) => {
-    const ids = selected.has(tokenId) && selected.size > 1 ? Array.from(selected) : [tokenId];
-    setDragTokenIds(ids);
-    e.dataTransfer.setData("text/plain", JSON.stringify(ids));
-    e.dataTransfer.effectAllowed = "copy";
-    if (ids.length > 1 && dragGhostRef.current) {
-      dragGhostRef.current.textContent = `${ids.length} items`;
-      dragGhostRef.current.style.display = "flex";
-      e.dataTransfer.setDragImage(dragGhostRef.current, 40, 20);
-      requestAnimationFrame(() => { if (dragGhostRef.current) dragGhostRef.current.style.display = "none"; });
-    }
-  }, [selected]);
-
-  const handleDragOver = useCallback((e: DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }, []);
-  const handleDragEnter = useCallback((e: DragEvent, catId: string) => { e.preventDefault(); dragCounter.current[catId] = (dragCounter.current[catId] || 0) + 1; setDragOverId(catId); }, []);
-  const handleDragLeave = useCallback((catId: string) => { dragCounter.current[catId] = (dragCounter.current[catId] || 0) - 1; if (dragCounter.current[catId] <= 0) { dragCounter.current[catId] = 0; setDragOverId((p) => (p === catId ? null : p)); } }, []);
-
-  const handleDrop = useCallback((e: DragEvent, catId: string) => {
-    e.preventDefault();
-    dragCounter.current[catId] = 0;
-    setDragOverId(null);
-    let ids: string[];
-    try { ids = JSON.parse(e.dataTransfer.getData("text/plain")); } catch { ids = dragTokenIds; }
-    if (!ids.length) return;
-    const dropped = INITIAL_TAX_TOKENS.filter((t) => ids.includes(t.id));
-    if (!dropped.length) return;
-    setCategories((prev) => {
-      const cat = prev.find((c) => c.id === catId);
-      if (!cat) return prev;
-      const existingIds = new Set(cat.tokens.map((t) => t.id));
-      const newTokens = dropped.filter((t) => !existingIds.has(t.id));
-      if (!newTokens.length) {
-        const names = dropped.length === 1 ? `"${dropped[0].name}"` : `${dropped.length} values`;
-        setDuplicateMsg(`${names} already mapped to this category.`);
-        if (duplicateTimer.current) clearTimeout(duplicateTimer.current);
-        duplicateTimer.current = setTimeout(() => setDuplicateMsg(null), 3000);
-        return prev;
-      }
-      return prev.map((c) => c.id === catId ? { ...c, count: c.count + newTokens.length, tokens: [...c.tokens, ...newTokens] } : c);
+  const assignedLabelIds = useMemo(() => {
+    const assigned = new Set<string>();
+    Object.values(mappings).forEach((labelId) => {
+      if (labelId) assigned.add(labelId);
     });
-    setSelected((prev) => { const n = new Set(prev); ids.forEach((id) => n.delete(id)); return n; });
-    setDragTokenIds([]);
-  }, [dragTokenIds]);
+    return assigned;
+  }, [mappings]);
 
-  const handleDragEnd = useCallback(() => { setDragTokenIds([]); setDragOverId(null); dragCounter.current = {}; }, []);
+  const unassignedLabels = SYSTEM_LABELS.filter((l) => !assignedLabelIds.has(l.id));
+  const mappedCount = Object.values(mappings).filter(Boolean).length;
 
-  const removeToken = useCallback((catId: string, token: TaxToken) => {
-    setCategories((prev) => prev.map((c) => c.id === catId ? { ...c, count: c.count - 1, tokens: c.tokens.filter((t) => t.id !== token.id) } : c));
+  const assignLabel = (colId: string, labelId: string) => {
+    setMappings((prev) => {
+      const next = { ...prev };
+      const existingCol = Object.entries(next).find(([, v]) => v === labelId);
+      if (existingCol) next[existingCol[0]] = null;
+      next[colId] = labelId;
+      return next;
+    });
+  };
+
+  const unassignLabel = (colId: string) => {
+    setMappings((prev) => ({ ...prev, [colId]: null }));
+  };
+
+  const handleDragStart = useCallback((e: DragEvent, labelId: string) => {
+    setDraggingLabel(labelId);
+    e.dataTransfer.setData("text/plain", labelId);
+    e.dataTransfer.effectAllowed = "move";
   }, []);
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const handleDragEnter = useCallback((_e: DragEvent, colId: string) => {
+    setDragOverCol(colId);
+  }, []);
+
+  const handleDragLeave = useCallback((_e: DragEvent, colId: string) => {
+    setDragOverCol((prev) => (prev === colId ? null : prev));
+  }, []);
+
+  const handleDrop = useCallback((e: DragEvent, colId: string) => {
+    e.preventDefault();
+    setDragOverCol(null);
+    const labelId = e.dataTransfer.getData("text/plain") || draggingLabel;
+    if (labelId) assignLabel(colId, labelId);
+    setDraggingLabel(null);
+  }, [draggingLabel]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggingLabel(null);
+    setDragOverCol(null);
+  }, []);
+
+  const getLabelForCol = (colId: string) => {
+    const labelId = mappings[colId];
+    if (!labelId) return null;
+    return SYSTEM_LABELS.find((l) => l.id === labelId) || null;
+  };
 
   return (
     <>
-      <div ref={dragGhostRef} className="pointer-events-none fixed left-[-9999px] top-[-9999px] z-[9999] hidden items-center gap-1.5 rounded-lg bg-[#1f2937] px-3 py-1.5 text-xs font-medium text-white shadow-lg" />
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-[#020617]">Placement Details</h2>
         <div className="mt-1 text-sm leading-5 text-[#646464]">
-          <p>Map taxonomy values found in your media plan to standard categories.</p>
+          <p>Match your external column names to the system&apos;s internal labels. Use the dropdown in each column header or drag labels from the bar above.</p>
         </div>
       </div>
 
       <PlacementSubSteps activeStep={3} hasReuploaded={hasReuploaded} />
 
-      <p className="mb-6 text-sm text-[#646464]">Drag unassigned taxonomy values on the left to the appropriate category on the right. Values can be mapped to multiple categories.</p>
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-sm text-[#646464]">
+          <span className="font-medium text-[#020617]">{mappedCount}</span> of <span className="font-medium text-[#020617]">{PARSED_COLUMNS.length}</span> columns mapped
+        </p>
+        {mappedCount === PARSED_COLUMNS.length && (
+          <span className="flex items-center gap-1 text-sm font-medium text-[#16a34a]">
+            <Check className="size-4" /> All columns mapped
+          </span>
+        )}
+      </div>
 
-      {duplicateMsg && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-[#fde68a] bg-[#fefce8] px-4 py-2.5 text-sm text-[#92400e]">
-          <Info className="size-4 shrink-0" />
-          {duplicateMsg}
+      {/* Pill bar of available system labels */}
+      <div className="mb-6 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-4">
+        <p className="mb-2 text-xs font-medium text-[#64748b]">Available Labels — Drag Onto Columns or Use the Dropdown</p>
+        <div className="flex flex-wrap gap-2">
+          {SYSTEM_LABELS.map((label) => {
+            const isAssigned = assignedLabelIds.has(label.id);
+            return (
+              <div
+                key={label.id}
+                draggable={!isAssigned}
+                onDragStart={(e) => handleDragStart(e, label.id)}
+                onDragEnd={handleDragEnd}
+                className={`flex cursor-grab items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all active:cursor-grabbing ${
+                  isAssigned
+                    ? "cursor-default bg-[#f1f5f9] text-[#94a3b8] line-through opacity-50"
+                    : "border border-[#e2e8f0] bg-white text-[#020617] shadow-sm hover:shadow-md"
+                } ${draggingLabel === label.id ? "scale-95 opacity-60" : ""}`}
+              >
+                <GripVertical className={`size-3 ${isAssigned ? "text-[#cbd5e1]" : "text-[#9ca3af]"}`} />
+                {label.name}
+              </div>
+            );
+          })}
         </div>
-      )}
+      </div>
 
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <h3 className="mb-2 text-base font-semibold text-[#020617]">Unassigned Values</h3>
-          <div className="rounded-lg border border-[#e2e8f0]">
-            <div className="flex items-center gap-4 border-b border-[#e2e8f0] px-4 py-2">
-              <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="size-4 rounded border-gray-300 accent-[#212be9]" />
-              <span className="text-xs text-[#6b7280]">select all ({selected.size} selected)</span>
-            </div>
-            <div className="max-h-[400px] overflow-y-auto">
-              {tokens.map((token) => (
-                <div
-                  key={token.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, token.id)}
-                  onDragEnd={handleDragEnd}
-                  className={`group flex cursor-grab items-center gap-3 border-b border-[#e2e8f0]/50 px-4 py-2 text-sm transition-colors active:cursor-grabbing ${selected.has(token.id) ? "bg-[#eef2ff]" : "hover:bg-gray-50"} ${dragTokenIds.includes(token.id) ? "opacity-40" : ""}`}
-                >
-                  <GripVertical className="size-4 shrink-0 text-[#9ca3af] opacity-0 transition-opacity group-hover:opacity-100" />
-                  <input type="checkbox" checked={selected.has(token.id)} onChange={() => toggleSelect(token.id)} className="size-4 shrink-0 rounded border-gray-300 accent-[#212be9]" />
-                  <span className="flex-1 text-[#020617]">{token.name}</span>
-                  {assignedCounts.has(token.id) && <span className="rounded-full bg-[#f0fdf4] px-1.5 py-0.5 text-[10px] font-medium text-[#166534]">mapped to {assignedCounts.get(token.id)}</span>}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="w-[420px] shrink-0">
-          <h3 className="mb-2 text-base font-semibold text-[#020617]">Assigned Taxonomy Values</h3>
-          <div className="rounded-lg border border-[#e2e8f0]">
-            <div className="space-y-1.5 p-2">
-              {categories.map((cat) => {
-                const isOver = dragOverId === cat.id;
-                const isExp = expanded.has(cat.id);
+      {/* Data table with mappable column headers */}
+      <div className="w-full overflow-x-auto rounded-lg border border-[#e2e8f0]">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-[#e2e8f0]">
+              {PARSED_COLUMNS.map((col) => {
+                const assignedLabel = getLabelForCol(col.id);
+                const isOver = dragOverCol === col.id;
+                const isDragging = !!draggingLabel;
                 return (
-                  <div
-                    key={cat.id}
+                  <th
+                    key={col.id}
                     onDragOver={handleDragOver}
-                    onDragEnter={(e) => handleDragEnter(e, cat.id)}
-                    onDragLeave={() => handleDragLeave(cat.id)}
-                    onDrop={(e) => handleDrop(e, cat.id)}
-                    className={`rounded-lg border transition-all ${isOver ? "border-[#212be9] bg-[#eef2ff] shadow-sm" : "border-[#e2e8f0] bg-white"}`}
+                    onDragEnter={(e) => handleDragEnter(e, col.id)}
+                    onDragLeave={(e) => handleDragLeave(e, col.id)}
+                    onDrop={(e) => handleDrop(e, col.id)}
+                    className={`relative min-w-[140px] px-3 py-3 text-left transition-all ${
+                      isOver ? "bg-[#eef2ff] ring-2 ring-inset ring-[#212be9]" :
+                      isDragging && !assignedLabel ? "ring-1 ring-inset ring-dashed ring-[#94a3b8]" : ""
+                    }`}
                   >
-                    <button onClick={() => toggleExpand(cat.id)} className="flex w-full items-center gap-2 px-3 py-3 text-left">
-                      <span className="flex-1 text-sm font-medium text-[#020617]">{cat.name}</span>
-                      <span className="min-w-[24px] text-right text-sm tabular-nums text-[#6b7280]">{cat.count}</span>
-                      {isExp ? <ChevronUp className="size-4 text-[#6b7280]" /> : <ChevronDown className="size-4 text-[#6b7280]" />}
-                    </button>
-                    {isExp && cat.tokens.length > 0 && (
-                      <div className="border-t border-[#e2e8f0] px-3 pb-3 pt-2">
-                        <div className="flex flex-wrap gap-1.5">
-                          {cat.tokens.map((t) => (
-                            <span key={t.id} className="flex items-center gap-1 rounded-full bg-[#f3f4f6] py-0.5 pl-2.5 pr-1 text-xs text-[#020617]">
-                              {t.name}
-                              <button onClick={(e) => { e.stopPropagation(); removeToken(cat.id, t); }} className="rounded-full p-0.5 text-[#9ca3af] hover:bg-[#e5e7eb] hover:text-[#374151]"><X className="size-3" /></button>
+                    <div className="flex flex-col gap-1">
+                      {assignedLabel ? (
+                        <>
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="flex items-center gap-1 whitespace-nowrap rounded-full border border-[#e2e8f0] bg-[#f1f5f9] px-2 py-0.5 text-xs font-semibold text-[#020617]"
+                            >
+                              {assignedLabel.name}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); unassignLabel(col.id); }}
+                                className="ml-0.5 rounded-full p-0.5 text-[#64748b] transition-colors hover:bg-[#e2e8f0] hover:text-[#020617]"
+                              >
+                                <X className="size-2.5" />
+                              </button>
                             </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {isExp && cat.tokens.length === 0 && (
-                      <div className="border-t border-[#e2e8f0] px-3 py-3 text-xs text-[#6b7280]">Drop values here to assign them.</div>
-                    )}
-                  </div>
+                          </div>
+                          <span className="text-[10px] text-[#94a3b8]">{col.rawName}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xs font-medium text-[#020617]">{col.rawName}</span>
+                          <Select onValueChange={(labelId) => assignLabel(col.id, labelId)}>
+                            <SelectTrigger className="h-6 w-auto gap-1 border-dashed border-[#cbd5e1] px-2 text-[10px] text-[#64748b] shadow-none hover:border-[#212be9] hover:text-[#212be9]">
+                              <SelectValue placeholder="Select Label" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[240px]">
+                              {SYSTEM_LABELS.map((label) => {
+                                const isUsed = assignedLabelIds.has(label.id);
+                                return (
+                                  <SelectItem
+                                    key={label.id}
+                                    value={label.id}
+                                    disabled={isUsed}
+                                  >
+                                    {label.name}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        </>
+                      )}
+                    </div>
+                  </th>
                 );
               })}
-            </div>
-          </div>
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: endIdx - startIdx }, (_, i) => startIdx + i).map((rowIdx) => (
+              <tr key={rowIdx} className="border-b border-[#e2e8f0]/50">
+                {PARSED_COLUMNS.map((col) => (
+                  <td key={col.id} className="px-3 py-2.5 text-sm text-[#374151]">
+                    {col.sampleData[rowIdx] || "—"}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between">
+        <p className="text-xs text-[#94a3b8]">Showing {startIdx + 1}–{endIdx} of {totalRows} rows</p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="flex size-8 items-center justify-center rounded-md border border-[#e2e8f0] text-[#64748b] transition-colors hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`flex size-8 items-center justify-center rounded-md text-xs font-medium transition-colors ${
+                page === currentPage
+                  ? "bg-[#020617] text-white"
+                  : "border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8fafc]"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="flex size-8 items-center justify-center rounded-md border border-[#e2e8f0] text-[#64748b] transition-colors hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ChevronRight className="size-4" />
+          </button>
         </div>
       </div>
 
       <div className="mt-8 flex items-center justify-between py-4">
-        <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back to Partner Mappings</button>
-        <button onClick={onContinue} className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]">Continue to Creative Mappings</button>
-      </div>
-    </>
-  );
-}
-
-/* ───── MapCreativesContent ───── */
-
-type CreativeToken = { id: string; name: string };
-type MediaTypeCategory = { id: string; name: string; count: number; tokens: CreativeToken[] };
-
-const INITIAL_CREATIVE_TOKENS: CreativeToken[] = [
-  { id: "cr6", name: "Rich_Media_Expandable" },
-  { id: "cr10", name: "Social_Carousel_Feed" },
-  { id: "cr14", name: "Programmatic_Guaranteed_Unit" },
-  { id: "cr17", name: "Dynamic_Retargeting_300x600" },
-];
-
-const INITIAL_MEDIA_TYPE_CATEGORIES: MediaTypeCategory[] = [
-  { id: "mt1", name: "Display", count: 3, tokens: [{ id: "cr1", name: "Standard_Banner_300x250" }, { id: "cr2", name: "Interactive_Unit_728x90" }, { id: "cr3", name: "Native_Content_Feed" }] },
-  { id: "mt2", name: "Online Video", count: 2, tokens: [{ id: "cr4", name: "Video_Pre_Roll_15s" }, { id: "cr5", name: "Mid_Roll_30s" }] },
-  { id: "mt3", name: "Audio", count: 2, tokens: [{ id: "cr7", name: "Audio_Spot_30s" }, { id: "cr8", name: "Podcast_Sponsorship_60s" }] },
-  { id: "mt4", name: "Search", count: 1, tokens: [{ id: "cr9", name: "Paid_Search_Text_Ad" }] },
-  { id: "mt5", name: "Out-of-Home (Multi-Market)", count: 2, tokens: [{ id: "cr11", name: "Digital_Billboard_National" }, { id: "cr12", name: "Transit_Shelter_Multi" }] },
-  { id: "mt6", name: "Out-of-Home (Individual Market)", count: 1, tokens: [{ id: "cr13", name: "Street_Furniture_NYC" }] },
-  { id: "mt7", name: "Connected TV (CTV)", count: 2, tokens: [{ id: "cr15", name: "CTV_Spot_30s_Hulu" }, { id: "cr16", name: "CTV_Pre_Roll_15s_Peacock" }] },
-  { id: "mt8", name: "Linear TV with Custom As-Run Logs", count: 0, tokens: [] },
-  { id: "mt9", name: "Linear TV Identity Resolution", count: 0, tokens: [] },
-  { id: "mt10", name: "Linear TV Kantar Run Logs", count: 0, tokens: [] },
-];
-
-const ALL_CREATIVE_TOKENS: CreativeToken[] = [
-  ...INITIAL_CREATIVE_TOKENS,
-  { id: "cr1", name: "Standard_Banner_300x250" }, { id: "cr2", name: "Interactive_Unit_728x90" }, { id: "cr3", name: "Native_Content_Feed" },
-  { id: "cr4", name: "Video_Pre_Roll_15s" }, { id: "cr5", name: "Mid_Roll_30s" },
-  { id: "cr7", name: "Audio_Spot_30s" }, { id: "cr8", name: "Podcast_Sponsorship_60s" },
-  { id: "cr9", name: "Paid_Search_Text_Ad" },
-  { id: "cr11", name: "Digital_Billboard_National" }, { id: "cr12", name: "Transit_Shelter_Multi" },
-  { id: "cr13", name: "Street_Furniture_NYC" },
-  { id: "cr15", name: "CTV_Spot_30s_Hulu" }, { id: "cr16", name: "CTV_Pre_Roll_15s_Peacock" },
-];
-
-function MapCreativesContent({ onBack, onContinue, hasReuploaded }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean }) {
-  const tokens = ALL_CREATIVE_TOKENS;
-  const [categories, setCategories] = useState<MediaTypeCategory[]>(INITIAL_MEDIA_TYPE_CATEGORIES);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [dragTokenIds, setDragTokenIds] = useState<string[]>([]);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const dragCounter = useRef<Record<string, number>>({});
-  const dragGhostRef = useRef<HTMLDivElement>(null);
-
-  const assignedCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    categories.forEach((c) => c.tokens.forEach((t) => counts.set(t.id, (counts.get(t.id) || 0) + 1)));
-    return counts;
-  }, [categories]);
-
-  const [duplicateMsg, setDuplicateMsg] = useState<string | null>(null);
-  const duplicateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const allSelected = tokens.length > 0 && selected.size === tokens.length;
-
-  const toggleSelect = (id: string) => setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  const toggleSelectAll = () => { if (allSelected) setSelected(new Set()); else setSelected(new Set(tokens.map((t) => t.id))); };
-  const toggleExpand = (id: string) => setExpanded((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-
-  const handleDragStart = useCallback((e: DragEvent, tokenId: string) => {
-    const ids = selected.has(tokenId) && selected.size > 1 ? Array.from(selected) : [tokenId];
-    setDragTokenIds(ids);
-    e.dataTransfer.setData("text/plain", JSON.stringify(ids));
-    e.dataTransfer.effectAllowed = "copy";
-    if (ids.length > 1 && dragGhostRef.current) {
-      dragGhostRef.current.textContent = `${ids.length} items`;
-      dragGhostRef.current.style.display = "flex";
-      e.dataTransfer.setDragImage(dragGhostRef.current, 40, 20);
-      requestAnimationFrame(() => { if (dragGhostRef.current) dragGhostRef.current.style.display = "none"; });
-    }
-  }, [selected]);
-
-  const handleDragOver = useCallback((e: DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }, []);
-  const handleDragEnter = useCallback((e: DragEvent, catId: string) => { e.preventDefault(); dragCounter.current[catId] = (dragCounter.current[catId] || 0) + 1; setDragOverId(catId); }, []);
-  const handleDragLeave = useCallback((catId: string) => { dragCounter.current[catId] = (dragCounter.current[catId] || 0) - 1; if (dragCounter.current[catId] <= 0) { dragCounter.current[catId] = 0; setDragOverId((p) => (p === catId ? null : p)); } }, []);
-
-  const handleDrop = useCallback((e: DragEvent, catId: string) => {
-    e.preventDefault();
-    dragCounter.current[catId] = 0;
-    setDragOverId(null);
-    let ids: string[];
-    try { ids = JSON.parse(e.dataTransfer.getData("text/plain")); } catch { ids = dragTokenIds; }
-    if (!ids.length) return;
-    const dropped = ALL_CREATIVE_TOKENS.filter((t) => ids.includes(t.id));
-    if (!dropped.length) return;
-    setCategories((prev) => {
-      const cat = prev.find((c) => c.id === catId);
-      if (!cat) return prev;
-      const existingIds = new Set(cat.tokens.map((t) => t.id));
-      const newTokens = dropped.filter((t) => !existingIds.has(t.id));
-      if (!newTokens.length) {
-        const names = dropped.length === 1 ? `"${dropped[0].name}"` : `${dropped.length} values`;
-        setDuplicateMsg(`${names} already mapped to this media type.`);
-        if (duplicateTimer.current) clearTimeout(duplicateTimer.current);
-        duplicateTimer.current = setTimeout(() => setDuplicateMsg(null), 3000);
-        return prev;
-      }
-      return prev.map((c) => c.id === catId ? { ...c, count: c.count + newTokens.length, tokens: [...c.tokens, ...newTokens] } : c);
-    });
-    setSelected((prev) => { const n = new Set(prev); ids.forEach((id) => n.delete(id)); return n; });
-    setDragTokenIds([]);
-  }, [dragTokenIds]);
-
-  const handleDragEnd = useCallback(() => { setDragTokenIds([]); setDragOverId(null); dragCounter.current = {}; }, []);
-
-  const removeToken = useCallback((catId: string, token: CreativeToken) => {
-    setCategories((prev) => prev.map((c) => c.id === catId ? { ...c, count: c.count - 1, tokens: c.tokens.filter((t) => t.id !== token.id) } : c));
-  }, []);
-
-  return (
-    <>
-      <div ref={dragGhostRef} className="pointer-events-none fixed left-[-9999px] top-[-9999px] z-[9999] hidden items-center gap-1.5 rounded-lg bg-[#1f2937] px-3 py-1.5 text-xs font-medium text-white shadow-lg" />
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-[#020617]">Placement Details</h2>
-        <div className="mt-1 text-sm leading-5 text-[#646464]">
-          <p>Map creative values found in your media plan to standard media types.</p>
-        </div>
-      </div>
-
-      <PlacementSubSteps activeStep={4} hasReuploaded={hasReuploaded} />
-
-      <p className="mb-6 text-sm text-[#646464]">Drag unassigned creatives on the left to the appropriate media type on the right. Creatives can be mapped to multiple media types.</p>
-
-      {duplicateMsg && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-[#fde68a] bg-[#fefce8] px-4 py-2.5 text-sm text-[#92400e]">
-          <Info className="size-4 shrink-0" />
-          {duplicateMsg}
-        </div>
-      )}
-
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <h3 className="mb-2 text-base font-semibold text-[#020617]">Unassigned Creatives</h3>
-          <div className="rounded-lg border border-[#e2e8f0]">
-            <div className="flex items-center gap-4 border-b border-[#e2e8f0] px-4 py-2">
-              <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="size-4 rounded border-gray-300 accent-[#212be9]" />
-              <span className="text-xs text-[#6b7280]">select all ({selected.size} selected)</span>
-            </div>
-            <div className="max-h-[400px] overflow-y-auto">
-              {tokens.map((token) => (
-                <div
-                  key={token.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, token.id)}
-                  onDragEnd={handleDragEnd}
-                  className={`group flex cursor-grab items-center gap-3 border-b border-[#e2e8f0]/50 px-4 py-2 text-sm transition-colors active:cursor-grabbing ${selected.has(token.id) ? "bg-[#eef2ff]" : "hover:bg-gray-50"} ${dragTokenIds.includes(token.id) ? "opacity-40" : ""}`}
-                >
-                  <GripVertical className="size-4 shrink-0 text-[#9ca3af] opacity-0 transition-opacity group-hover:opacity-100" />
-                  <input type="checkbox" checked={selected.has(token.id)} onChange={() => toggleSelect(token.id)} className="size-4 shrink-0 rounded border-gray-300 accent-[#212be9]" />
-                  <span className="flex-1 text-[#020617]">{token.name}</span>
-                  {assignedCounts.has(token.id) && <span className="rounded-full bg-[#f0fdf4] px-1.5 py-0.5 text-[10px] font-medium text-[#166534]">mapped to {assignedCounts.get(token.id)}</span>}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="w-[420px] shrink-0">
-          <h3 className="mb-2 text-base font-semibold text-[#020617]">Assigned Media Channels</h3>
-          <div className="rounded-lg border border-[#e2e8f0]">
-            <div className="space-y-1.5 p-2">
-              {categories.map((cat) => {
-                const isOver = dragOverId === cat.id;
-                const isExp = expanded.has(cat.id);
-                return (
-                  <div
-                    key={cat.id}
-                    onDragOver={handleDragOver}
-                    onDragEnter={(e) => handleDragEnter(e, cat.id)}
-                    onDragLeave={() => handleDragLeave(cat.id)}
-                    onDrop={(e) => handleDrop(e, cat.id)}
-                    className={`rounded-lg border transition-all ${isOver ? "border-[#212be9] bg-[#eef2ff] shadow-sm" : "border-[#e2e8f0] bg-white"}`}
-                  >
-                    <button onClick={() => toggleExpand(cat.id)} className="flex w-full items-center gap-2 px-3 py-3 text-left">
-                      <span className="flex-1 text-sm font-medium text-[#020617]">{cat.name}</span>
-                      <span className="min-w-[24px] text-right text-sm tabular-nums text-[#6b7280]">{cat.count}</span>
-                      {isExp ? <ChevronUp className="size-4 text-[#6b7280]" /> : <ChevronDown className="size-4 text-[#6b7280]" />}
-                    </button>
-                    {isExp && cat.tokens.length > 0 && (
-                      <div className="border-t border-[#e2e8f0] px-3 pb-3 pt-2">
-                        <div className="flex flex-wrap gap-1.5">
-                          {cat.tokens.map((t) => (
-                            <span key={t.id} className="flex items-center gap-1 rounded-full bg-[#f3f4f6] py-0.5 pl-2.5 pr-1 text-xs text-[#020617]">
-                              {t.name}
-                              <button onClick={(ev) => { ev.stopPropagation(); removeToken(cat.id, t); }} className="rounded-full p-0.5 text-[#9ca3af] hover:bg-[#e5e7eb] hover:text-[#374151]"><X className="size-3" /></button>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {isExp && cat.tokens.length === 0 && (
-                      <div className="border-t border-[#e2e8f0] px-3 py-3 text-xs text-[#6b7280]">Drop creatives here to assign them.</div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-8 flex items-center justify-between py-4">
-        <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back to Taxonomy Mappings</button>
+        <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back to Map Partners</button>
         <button onClick={onContinue} className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]">Continue to Apply Placements</button>
       </div>
     </>
@@ -2996,18 +2938,26 @@ function MapCreativesContent({ onBack, onContinue, hasReuploaded }: { onBack: ()
 /* ───── ApplyPlacementsContent ───── */
 
 const INITIAL_PLACEMENT_ROWS_AP = [
-  { id: "HKE239J", status: "low" as const, subPlacement: "Pandora_2025_Display_Q1", partner: "Viant", channel: "", audience: "Audience_Seg_01", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "", mediaCpm: "" },
-  { id: "HKE239K", status: "high" as const, subPlacement: "Pandora_2025_Mobile_Q1", partner: "Viant", channel: "Display", audience: "Audience_Seg_02", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "Los_Angeles", mediaCpm: "$3.75" },
-  { id: "HKE240J", status: "low" as const, subPlacement: "", partner: "Adtheorent", channel: "", audience: "Audience_Seg_05", adSize: "320x50", creative: "Rich_Media", language: "English", geography: "", mediaCpm: "" },
-  { id: "HKE241J", status: "high" as const, subPlacement: "Streamline_2025_Video_Q1", partner: "Nexxen", channel: "Video", audience: "Audience_Seg_08", adSize: "728x90", creative: "Video_Pre_Roll", language: "English", geography: "Houston", mediaCpm: "$12.00" },
-  { id: "HKE242J", status: "medium" as const, subPlacement: "FitTrack_2025_Mobile_Q2", partner: "Adtheorent", channel: "Mobile", audience: "Audience_Seg_12", adSize: "300x600", creative: "Interactive", language: "Spanish", geography: "", mediaCpm: "" },
-  { id: "HKE243J", status: "low" as const, subPlacement: "", partner: "Viant", channel: "", audience: "Audience_Seg_03", adSize: "300x250", creative: "Standard_Banner", language: "English", geography: "", mediaCpm: "" },
-  { id: "HKE244J", status: "high" as const, subPlacement: "TechSavvy_2025_Display_Q1", partner: "Nexxen", channel: "Display", audience: "Audience_Seg_15", adSize: "300x600", creative: "Native_Content", language: "English", geography: "San_Francisco", mediaCpm: "$6.50" },
-  { id: "HKE245J", status: "high" as const, subPlacement: "TravelQuest_2025_CTV_Q2", partner: "Viant", channel: "CTV", audience: "Audience_Seg_20", adSize: "970x250", creative: "Rich_Media", language: "English", geography: "Seattle", mediaCpm: "$15.75" },
-  { id: "HKE246J", status: "medium" as const, subPlacement: "CulinaryDelight_2025_Social", partner: "Adtheorent", channel: "Social", audience: "Audience_Seg_22", adSize: "300x250", creative: "Standard_Banner", language: "English", geography: "Denver", mediaCpm: "" },
-  { id: "HKE247J", status: "medium" as const, subPlacement: "HealthTech_2025_Native_Q3", partner: "Viant", channel: "Native", audience: "Audience_Seg_01", adSize: "728x90", creative: "Native_Content", language: "English", geography: "", mediaCpm: "$8.50" },
-  { id: "HKE248J", status: "low" as const, subPlacement: "SportsFan_2025_CTV_Q2", partner: "Nexxen", channel: "", audience: "Audience_Seg_12", adSize: "970x250", creative: "Video_Pre_Roll", language: "English", geography: "", mediaCpm: "" },
-  { id: "HKE249J", status: "medium" as const, subPlacement: "EcoLiving_2025_Display_Q1", partner: "Adtheorent", channel: "Display", audience: "Audience_Seg_05", adSize: "300x600", creative: "Rich_Media", language: "Spanish", geography: "Dallas", mediaCpm: "" },
+  { id: "HKE239J", status: "high" as const, subPlacement: "Pandora_2025_Display_Q1", partner: "Viant", channel: "Display", audience: "Audience_Seg_01", adSize: "300x50", creative: "Standard_Banner", language: "English", geography: "Los_Angeles", mediaCpm: "$3.75" },
+  { id: "HKE239K", status: "high" as const, subPlacement: "Streamline_2025_Video_Q1", partner: "Nexxen", channel: "Video", audience: "Audience_Seg_08", adSize: "728x90", creative: "Video_Pre_Roll", language: "English", geography: "Houston", mediaCpm: "$12.00" },
+  { id: "HKE240J", status: "high" as const, subPlacement: "FitTrack_2025_Mobile_Q2", partner: "Adtheorent", channel: "Mobile", audience: "Audience_Seg_12", adSize: "320x50", creative: "Interactive", language: "Spanish", geography: "Dallas", mediaCpm: "$4.25" },
+  { id: "HKE241J", status: "high" as const, subPlacement: "TechSavvy_2025_Display_Q1", partner: "Nexxen", channel: "Display", audience: "Audience_Seg_15", adSize: "300x600", creative: "Native_Content", language: "English", geography: "San_Francisco", mediaCpm: "$6.50" },
+  { id: "HKE242J", status: "high" as const, subPlacement: "TravelQuest_2025_CTV_Q2", partner: "Viant", channel: "CTV", audience: "Audience_Seg_20", adSize: "970x250", creative: "Rich_Media", language: "English", geography: "Seattle", mediaCpm: "$15.75" },
+  { id: "HKE243J", status: "high" as const, subPlacement: "CulinaryDelight_2025_Social", partner: "Adtheorent", channel: "Social", audience: "Audience_Seg_22", adSize: "300x250", creative: "Standard_Banner", language: "English", geography: "Denver", mediaCpm: "$5.00" },
+  { id: "HKE244J", status: "high" as const, subPlacement: "HealthTech_2025_Native_Q3", partner: "Viant", channel: "Native", audience: "Audience_Seg_01", adSize: "728x90", creative: "Native_Content", language: "English", geography: "New_York", mediaCpm: "$8.50" },
+  { id: "HKE245J", status: "high" as const, subPlacement: "SportsFan_2025_CTV_Q2", partner: "Nexxen", channel: "CTV", audience: "Audience_Seg_12", adSize: "970x250", creative: "Video_Pre_Roll", language: "English", geography: "Phoenix", mediaCpm: "$18.50" },
+  { id: "HKE246J", status: "high" as const, subPlacement: "EcoLiving_2025_Display_Q1", partner: "Adtheorent", channel: "Display", audience: "Audience_Seg_05", adSize: "300x600", creative: "Rich_Media", language: "Spanish", geography: "Dallas", mediaCpm: "$6.50" },
+  { id: "HKE247J", status: "high" as const, subPlacement: "AutoDrive_2025_Video_Q3", partner: "Viant", channel: "Video", audience: "Audience_Seg_03", adSize: "728x90", creative: "Video_Pre_Roll", language: "English", geography: "New_York", mediaCpm: "$10.50" },
+  { id: "HKE248J", status: "high" as const, subPlacement: "PetCare_2025_Mobile_Q1", partner: "Nexxen", channel: "Mobile", audience: "Audience_Seg_08", adSize: "320x50", creative: "Interactive", language: "English", geography: "Chicago", mediaCpm: "$4.25" },
+  { id: "HKE249J", status: "high" as const, subPlacement: "FinanceHub_2025_Display_Q2", partner: "Adtheorent", channel: "Display", audience: "Audience_Seg_15", adSize: "300x250", creative: "Standard_Banner", language: "French", geography: "Philadelphia", mediaCpm: "$5.00" },
+  { id: "HKE250J", status: "high" as const, subPlacement: "StyleBox_2025_Social_Q1", partner: "Viant", channel: "Social", audience: "Audience_Seg_22", adSize: "300x600", creative: "Standard_Banner", language: "English", geography: "San_Antonio", mediaCpm: "$3.75" },
+  { id: "HKE251J", status: "high" as const, subPlacement: "GameStream_2025_CTV_Q3", partner: "Nexxen", channel: "CTV", audience: "Audience_Seg_20", adSize: "970x250", creative: "Video_Pre_Roll", language: "English", geography: "Phoenix", mediaCpm: "$18.50" },
+  { id: "HKE252J", status: "high" as const, subPlacement: "WellnessPlus_2025_Native_Q2", partner: "Adtheorent", channel: "Native", audience: "Audience_Seg_01", adSize: "728x90", creative: "Native_Content", language: "English", geography: "Denver", mediaCpm: "$8.50" },
+  { id: "HKE253J", status: "high" as const, subPlacement: "SmartHome_2025_Display_Q3", partner: "Viant", channel: "Display", audience: "Audience_Seg_05", adSize: "300x250", creative: "Rich_Media", language: "German", geography: "San_Antonio", mediaCpm: "$6.50" },
+  { id: "HKE254J", status: "high" as const, subPlacement: "FoodieApp_2025_Mobile_Q2", partner: "Nexxen", channel: "Mobile", audience: "Audience_Seg_12", adSize: "320x50", creative: "Interactive", language: "Spanish", geography: "Chicago", mediaCpm: "$4.25" },
+  { id: "HKE255J", status: "high" as const, subPlacement: "TechGear_2025_Video_Q1", partner: "Adtheorent", channel: "Video", audience: "Audience_Seg_08", adSize: "728x90", creative: "Video_Pre_Roll", language: "English", geography: "Los_Angeles", mediaCpm: "$12.00" },
+  { id: "HKE256J", status: "high" as const, subPlacement: "TravelEasy_2025_CTV_Q1", partner: "Viant", channel: "CTV", audience: "Audience_Seg_03", adSize: "970x250", creative: "Rich_Media", language: "English", geography: "Seattle", mediaCpm: "$15.75" },
+  { id: "HKE257J", status: "high" as const, subPlacement: "MusicLive_2025_Audio_Q2", partner: "Nexxen", channel: "Audio", audience: "Audience_Seg_15", adSize: "300x50", creative: "Audio_Spot", language: "English", geography: "Houston", mediaCpm: "$3.50" },
 ];
 
 type PlacementRow = {
@@ -3245,7 +3195,7 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
         <p className="mt-1 text-sm text-[#6b7280]">Instructions for this stage (Placement Details) go here, and shouldn&apos;t be too long, and certainly not more than two lines worth.</p>
       </div>
 
-      <PlacementSubSteps activeStep={5} />
+      <PlacementSubSteps activeStep={4} />
 
       <p className="mb-6 text-sm text-[#6b7280]">Instructions for the current active step go here below the step name and above the active content area</p>
 
@@ -3608,8 +3558,8 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
 
       {/* Footer */}
       <div className="mt-8 flex items-center justify-between">
-        <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back to Creative Mappings</button>
-        <button onClick={onContinue} className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]">Continue to Funding Allocation</button>
+        <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back to Map Taxonomies</button>
+        <button onClick={onContinue} className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]">Continue to Map Partners</button>
       </div>
     </>
   );
@@ -4149,7 +4099,6 @@ function Sidebar({ currentStep, hasUploadedFile, hasReuploaded, onUpload, isUplo
     currentStep === "placement" ? ["campaign"] :
     currentStep === "map-partners" ? ["campaign"] :
     currentStep === "map-taxonomies" ? ["campaign"] :
-    currentStep === "map-creatives" ? ["campaign"] :
     currentStep === "apply-placements" ? ["campaign"] :
     currentStep === "funding" ? ["campaign", "placement"] :
     currentStep === "pixel" ? ["campaign", "placement", "funding"] :
@@ -4158,7 +4107,7 @@ function Sidebar({ currentStep, hasUploadedFile, hasReuploaded, onUpload, isUplo
   const errorSteps: Step[] = (() => {
     if (!hasReuploaded) return [];
     const order: Step[] = ["campaign", "placement", "funding", "pixel"];
-    const placementSubSteps: Step[] = ["placement", "map-partners", "map-taxonomies", "map-creatives", "apply-placements"];
+    const placementSubSteps: Step[] = ["placement", "map-partners", "map-taxonomies", "apply-placements"];
     const sIdx = placementSubSteps.includes(currentStep) ? order.indexOf("placement") : order.indexOf(currentStep);
     const steps: Step[] = [];
     for (let i = 0; i < sIdx; i++) steps.push(order[i]);
@@ -4168,7 +4117,7 @@ function Sidebar({ currentStep, hasUploadedFile, hasReuploaded, onUpload, isUplo
   const fileName = hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026";
 
 
-  const placementSubSteps: Step[] = ["map-partners", "map-taxonomies", "map-creatives", "apply-placements"];
+  const placementSubSteps: Step[] = ["map-partners", "map-taxonomies", "apply-placements"];
   const sidebarCurrentStep: Step = placementSubSteps.includes(currentStep) ? "placement" : currentStep;
 
   return (
@@ -4269,7 +4218,7 @@ function NewCampaignContent() {
   const initialStep = (searchParams.get("step") as Step) || "campaign";
   const [currentStep, setCurrentStep] = useState<Step>(initialStep);
   const [showForm, setShowForm] = useState(false);
-  const [hasUploadedFile, setHasUploadedFile] = useState(initialStep === "map-partners" || initialStep === "placement" || initialStep === "map-taxonomies" || initialStep === "map-creatives" || initialStep === "apply-placements");
+  const [hasUploadedFile, setHasUploadedFile] = useState(initialStep === "placement" || initialStep === "map-partners" || initialStep === "map-taxonomies" || initialStep === "apply-placements");
   const [campaignName, setCampaignName] = useState("");
   const [measurementBudget, setMeasurementBudget] = useState("");
   const [metric, setMetric] = useState("");
@@ -4283,8 +4232,9 @@ function NewCampaignContent() {
   const [sfValidated, setSfValidated] = useState(false);
   const [campaignStepValid, setCampaignStepValid] = useState(false);
   const [fundingStepValid, setFundingStepValid] = useState(false);
-  const [pixelStepValid, setPixelStepValid] = useState(false);
+  const [pixelStepValid, setPixelStepValid] = useState(true);
   const [campaignSubmitted, setCampaignSubmitted] = useState(false);
+  const [alreadyParsed, setAlreadyParsed] = useState(false);
   const [visitedSteps, setVisitedSteps] = useState<Set<string>>(new Set([initialStep]));
   const [isReparsing, setIsReparsing] = useState(false);
   const [reparseError, setReparseError] = useState<string | null>(null);
@@ -4312,10 +4262,9 @@ function NewCampaignContent() {
 
   const stepProgressMap: Record<string, number> = {
     campaign: 0,
-    placement: 12,
+    placement: 14,
     "map-partners": 24,
-    "map-taxonomies": 32,
-    "map-creatives": 40,
+    "map-taxonomies": 36,
     "apply-placements": 48,
     funding: 60,
     pixel: 72,
@@ -4335,7 +4284,7 @@ function NewCampaignContent() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const STEP_ORDER: string[] = ["campaign", "placement", "map-partners", "map-taxonomies", "map-creatives", "apply-placements", "funding", "pixel", "review"];
+  const STEP_ORDER: string[] = ["campaign", "placement", "map-partners", "map-taxonomies", "apply-placements", "funding", "pixel", "review"];
   const currentIdx = STEP_ORDER.indexOf(currentStep);
 
   const stepValidityMap: Record<string, boolean> = {
@@ -4343,7 +4292,6 @@ function NewCampaignContent() {
     placement: true,
     "map-partners": true,
     "map-taxonomies": true,
-    "map-creatives": true,
     "apply-placements": true,
     funding: fundingStepValid,
     pixel: pixelStepValid,
@@ -4551,10 +4499,12 @@ function NewCampaignContent() {
           {currentStep === "placement" && (
             <PlacementDetailsContent
               placementState={placementState}
-              onContinueToMapPartners={() => goToStep("map-partners")}
+              onContinueToMapTaxonomies={() => goToStep("map-partners")}
               onUpload={handleUpload}
               onFileDrop={handleFileDrop}
               hasReuploaded={hasReuploaded}
+              alreadyParsed={alreadyParsed}
+              onAlreadyParsedChange={setAlreadyParsed}
             />
           )}
           {currentStep === "map-partners" && (
@@ -4567,20 +4517,13 @@ function NewCampaignContent() {
           {currentStep === "map-taxonomies" && (
             <MapTaxonomiesContent
               onBack={() => goToStep("map-partners")}
-              onContinue={() => goToStep("map-creatives")}
-              hasReuploaded={hasReuploaded}
-            />
-          )}
-          {currentStep === "map-creatives" && (
-            <MapCreativesContent
-              onBack={() => goToStep("map-taxonomies")}
               onContinue={() => goToStep("apply-placements")}
               hasReuploaded={hasReuploaded}
             />
           )}
           {currentStep === "apply-placements" && (
             <ApplyPlacementsContent
-              onBack={() => goToStep("map-creatives")}
+              onBack={() => goToStep("map-taxonomies")}
               onContinue={() => goToStep("funding")}
             />
           )}
@@ -4642,10 +4585,10 @@ function NewCampaignContent() {
                 Back to Campaign Details
               </button>
               <button
-                onClick={() => goToStep("map-partners")}
+                onClick={() => goToStep(alreadyParsed ? "apply-placements" : "map-partners")}
                 className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]"
               >
-                Continue to Map Partners
+                {alreadyParsed ? "Continue to Apply Placements" : "Continue to Map Partners"}
               </button>
             </div>
           )}
