@@ -2736,16 +2736,25 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
     e.dataTransfer.dropEffect = "move";
   }, []);
 
-  const handleDragEnter = useCallback((_e: DragEvent, colId: string) => {
+  const dragCounterRef = useRef<Record<string, number>>({});
+
+  const handleDragEnter = useCallback((e: DragEvent, colId: string) => {
+    e.preventDefault();
+    dragCounterRef.current[colId] = (dragCounterRef.current[colId] || 0) + 1;
     setDragOverCol(colId);
   }, []);
 
   const handleDragLeave = useCallback((_e: DragEvent, colId: string) => {
-    setDragOverCol((prev) => (prev === colId ? null : prev));
+    dragCounterRef.current[colId] = (dragCounterRef.current[colId] || 0) - 1;
+    if (dragCounterRef.current[colId] <= 0) {
+      dragCounterRef.current[colId] = 0;
+      setDragOverCol((prev) => (prev === colId ? null : prev));
+    }
   }, []);
 
   const handleDrop = useCallback((e: DragEvent, colId: string) => {
     e.preventDefault();
+    dragCounterRef.current = {};
     setDragOverCol(null);
     const labelId = e.dataTransfer.getData("text/plain") || draggingLabel;
     if (labelId) assignLabel(colId, labelId);
@@ -2755,6 +2764,7 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
   const handleDragEnd = useCallback(() => {
     setDraggingLabel(null);
     setDragOverCol(null);
+    dragCounterRef.current = {};
   }, []);
 
   const getLabelForCol = (colId: string) => {
@@ -2828,8 +2838,8 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
                     onDragLeave={(e) => handleDragLeave(e, col.id)}
                     onDrop={(e) => handleDrop(e, col.id)}
                     className={`relative min-w-[140px] px-3 py-3 text-left transition-all ${
-                      isOver ? "bg-[#eef2ff] ring-2 ring-inset ring-[#212be9]" :
-                      isDragging && !assignedLabel ? "ring-1 ring-inset ring-dashed ring-[#94a3b8]" : ""
+                      isOver ? "bg-[#dbeafe] ring-2 ring-inset ring-[#212be9] shadow-[inset_0_0_0_1px_#212be9]" :
+                      isDragging && !assignedLabel ? "bg-[#f8fafc] ring-1 ring-inset ring-[#cbd5e1] ring-dashed" : ""
                     }`}
                   >
                     <div className="flex flex-col gap-1">
@@ -3253,7 +3263,7 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
 
       {/* Placements table */}
       <div className="w-full overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[1512px]">
           <thead>
             <tr className="border-b border-border">
               <th className="w-10 px-3 py-3">
