@@ -2262,10 +2262,6 @@ function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy, hasReuplo
 
 
 function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean }) {
-  const [customColumns, setCustomColumns] = useState<{ id: string; name: string }[]>([]);
-  const [isAddingColumn, setIsAddingColumn] = useState(false);
-  const [newColumnName, setNewColumnName] = useState("");
-  const allColumns = [...PARSED_COLUMNS, ...customColumns.map((c) => ({ id: c.id, rawName: c.name, sampleData: Array(20).fill("") as string[] }))];
   const [mappings, setMappings] = useState<Record<string, string | null>>(() => {
     const m: Record<string, string | null> = {};
     PARSED_COLUMNS.forEach((col) => { m[col.id] = null; });
@@ -2274,11 +2270,16 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
   const [draggingLabel, setDraggingLabel] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [customLabels, setCustomLabels] = useState<SystemLabel[]>([]);
+  const [isAddingCustom, setIsAddingCustom] = useState(false);
+  const [customLabelName, setCustomLabelName] = useState("");
   const PAGE_SIZE = 15;
-  const totalRows = allColumns[0]?.sampleData.length || 0;
+  const totalRows = PARSED_COLUMNS[0].sampleData.length;
   const totalPages = Math.ceil(totalRows / PAGE_SIZE);
   const startIdx = (currentPage - 1) * PAGE_SIZE;
   const endIdx = Math.min(startIdx + PAGE_SIZE, totalRows);
+
+  const allLabels = useMemo(() => [...SYSTEM_LABELS, ...customLabels], [customLabels]);
 
   const assignedLabelIds = useMemo(() => {
     const assigned = new Set<string>();
@@ -2288,7 +2289,7 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
     return assigned;
   }, [mappings]);
 
-  const unassignedLabels = SYSTEM_LABELS.filter((l) => !assignedLabelIds.has(l.id));
+  const unassignedLabels = allLabels.filter((l) => !assignedLabelIds.has(l.id));
   const mappedCount = Object.values(mappings).filter(Boolean).length;
 
   const assignLabel = (colId: string, labelId: string) => {
@@ -2350,7 +2351,7 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
   const getLabelForCol = (colId: string) => {
     const labelId = mappings[colId];
     if (!labelId) return null;
-    return SYSTEM_LABELS.find((l) => l.id === labelId) || null;
+    return allLabels.find((l) => l.id === labelId) || null;
   };
 
   return (
@@ -2366,9 +2367,9 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
 
       <div className="mb-2 flex items-center justify-between">
         <p className="text-sm text-[#646464]">
-          <span className="font-medium text-[#020617]">{mappedCount}</span> of <span className="font-medium text-[#020617]">{allColumns.length}</span> columns mapped
+          <span className="font-medium text-[#020617]">{mappedCount}</span> of <span className="font-medium text-[#020617]">{PARSED_COLUMNS.length}</span> columns mapped
         </p>
-        {mappedCount === allColumns.length && (
+        {mappedCount === PARSED_COLUMNS.length && (
           <span className="flex items-center gap-1 text-sm font-medium text-[#16a34a]">
             <Check className="size-4" /> All columns mapped
           </span>
@@ -2379,8 +2380,9 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
       <div className="mb-6 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-4">
         <p className="mb-2 text-xs font-medium text-[#64748b]">Available Labels — Drag Onto Columns or Use the Dropdown</p>
         <div className="flex flex-wrap gap-2">
-          {SYSTEM_LABELS.map((label) => {
+          {allLabels.map((label) => {
             const isAssigned = assignedLabelIds.has(label.id);
+            const isCustom = label.id.startsWith("custom-");
             return (
               <div
                 key={label.id}
@@ -2395,9 +2397,71 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
               >
                 <GripVertical className={`size-3 ${isAssigned ? "text-[#cbd5e1]" : "text-[#9ca3af]"}`} />
                 {label.name}
+                {isCustom && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMappings((prev) => {
+                        const next = { ...prev };
+                        Object.entries(next).forEach(([k, v]) => { if (v === label.id) next[k] = null; });
+                        return next;
+                      });
+                      setCustomLabels((prev) => prev.filter((l) => l.id !== label.id));
+                    }}
+                    className="ml-0.5 rounded-full p-0.5 text-[#94a3b8] transition-colors hover:bg-[#fee2e2] hover:text-[#dc2626]"
+                  >
+                    <X className="size-3" />
+                  </button>
+                )}
               </div>
             );
           })}
+          {isAddingCustom ? (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={customLabelName}
+                onChange={(e) => setCustomLabelName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && customLabelName.trim()) {
+                    setCustomLabels((prev) => [...prev, { id: `custom-${Date.now()}`, name: customLabelName.trim(), color: "#6b7280" }]);
+                    setCustomLabelName("");
+                    setIsAddingCustom(false);
+                  }
+                  if (e.key === "Escape") { setCustomLabelName(""); setIsAddingCustom(false); }
+                }}
+                autoFocus
+                placeholder="Label name..."
+                className="h-7 w-[140px] rounded-full border border-[#212be9] bg-white px-3 text-xs outline-none placeholder:text-[#9ca3af] focus:ring-2 focus:ring-[#212be9]/20"
+              />
+              <button
+                onClick={() => {
+                  if (customLabelName.trim()) {
+                    setCustomLabels((prev) => [...prev, { id: `custom-${Date.now()}`, name: customLabelName.trim(), color: "#6b7280" }]);
+                    setCustomLabelName("");
+                    setIsAddingCustom(false);
+                  }
+                }}
+                className="flex size-7 items-center justify-center rounded-full bg-[#212be9] text-white transition-colors hover:bg-[#1a22c4]"
+              >
+                <Check className="size-3.5" />
+              </button>
+              <button
+                onClick={() => { setCustomLabelName(""); setIsAddingCustom(false); }}
+                className="flex size-7 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#64748b] transition-colors hover:bg-gray-50"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsAddingCustom(true)}
+              className="flex items-center gap-1 rounded-full border border-dashed border-[#cbd5e1] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:border-[#212be9] hover:text-[#212be9]"
+            >
+              <Plus className="size-3" />
+              Add Custom
+            </button>
+          )}
         </div>
       </div>
 
@@ -2406,7 +2470,7 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
         <table className="w-full">
           <thead>
             <tr className="border-b border-[#e2e8f0]">
-              {allColumns.map((col) => {
+              {PARSED_COLUMNS.map((col) => {
                 const assignedLabel = getLabelForCol(col.id);
                 const isOver = dragOverCol === col.id;
                 const isDragging = !!draggingLabel;
@@ -2448,7 +2512,7 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
                               <SelectValue placeholder="Select Label" />
                             </SelectTrigger>
                             <SelectContent className="max-h-[240px]">
-                              {SYSTEM_LABELS.map((label) => {
+                              {allLabels.map((label) => {
                                 const isUsed = assignedLabelIds.has(label.id);
                                 return (
                                   <SelectItem
@@ -2468,69 +2532,16 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
                   </th>
                 );
               })}
-              <th className="min-w-[160px] px-3 py-3 text-left align-top">
-                {isAddingColumn ? (
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      value={newColumnName}
-                      onChange={(e) => setNewColumnName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && newColumnName.trim()) {
-                          const id = `custom-col-${Date.now()}`;
-                          setCustomColumns((prev) => [...prev, { id, name: newColumnName.trim() }]);
-                          setMappings((prev) => ({ ...prev, [id]: null }));
-                          setNewColumnName("");
-                          setIsAddingColumn(false);
-                        }
-                        if (e.key === "Escape") { setIsAddingColumn(false); setNewColumnName(""); }
-                      }}
-                      autoFocus
-                      placeholder="Column name..."
-                      className="w-[120px] rounded-md border border-[#212be9] bg-white px-2 py-1 text-xs outline-none placeholder:text-[#94a3b8]"
-                    />
-                    <button
-                      onClick={() => {
-                        if (newColumnName.trim()) {
-                          const id = `custom-col-${Date.now()}`;
-                          setCustomColumns((prev) => [...prev, { id, name: newColumnName.trim() }]);
-                          setMappings((prev) => ({ ...prev, [id]: null }));
-                          setNewColumnName("");
-                          setIsAddingColumn(false);
-                        }
-                      }}
-                      className="rounded p-0.5 text-[#16a34a] hover:bg-[#f0fdf4]"
-                    >
-                      <Check className="size-3.5" />
-                    </button>
-                    <button
-                      onClick={() => { setIsAddingColumn(false); setNewColumnName(""); }}
-                      className="rounded p-0.5 text-[#64748b] hover:bg-gray-100"
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setIsAddingColumn(true)}
-                    className="flex items-center gap-1 rounded-md border border-dashed border-[#cbd5e1] px-2.5 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:border-[#212be9] hover:text-[#212be9]"
-                  >
-                    <Plus className="size-3" />
-                    Add Column
-                  </button>
-                )}
-              </th>
             </tr>
           </thead>
           <tbody>
             {Array.from({ length: endIdx - startIdx }, (_, i) => startIdx + i).map((rowIdx) => (
               <tr key={rowIdx} className="border-b border-[#e2e8f0]/50">
-                {allColumns.map((col) => (
+                {PARSED_COLUMNS.map((col) => (
                   <td key={col.id} className="px-3 py-2.5 text-sm text-[#374151]">
                     {col.sampleData[rowIdx] || "—"}
                   </td>
                 ))}
-                <td className="px-3 py-2.5" />
               </tr>
             ))}
           </tbody>
