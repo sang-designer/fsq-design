@@ -949,7 +949,6 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
 const PARTNER_NAME_OPTIONS = ["Adtheorent", "Viant", "Nexxen", "TradeDesk", "LiveRamp", "Taboola"];
 const AD_SERVER_OPTIONS = ["CM360", "DV360", "Google Campaign Manager", "Sizmek", "Flashtalking", "Innovid", "Extreme Reach"];
 const AGENCY_OPTIONS = ["Starcom", "Mediavest", "Zenith", "OMD", "Mindshare", "Wavemaker"];
-const PIXEL_TYPE_OPTIONS = ["In-App", "Cross-Device / CTV", "Cross-Device Redirect"];
 const PIXEL_IMPL_OPTIONS = ["Standard Tag", "Server-to-Server", "SDK Integration", "Piggyback Pixel"];
 const MEDIA_TYPE_OPTIONS = ["Display", "Mobile", "Video", "Audio", "CTV", "Social", "Native", "OOH"];
 const CONVERSION_TYPE_OPTIONS = ["Visits and Sales Impact", "Sales Impact", "Visits Only", "Custom Attribution"];
@@ -1206,499 +1205,115 @@ function FundingAllocationContent({ measurementBudget, onValidChange }: { measur
   );
 }
 
-type PixelState = "empty" | "empty-uploaded" | "populated";
 
-function MultiSelectDropdown({ options, selected, onChange, placeholder, hasWarning }: {
-  options: string[];
-  selected: string[];
-  onChange: (val: string[]) => void;
-  placeholder: string;
-  hasWarning?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const allSelected = options.length > 0 && options.every((o) => selected.includes(o));
+function PixelGenerationContent({ campaignName, onValidChange, onBack, onContinue }: { campaignName: string; onValidChange?: (valid: boolean) => void; onBack: () => void; onContinue: () => void }) {
+  const [ticketStatus, setTicketStatus] = useState<"idle" | "creating" | "created" | "error">("idle");
+  const [ticketId, setTicketId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
+  const partners = PIXELS.map((p) => p.partner);
 
-  const toggle = (opt: string) => {
-    if (selected.includes(opt)) {
-      onChange(selected.filter((s) => s !== opt));
-    } else {
-      onChange([...selected, opt]);
-    }
+  const handleCreateTicket = () => {
+    setTicketStatus("creating");
+    setTimeout(() => {
+      const id = `PIX-${Math.floor(1000 + Math.random() * 9000)}`;
+      setTicketId(id);
+      setTicketStatus("created");
+      onValidChange?.(true);
+    }, 1500);
   };
-
-  return (
-    <div ref={ref} className="relative">
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => setOpen(!open)}
-        className={`flex min-h-[36px] min-w-[220px] max-w-[340px] cursor-pointer items-center justify-between rounded-md border bg-white px-3 py-1.5 text-left text-sm transition-colors ${hasWarning && selected.length === 0 ? "border-[#ef4444]" : open ? "border-[#212be9] ring-1 ring-[#212be9]" : "border-[#e2e8f0]"}`}
-      >
-        {selected.length === 0 ? (
-          <span className="text-[#94a3b8]">{placeholder}</span>
-        ) : (
-          <span className="flex flex-row flex-wrap gap-1">
-            {selected.map((s) => (
-              <span key={s} className="inline-flex shrink-0 items-center gap-1 rounded bg-[#f1f5f9] px-1.5 py-0.5 text-xs font-medium text-[#020617]">
-                {s}
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => { e.stopPropagation(); toggle(s); }}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); toggle(s); } }}
-                  className="cursor-pointer text-[#8d8d8d] hover:text-[#020617]"
-                >
-                  <X className="size-3" />
-                </span>
-              </span>
-            ))}
-          </span>
-        )}
-        <ChevronDown className={`ml-2 size-4 shrink-0 text-[#8d8d8d] transition-transform ${open ? "rotate-180" : ""}`} />
-      </div>
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 min-w-[220px] max-w-[340px] rounded-md border border-[#e2e8f0] bg-white py-1 shadow-lg">
-          <div className="flex items-center justify-between border-b border-[#e2e8f0] px-3 py-1.5">
-            <button
-              onClick={() => onChange([...options])}
-              className={`text-xs font-medium transition-colors ${allSelected ? "text-[#94a3b8]" : "text-[#212be9] hover:text-[#1a22c4]"}`}
-            >
-              Select All
-            </button>
-            <button
-              onClick={() => onChange([])}
-              className={`text-xs font-medium transition-colors ${selected.length === 0 ? "text-[#94a3b8]" : "text-[#dc2626] hover:text-[#b91c1c]"}`}
-            >
-              Reset
-            </button>
-          </div>
-          {options.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => toggle(opt)}
-              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[#020617] transition-colors hover:bg-[#f5f5ff]"
-            >
-              <div className={`flex size-4 shrink-0 items-center justify-center rounded border ${selected.includes(opt) ? "border-[#212be9] bg-[#212be9]" : "border-[#d1d5db]"}`}>
-                {selected.includes(opt) && <Check className="size-3 text-white" />}
-              </div>
-              {opt}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SingleSelectDropdown({ options, value, onChange, placeholder }: {
-  options: string[];
-  value: string;
-  onChange: (val: string) => void;
-  placeholder: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
-
-  return (
-    <div ref={ref} className="relative">
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => setOpen(!open)}
-        className={`flex min-h-[36px] w-full cursor-pointer items-center justify-between rounded-md border bg-white px-3 py-1.5 text-left text-sm transition-colors ${open ? "border-[#212be9] ring-1 ring-[#212be9]" : "border-[#e2e8f0]"}`}
-      >
-        {value ? (
-          <span className="text-[#020617]">{value}</span>
-        ) : (
-          <span className="text-[#94a3b8]">{placeholder}</span>
-        )}
-        <ChevronDown className={`ml-2 size-4 shrink-0 text-[#8d8d8d] transition-transform ${open ? "rotate-180" : ""}`} />
-      </div>
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-md border border-[#e2e8f0] bg-white py-1 shadow-lg">
-          {options.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => { onChange(opt); setOpen(false); }}
-              className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-[#f5f5ff] ${opt === value ? "font-medium text-[#212be9]" : "text-[#020617]"}`}
-            >
-              {opt === value && <Check className="size-3.5 text-[#212be9]" />}
-              {opt !== value && <span className="size-3.5" />}
-              {opt}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PixelGenerationContent({ pixelState, onValidChange, onBack, onContinue }: { pixelState: PixelState; onValidChange?: (valid: boolean) => void; onBack: () => void; onContinue: () => void }) {
-  const [openActionRow, setOpenActionRow] = useState<number | null>(null);
-  const [showUploadBanner, setShowUploadBanner] = useState(pixelState === "empty-uploaded");
-  const [pixels, setPixels] = useState<{ partner: string; adServer: string; pixelId: string; pixelType: string; pixelImg: string; tracking: string }[]>([]);
-  const [viewPixelRow, setViewPixelRow] = useState<number | null>(null);
-  const [copiedPixelRow, setCopiedPixelRow] = useState<number | null>(null);
-  const pixelPopoverRef = useRef<HTMLDivElement>(null);
-  const [activePixelSubStep, setActivePixelSubStep] = useState(1);
-  const [adServers, setAdServers] = useState(
-    PIXELS.map((p) => ({ partner: p.partner, setupMethod: "Platform-Generated Pixels" as string, adServers: p.partner === "Kinfolk" ? [] as string[] : [p.adServer], pixelTypes: [] as string[] }))
-  );
-
-  const generateFromSelections = () => {
-    let counter = 0;
-    const rows: typeof pixels = [];
-    for (const row of adServers) {
-      for (const server of row.adServers) {
-        for (const pType of row.pixelTypes) {
-          counter++;
-          const id = `${String(1000 + counter * 111).slice(0, 4)}${String.fromCharCode(64 + counter)}${counter}`;
-          rows.push({
-            partner: row.partner,
-            adServer: server,
-            pixelId: `PXL-${id}`,
-            pixelType: pType,
-            pixelImg: `<img src="https://p.placed.com/api/v2/sync/${id}?campaign=${row.partner.toLowerCase().replace(/\s+/g, "_")}" height="1" width="1" />`,
-            tracking: "",
-          });
-        }
-      }
-    }
-    return rows;
-  };
-
-  useEffect(() => {
-    if (viewPixelRow === null) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (pixelPopoverRef.current && !pixelPopoverRef.current.contains(e.target as Node)) {
-        setViewPixelRow(null);
-        setCopiedPixelRow(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [viewPixelRow]);
-
-  const updateTracking = (index: number, value: string) => {
-    setPixels((prev) => prev.map((p, i) => (i === index ? { ...p, tracking: value } : p)));
-  };
-
-  const isValid = true;
-
-  useEffect(() => {
-    onValidChange?.(isValid);
-  }, [isValid, onValidChange]);
 
   return (
     <>
-      {showUploadBanner && (
-        <div className="mb-4 flex items-center rounded-lg border border-[#e0e0e0] bg-white px-4 py-3">
-          <div className="flex flex-1 items-center gap-8">
-            <div>
-              <p className="text-sm font-semibold text-[#020617]">Upload Results</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-[#757575]">File</span>
-              <span className="text-sm font-medium text-[#020617]">QSR_Q2_2026</span>
-            </div>
-            <div>
-              <span className="text-xs text-[#757575]">Campaign Details</span>
-              <p className="text-xs font-medium text-[#dc2626]">No Information Available</p>
-            </div>
-            <div>
-              <span className="text-xs text-[#757575]">Partner Details</span>
-              <p className="text-xs font-medium text-[#dc2626]">No Information Available</p>
-            </div>
-            <div>
-              <span className="text-xs text-[#757575]">Placement Details</span>
-              <p className="text-xs font-medium text-[#f59e0b]">Missing Information</p>
-            </div>
-          </div>
-          <button onClick={() => setShowUploadBanner(false)} className="ml-4 shrink-0 p-1 text-[#8d8d8d] hover:text-[#020617]">
-            <X className="size-4" />
-          </button>
-        </div>
-      )}
-
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-[#020617]">Pixel Generation</h2>
         <div className="mt-1 text-sm leading-5 text-[#646464]">
-          <p>
-            Manage generated pixels here. Pixels are auto-generated using provided Salesforce data and partner details.
-          </p>
-          <p>
-            <span className="cursor-pointer text-[#212be9]">Learn more</span> about self-directed pixel generation.
-          </p>
+          <p>A Jira ticket will be created for your pixel setup. Review the details below and confirm.</p>
         </div>
       </div>
 
       <div className="mb-6 h-px w-full bg-[#e2e8f0]" />
 
-      {pixelState === "populated" && <PixelSubSteps activeStep={activePixelSubStep} />}
-
-      {pixelState === "populated" ? (
-        <>
-          {activePixelSubStep === 1 ? (
-            <>
-              <p className="mb-4 text-sm text-[#64748b]">
-                Confirm or update the ad server for each media partner before generating pixels.
-              </p>
-
-              <Alert className="mb-6 border-[#bfdbfe] bg-[#eff6ff]">
-                <Info className="size-4 text-[#3b82f6]" />
-                <AlertTitle className="text-[#1e40af]">Review ad server assignments</AlertTitle>
-                <AlertDescription className="text-[#1e40af]/80">
-                  Ensure each partner has the correct ad server and pixel type selected. You can update selections before proceeding.
-                </AlertDescription>
-              </Alert>
-
-              <div className="relative w-full">
-                <table className="w-full table-fixed">
-                  <thead>
-                    <tr className="border-b border-[#e2e8f0]">
-                      <th className="w-[15%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
-                      <th className="w-[42%] px-6 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
-                      <th className="w-[43%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {adServers.map((row, i) => {
-                      return (
-                      <tr key={i} className="border-b border-[#e2e8f0]">
-                        <td className="px-4 py-4 text-sm font-medium text-black">{row.partner}</td>
-                        <td className="px-6 py-4">
-                          <MultiSelectDropdown
-                            options={AD_SERVER_OPTIONS}
-                            selected={row.adServers}
-                            onChange={(val) =>
-                              setAdServers((prev) =>
-                                prev.map((r, idx) => (idx === i ? { ...r, adServers: val } : r))
-                              )
-                            }
-                            placeholder="Select ad servers..."
-                            hasWarning={row.adServers.length === 0}
-                          />
-                        </td>
-                        <td className="px-4 py-4">
-                          <MultiSelectDropdown
-                            options={PIXEL_TYPE_OPTIONS}
-                            selected={row.pixelTypes}
-                            onChange={(val) =>
-                              setAdServers((prev) =>
-                                prev.map((r, idx) => (idx === i ? { ...r, pixelTypes: val } : r))
-                              )
-                            }
-                            placeholder="Select pixel types..."
-                            hasWarning={row.pixelTypes.length === 0}
-                          />
-                        </td>
-                      </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="mt-6 flex items-center justify-between">
-                <button
-                  onClick={onBack}
-                  className="rounded-md border border-[#e2e8f0] bg-white px-4 py-2 text-sm font-medium text-[#020617] transition-colors hover:bg-gray-50"
-                >
-                  Back to Funding Allocation
-                </button>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={onContinue}
-                    className="rounded-md border border-[#212be9] bg-white px-4 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
-                  >
-                    Skip
-                  </button>
-                  <button
-                    onClick={() => { setPixels(generateFromSelections()); setActivePixelSubStep(2); }}
-                    className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
-                  >
-                    Continue to Manage Pixels
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <Alert className="mb-6 border-[#bfdbfe] bg-[#eff6ff]">
-                <Info className="size-4 text-[#3b82f6]" />
-                <AlertTitle className="text-[#1e40af]">Assign tagging for each pixel</AlertTitle>
-                <AlertDescription className="text-[#1e40af]/80">
-                  Select whether the pixel should be tagged by the Partner, Agency, or Both.
-                </AlertDescription>
-              </Alert>
-
-              <div className="mb-4 flex items-center justify-between">
-                <p className="text-sm text-[#171417]">
-                  <span className="text-[#757575]">Showing </span>
-                  <span className="font-medium">{pixels.length}</span>
-                  <span className="text-[#757575]"> of </span>
-                  <span className="font-medium">{pixels.length}</span>
-                  <span className="text-[#757575]"> results</span>
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex w-[200px] items-center rounded-md border border-[#e2e8f0] bg-white px-3 py-2">
-                    <Search className="mr-2 size-4 text-[#64748b]" />
-                    <span className="text-sm text-[#64748b]">Search</span>
-                  </div>
-                  <button className="rounded-md border border-[#e2e8f0] bg-white p-2 hover:bg-gray-50">
-                    <Copy className="size-4 text-[#64748b]" />
-                  </button>
-                  <button className="rounded-md border border-[#e2e8f0] bg-white p-2 hover:bg-gray-50">
-                    <Mail className="size-4 text-[#64748b]" />
-                  </button>
-                  <button className="group relative rounded-md border border-[#212be9] bg-[#fcfcfc] p-2 text-[#212be9] transition-colors hover:bg-[#ebf1ff]">
-                    <Download className="size-4" />
-                    <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#0f172a] px-2.5 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                      Download All
-                      <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#0f172a]" />
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="relative w-full">
-                <table className="w-full table-fixed">
-                  <thead>
-                    <tr className="border-b border-[#e2e8f0]">
-                      <th className="w-[40px] px-4 py-3" />
-                      <th className="w-[13%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
-                      <th className="w-[14%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
-                      <th className="w-[16%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
-                      <th className="w-[16%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Tagging</th>
-                      <th className="w-[15%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel ID</th>
-                      <th className="w-[10%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel</th>
-                      <th className="w-[80px] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pixels.map((pixel, i) => {
-                      return (
-                      <tr key={i} className="border-b border-[#e2e8f0]">
-                        <td className="w-10 px-4 py-4">
-                          <div className="size-4 rounded border border-[#0f172a]" />
-                        </td>
-                        <td className="px-4 py-4 text-sm font-medium text-black">{pixel.partner}</td>
-                        <td className="px-4 py-4">
-                          <span className="rounded bg-[#f1f5f9] px-1.5 py-0.5 text-xs font-medium text-[#020617]">{pixel.adServer}</span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className="rounded bg-[#f1f5f9] px-1.5 py-0.5 text-xs font-medium text-[#020617]">{pixel.pixelType}</span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <Select value={pixel.tracking || undefined} onValueChange={(val) => updateTracking(i, val)}>
-                            <SelectTrigger className={`w-[120px] ${pixel.tracking ? "" : "border-[#ef4444]"}`} size="sm">
-                              <SelectValue placeholder="Select..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Partner">Partner</SelectItem>
-                              <SelectItem value="Agency">Agency</SelectItem>
-                              <SelectItem value="Both">Both</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-black">{pixel.pixelId}</td>
-                        <td className="relative px-4 py-4">
-                          <button
-                            onClick={() => setViewPixelRow(viewPixelRow === i ? null : i)}
-                            className="rounded px-2 py-1 text-xs font-medium text-[#212be9] transition-colors hover:bg-[#f0f1ff]"
-                          >
-                            View
-                          </button>
-                          {viewPixelRow === i && (
-                            <div ref={pixelPopoverRef} className="absolute bottom-full left-1/2 z-20 mb-2 w-[360px] -translate-x-1/2 rounded-lg border border-[#e2e8f0] bg-white p-3 shadow-lg">
-                              <div className="mb-2 flex items-center justify-between">
-                                <span className="text-xs font-medium text-[#64748b]">Pixel Tag</span>
-                                <button
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(pixel.pixelImg);
-                                    setCopiedPixelRow(i);
-                                    setTimeout(() => setCopiedPixelRow(null), 2000);
-                                  }}
-                                  className={`rounded px-1.5 py-0.5 text-xs font-medium ${copiedPixelRow === i ? "text-[#16a34a]" : "text-[#212be9] hover:bg-[#f0f1ff]"}`}
-                                >
-                                  {copiedPixelRow === i ? "Copied" : "Copy"}
-                                </button>
-                              </div>
-                              <code className="block break-all rounded-md bg-[#f8fafc] p-2.5 text-xs leading-relaxed text-[#334155]">
-                                {pixel.pixelImg}
-                              </code>
-                              <div className="absolute left-1/2 top-full -mt-px -translate-x-1/2 border-[6px] border-transparent border-t-white drop-shadow-sm" />
-                            </div>
-                          )}
-                        </td>
-                        <td className="relative w-[80px] px-4 py-4 text-center">
-                          <button
-                            onClick={() => setOpenActionRow(openActionRow === i ? null : i)}
-                            className="rounded-md p-1 hover:bg-gray-100"
-                          >
-                            <MoreHorizontal className="size-4 text-[#64748b]" />
-                          </button>
-                          {openActionRow === i && (
-                            <div className="absolute right-4 top-12 z-10 w-40 rounded-lg border border-[#e2e8f0] bg-white py-1 shadow-lg">
-                              <button className="flex w-full items-center px-4 py-2 text-left text-sm text-[#020617] hover:bg-gray-50">Email</button>
-                              <button className="flex w-full items-center px-4 py-2 text-left text-sm text-[#020617] hover:bg-gray-50">Download</button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="mt-6 flex items-center justify-between">
-                <button
-                  onClick={() => setActivePixelSubStep(1)}
-                  className="rounded-md border border-[#e2e8f0] bg-white px-4 py-2 text-sm font-medium text-[#020617] transition-colors hover:bg-gray-50"
-                >
-                  Back to Confirm Ad Server
-                </button>
-                <button
-                  onClick={onContinue}
-                  className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
-                >
-                  Continue to Review
-                </button>
-              </div>
-            </>
-          )}
-        </>
-      ) : (
-        <div className="rounded-lg border border-[#e2e8f0] bg-[#fcfcfc] px-6 py-6">
-          <p className="text-sm font-semibold text-[#020617]">No pixels have been generated</p>
-          <div className="mt-2 text-sm text-[#646464]">
-            <p>No pixel information is available.</p>
-            <p>
-              Please add a valid <span className="cursor-pointer text-[#212be9]">Salesforce Opportunity URL</span>, and at least one <span className="cursor-pointer text-[#212be9]">media partner</span> in the previous steps.
-            </p>
+      {ticketStatus === "created" && ticketId && (
+        <div className="mb-6 flex items-center gap-3 rounded-lg border border-[#bbf7d0] bg-[#f0fdf4] px-5 py-4">
+          <Check className="size-5 shrink-0 text-[#16a34a]" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-[#15803d]">Jira ticket {ticketId} created successfully</p>
+            <a href="#" className="mt-0.5 inline-flex items-center gap-1 text-sm font-medium text-[#16a34a] hover:underline">
+              View in Jira <ExternalLink className="size-3.5" />
+            </a>
           </div>
         </div>
       )}
+
+      {ticketStatus === "error" && (
+        <Alert className="mb-6 border-[#fecaca] bg-[#fef2f2]">
+          <CircleAlert className="size-4 text-[#dc2626]" />
+          <AlertTitle className="text-[#991b1b]">Failed to create Jira ticket</AlertTitle>
+          <AlertDescription className="text-[#991b1b]/80">
+            Something went wrong. Please try again.
+            <button onClick={handleCreateTicket} className="ml-2 font-medium text-[#dc2626] underline hover:no-underline">Retry</button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="max-w-[640px] rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
+        <div className="border-b border-[#e2e8f0] px-6 py-4">
+          <div className="flex items-center gap-2">
+            <FileText className="size-4 text-[#64748b]" />
+            <h3 className="text-sm font-semibold text-[#020617]">Jira Ticket Preview</h3>
+          </div>
+        </div>
+        <div className="divide-y divide-[#f1f5f9] px-6 py-4">
+          <div className="flex items-start gap-4 py-3">
+            <span className="w-[120px] shrink-0 text-sm text-[#64748b]">Project</span>
+            <span className="text-sm font-medium text-[#020617]">PIX (Pixel Operations)</span>
+          </div>
+          <div className="flex items-start gap-4 py-3">
+            <span className="w-[120px] shrink-0 text-sm text-[#64748b]">Type</span>
+            <span className="text-sm font-medium text-[#020617]">Task</span>
+          </div>
+          <div className="flex items-start gap-4 py-3">
+            <span className="w-[120px] shrink-0 text-sm text-[#64748b]">Partners</span>
+            <div className="flex flex-wrap gap-1.5">
+              {partners.map((p) => (
+                <span key={p} className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-medium text-[#334155]">{p}</span>
+              ))}
+            </div>
+          </div>
+          {ticketId && (
+            <div className="flex items-start gap-4 py-3">
+              <span className="w-[120px] shrink-0 text-sm text-[#64748b]">Ticket ID</span>
+              <span className="text-sm font-semibold text-[#16a34a]">{ticketId}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-8 flex items-center justify-between py-4">
+        <button
+          onClick={onBack}
+          className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
+        >
+          Back to Funding Allocation
+        </button>
+        {ticketStatus === "created" ? (
+          <button
+            onClick={onContinue}
+            className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
+          >
+            Continue to Review
+          </button>
+        ) : (
+          <button
+            onClick={handleCreateTicket}
+            disabled={ticketStatus === "creating"}
+            className="flex items-center gap-2 rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {ticketStatus === "creating" && <Loader2 className="size-4 animate-spin" />}
+            {ticketStatus === "creating" ? "Creating Ticket..." : "Create Jira Ticket"}
+          </button>
+        )}
+      </div>
     </>
   );
 }
@@ -1708,11 +1323,6 @@ const PLACEMENT_SUB_STEPS = [
   { num: 2, label: "Map Partners" },
   { num: 3, label: "Map Taxonomies" },
   { num: 4, label: "Apply Placements" },
-];
-
-const PIXEL_SUB_STEPS = [
-  { num: 1, label: "Confirm Ad Server" },
-  { num: 2, label: "Manage Generated Pixels" },
 ];
 
 type PlacementState = "empty" | "uploaded" | "new-upload";
@@ -1752,40 +1362,6 @@ function PlacementSubSteps({ activeStep, hasReuploaded }: { activeStep: number; 
   );
 }
 
-function PixelSubSteps({ activeStep }: { activeStep: number }) {
-  return (
-    <div className="mb-6">
-      <div className="mb-3 flex gap-0">
-        {PIXEL_SUB_STEPS.map((s) => (
-          <div
-            key={s.num}
-            className={`h-1 flex-1 ${s.num <= activeStep ? "bg-[#020617]" : "bg-[#e2e8f0]"} ${s.num === 1 ? "rounded-l-full" : ""} ${s.num === PIXEL_SUB_STEPS.length ? "rounded-r-full" : ""}`}
-          />
-        ))}
-      </div>
-      <div className="flex">
-        {PIXEL_SUB_STEPS.map((s) => (
-          <div key={s.num} className="flex flex-1 items-center gap-2">
-            <div
-              className={`flex size-6 items-center justify-center rounded-full text-xs font-semibold ${
-                s.num < activeStep
-                  ? "border border-[#d1d5db] bg-white text-[#9ca3af]"
-                  : s.num === activeStep
-                    ? "border-2 border-[#020617] bg-[#020617] text-white"
-                    : "border-2 border-gray-300 text-gray-400"
-              }`}
-            >
-              {s.num < activeStep ? <Check className="size-3.5" /> : s.num}
-            </div>
-            <span className={`text-sm ${s.num === activeStep ? "font-semibold text-[#020617]" : s.num < activeStep ? "text-[#020617]" : "text-[#757575]"}`}>
-              {s.label}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function PlacementDetailsContent({ placementState, onContinueToMapTaxonomies, onUpload, onFileDrop, hasReuploaded, alreadyParsed, onAlreadyParsedChange }: { placementState: PlacementState; onContinueToMapTaxonomies: () => void; onUpload: () => void; onFileDrop: (name: string) => void; hasReuploaded?: boolean; alreadyParsed: boolean; onAlreadyParsedChange: (v: boolean) => void }) {
   const [showUploadBanner, setShowUploadBanner] = useState(placementState === "new-upload");
@@ -2694,11 +2270,16 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
   const [draggingLabel, setDraggingLabel] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [customLabels, setCustomLabels] = useState<SystemLabel[]>([]);
+  const [isAddingCustom, setIsAddingCustom] = useState(false);
+  const [customLabelName, setCustomLabelName] = useState("");
   const PAGE_SIZE = 15;
   const totalRows = PARSED_COLUMNS[0].sampleData.length;
   const totalPages = Math.ceil(totalRows / PAGE_SIZE);
   const startIdx = (currentPage - 1) * PAGE_SIZE;
   const endIdx = Math.min(startIdx + PAGE_SIZE, totalRows);
+
+  const allLabels = useMemo(() => [...SYSTEM_LABELS, ...customLabels], [customLabels]);
 
   const assignedLabelIds = useMemo(() => {
     const assigned = new Set<string>();
@@ -2708,7 +2289,7 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
     return assigned;
   }, [mappings]);
 
-  const unassignedLabels = SYSTEM_LABELS.filter((l) => !assignedLabelIds.has(l.id));
+  const unassignedLabels = allLabels.filter((l) => !assignedLabelIds.has(l.id));
   const mappedCount = Object.values(mappings).filter(Boolean).length;
 
   const assignLabel = (colId: string, labelId: string) => {
@@ -2770,7 +2351,7 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
   const getLabelForCol = (colId: string) => {
     const labelId = mappings[colId];
     if (!labelId) return null;
-    return SYSTEM_LABELS.find((l) => l.id === labelId) || null;
+    return allLabels.find((l) => l.id === labelId) || null;
   };
 
   return (
@@ -2799,8 +2380,9 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
       <div className="mb-6 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-4">
         <p className="mb-2 text-xs font-medium text-[#64748b]">Available Labels — Drag Onto Columns or Use the Dropdown</p>
         <div className="flex flex-wrap gap-2">
-          {SYSTEM_LABELS.map((label) => {
+          {allLabels.map((label) => {
             const isAssigned = assignedLabelIds.has(label.id);
+            const isCustom = label.id.startsWith("custom-");
             return (
               <div
                 key={label.id}
@@ -2815,9 +2397,71 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
               >
                 <GripVertical className={`size-3 ${isAssigned ? "text-[#cbd5e1]" : "text-[#9ca3af]"}`} />
                 {label.name}
+                {isCustom && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMappings((prev) => {
+                        const next = { ...prev };
+                        Object.entries(next).forEach(([k, v]) => { if (v === label.id) next[k] = null; });
+                        return next;
+                      });
+                      setCustomLabels((prev) => prev.filter((l) => l.id !== label.id));
+                    }}
+                    className="ml-0.5 rounded-full p-0.5 text-[#94a3b8] transition-colors hover:bg-[#fee2e2] hover:text-[#dc2626]"
+                  >
+                    <X className="size-3" />
+                  </button>
+                )}
               </div>
             );
           })}
+          {isAddingCustom ? (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={customLabelName}
+                onChange={(e) => setCustomLabelName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && customLabelName.trim()) {
+                    setCustomLabels((prev) => [...prev, { id: `custom-${Date.now()}`, name: customLabelName.trim(), color: "#6b7280" }]);
+                    setCustomLabelName("");
+                    setIsAddingCustom(false);
+                  }
+                  if (e.key === "Escape") { setCustomLabelName(""); setIsAddingCustom(false); }
+                }}
+                autoFocus
+                placeholder="Label name..."
+                className="h-7 w-[140px] rounded-full border border-[#212be9] bg-white px-3 text-xs outline-none placeholder:text-[#9ca3af] focus:ring-2 focus:ring-[#212be9]/20"
+              />
+              <button
+                onClick={() => {
+                  if (customLabelName.trim()) {
+                    setCustomLabels((prev) => [...prev, { id: `custom-${Date.now()}`, name: customLabelName.trim(), color: "#6b7280" }]);
+                    setCustomLabelName("");
+                    setIsAddingCustom(false);
+                  }
+                }}
+                className="flex size-7 items-center justify-center rounded-full bg-[#212be9] text-white transition-colors hover:bg-[#1a22c4]"
+              >
+                <Check className="size-3.5" />
+              </button>
+              <button
+                onClick={() => { setCustomLabelName(""); setIsAddingCustom(false); }}
+                className="flex size-7 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#64748b] transition-colors hover:bg-gray-50"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsAddingCustom(true)}
+              className="flex items-center gap-1 rounded-full border border-dashed border-[#cbd5e1] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:border-[#212be9] hover:text-[#212be9]"
+            >
+              <Plus className="size-3" />
+              Add Custom
+            </button>
+          )}
         </div>
       </div>
 
@@ -2868,7 +2512,7 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
                               <SelectValue placeholder="Select Label" />
                             </SelectTrigger>
                             <SelectContent className="max-h-[240px]">
-                              {SYSTEM_LABELS.map((label) => {
+                              {allLabels.map((label) => {
                                 const isUsed = assignedLabelIds.has(label.id);
                                 return (
                                   <SelectItem
@@ -4242,7 +3886,7 @@ function NewCampaignContent() {
   const [sfValidated, setSfValidated] = useState(false);
   const [campaignStepValid, setCampaignStepValid] = useState(false);
   const [fundingStepValid, setFundingStepValid] = useState(false);
-  const [pixelStepValid, setPixelStepValid] = useState(true);
+  const [pixelStepValid, setPixelStepValid] = useState(false);
   const [campaignSubmitted, setCampaignSubmitted] = useState(false);
   const [alreadyParsed, setAlreadyParsed] = useState(false);
   const [visitedSteps, setVisitedSteps] = useState<Set<string>>(new Set([initialStep]));
@@ -4285,7 +3929,6 @@ function NewCampaignContent() {
 
   const displayName = campaignName.trim() || "Draft";
 
-  const pixelState: PixelState = hasUploadedFile ? "populated" : "empty";
   const placementState: PlacementState = hasUploadedFile ? "uploaded" : "empty";
 
   const goToStep = (step: Step) => {
@@ -4538,7 +4181,7 @@ function NewCampaignContent() {
             />
           )}
           {currentStep === "funding" && <FundingAllocationContent measurementBudget={parseInt(measurementBudget.replace(/,/g, "") || "0")} onValidChange={setFundingStepValid} />}
-          {currentStep === "pixel" && <PixelGenerationContent pixelState={pixelState} onValidChange={setPixelStepValid} onBack={() => goToStep("funding")} onContinue={() => goToStep("review")} />}
+          {currentStep === "pixel" && <PixelGenerationContent campaignName={campaignName} onValidChange={setPixelStepValid} onBack={() => goToStep("funding")} onContinue={() => goToStep("review")} />}
           {currentStep === "review" && (
             <ReviewContent
               onBack={() => goToStep("pixel")}
@@ -4584,7 +4227,6 @@ function NewCampaignContent() {
             </div>
           )}
 
-          {currentStep === "pixel" && null}
 
           {currentStep === "placement" && (
             <div className="mt-8 flex items-center justify-between py-4">
