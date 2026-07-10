@@ -1209,8 +1209,10 @@ function FundingAllocationContent({ measurementBudget, onValidChange }: { measur
 function PixelGenerationContent({ campaignName, onValidChange, onBack, onContinue }: { campaignName: string; onValidChange?: (valid: boolean) => void; onBack: () => void; onContinue: () => void }) {
   const [ticketStatus, setTicketStatus] = useState<"idle" | "creating" | "created" | "error">("idle");
   const [ticketId, setTicketId] = useState<string | null>(null);
+  const [ticketName, setTicketName] = useState("");
 
   const partners = PIXELS.map((p) => p.partner);
+  const canCreate = ticketName.trim().length > 0;
 
   const handleCreateTicket = () => {
     setTicketStatus("creating");
@@ -1265,8 +1267,25 @@ function PixelGenerationContent({ campaignName, onValidChange, onBack, onContinu
         </div>
         <div className="divide-y divide-[#f1f5f9] px-6 py-4">
           <div className="flex items-start gap-4 py-3">
-            <span className="w-[120px] shrink-0 text-sm text-[#64748b]">Project</span>
-            <span className="text-sm font-medium text-[#020617]">PIX (Pixel Operations)</span>
+            <span className="w-[120px] shrink-0 text-sm text-[#64748b]">Ticket Name</span>
+            <div className="relative w-full">
+              <input
+                type="text"
+                value={ticketName}
+                onChange={(e) => setTicketName(e.target.value)}
+                placeholder="Enter Jira ticket name..."
+                disabled={ticketStatus === "created"}
+                className="w-full rounded-md border border-[#e2e8f0] bg-transparent px-3 py-1.5 pr-8 text-sm font-medium text-[#020617] outline-none placeholder:text-[#9ca3af] focus:border-[#212be9] focus:ring-2 focus:ring-[#212be9]/20 disabled:cursor-not-allowed disabled:bg-[#f8fafc] disabled:text-[#64748b]"
+              />
+              {ticketName && ticketStatus !== "created" && (
+                <button
+                  onClick={() => setTicketName("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-[#9ca3af] transition-colors hover:bg-[#f1f5f9] hover:text-[#64748b]"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
           </div>
           <div className="flex items-start gap-4 py-3">
             <span className="w-[120px] shrink-0 text-sm text-[#64748b]">Type</span>
@@ -1306,8 +1325,8 @@ function PixelGenerationContent({ campaignName, onValidChange, onBack, onContinu
         ) : (
           <button
             onClick={handleCreateTicket}
-            disabled={ticketStatus === "creating"}
-            className="flex items-center gap-2 rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={ticketStatus === "creating" || !canCreate}
+            className="flex items-center gap-2 rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {ticketStatus === "creating" && <Loader2 className="size-4 animate-spin" />}
             {ticketStatus === "creating" ? "Creating Ticket..." : "Create Jira Ticket"}
