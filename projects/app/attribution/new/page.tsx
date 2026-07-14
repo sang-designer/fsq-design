@@ -17,13 +17,12 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
-type Step = "campaign" | "placement" | "map-partners" | "map-taxonomies" | "apply-placements" | "funding" | "pixel" | "review";
+type Step = "campaign" | "placement" | "map-partners" | "map-taxonomies" | "apply-placements" | "funding" | "review";
 
 const SIDEBAR_STEPS = [
   { key: "campaign" as Step, label: "Campaign Details" },
   { key: "placement" as Step, label: "Placement Details" },
   { key: "funding" as Step, label: "Funding Allocation" },
-  { key: "pixel" as Step, label: "Pixel Generation" },
   { key: "review" as Step, label: "Review and Submit" },
 ];
 
@@ -1206,136 +1205,6 @@ function FundingAllocationContent({ measurementBudget, onValidChange }: { measur
 }
 
 
-function PixelGenerationContent({ campaignName, onValidChange, onBack, onContinue }: { campaignName: string; onValidChange?: (valid: boolean) => void; onBack: () => void; onContinue: () => void }) {
-  const [ticketStatus, setTicketStatus] = useState<"idle" | "creating" | "created" | "error">("idle");
-  const [ticketId, setTicketId] = useState<string | null>(null);
-  const [ticketName, setTicketName] = useState("");
-
-  const partners = PIXELS.map((p) => p.partner);
-  const canCreate = ticketName.trim().length > 0;
-
-  const handleCreateTicket = () => {
-    setTicketStatus("creating");
-    setTimeout(() => {
-      const id = `PIX-${Math.floor(1000 + Math.random() * 9000)}`;
-      setTicketId(id);
-      setTicketStatus("created");
-      onValidChange?.(true);
-    }, 1500);
-  };
-
-  return (
-    <>
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-[#020617]">Pixel Generation</h2>
-        <div className="mt-1 text-sm leading-5 text-[#646464]">
-          <p>A Jira ticket will be created for your pixel setup. Review the details below and confirm.</p>
-        </div>
-      </div>
-
-      <div className="mb-6 h-px w-full bg-[#e2e8f0]" />
-
-      {ticketStatus === "created" && ticketId && (
-        <div className="mb-6 flex items-center gap-3 rounded-lg border border-[#bbf7d0] bg-[#f0fdf4] px-5 py-4">
-          <Check className="size-5 shrink-0 text-[#16a34a]" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-[#15803d]">Jira ticket {ticketId} created successfully</p>
-            <a href="#" className="mt-0.5 inline-flex items-center gap-1 text-sm font-medium text-[#16a34a] hover:underline">
-              View in Jira <ExternalLink className="size-3.5" />
-            </a>
-          </div>
-        </div>
-      )}
-
-      {ticketStatus === "error" && (
-        <Alert className="mb-6 border-[#fecaca] bg-[#fef2f2]">
-          <CircleAlert className="size-4 text-[#dc2626]" />
-          <AlertTitle className="text-[#991b1b]">Failed to create Jira ticket</AlertTitle>
-          <AlertDescription className="text-[#991b1b]/80">
-            Something went wrong. Please try again.
-            <button onClick={handleCreateTicket} className="ml-2 font-medium text-[#dc2626] underline hover:no-underline">Retry</button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="max-w-[640px] rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
-        <div className="border-b border-[#e2e8f0] px-6 py-4">
-          <div className="flex items-center gap-2">
-            <FileText className="size-4 text-[#64748b]" />
-            <h3 className="text-sm font-semibold text-[#020617]">Jira Ticket Preview</h3>
-          </div>
-        </div>
-        <div className="divide-y divide-[#f1f5f9] px-6 py-4">
-          <div className="flex items-start gap-4 py-3">
-            <span className="w-[120px] shrink-0 text-sm text-[#64748b]">Ticket Name</span>
-            <div className="relative w-full">
-              <input
-                type="text"
-                value={ticketName}
-                onChange={(e) => setTicketName(e.target.value)}
-                placeholder="Enter Jira ticket name..."
-                disabled={ticketStatus === "created"}
-                className="w-full rounded-md border border-[#e2e8f0] bg-transparent px-3 py-1.5 pr-8 text-sm font-medium text-[#020617] outline-none placeholder:text-[#9ca3af] focus:border-[#212be9] focus:ring-2 focus:ring-[#212be9]/20 disabled:cursor-not-allowed disabled:bg-[#f8fafc] disabled:text-[#64748b]"
-              />
-              {ticketName && ticketStatus !== "created" && (
-                <button
-                  onClick={() => setTicketName("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-[#9ca3af] transition-colors hover:bg-[#f1f5f9] hover:text-[#64748b]"
-                >
-                  <X className="size-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="flex items-start gap-4 py-3">
-            <span className="w-[120px] shrink-0 text-sm text-[#64748b]">Type</span>
-            <span className="text-sm font-medium text-[#020617]">Task</span>
-          </div>
-          <div className="flex items-start gap-4 py-3">
-            <span className="w-[120px] shrink-0 text-sm text-[#64748b]">Partners</span>
-            <div className="flex flex-wrap gap-1.5">
-              {partners.map((p) => (
-                <span key={p} className="rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-medium text-[#334155]">{p}</span>
-              ))}
-            </div>
-          </div>
-          {ticketId && (
-            <div className="flex items-start gap-4 py-3">
-              <span className="w-[120px] shrink-0 text-sm text-[#64748b]">Ticket ID</span>
-              <span className="text-sm font-semibold text-[#16a34a]">{ticketId}</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="mt-8 flex items-center justify-between py-4">
-        <button
-          onClick={onBack}
-          className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
-        >
-          Back to Funding Allocation
-        </button>
-        {ticketStatus === "created" ? (
-          <button
-            onClick={onContinue}
-            className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
-          >
-            Continue to Review
-          </button>
-        ) : (
-          <button
-            onClick={handleCreateTicket}
-            disabled={ticketStatus === "creating" || !canCreate}
-            className="flex items-center gap-2 rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {ticketStatus === "creating" && <Loader2 className="size-4 animate-spin" />}
-            {ticketStatus === "creating" ? "Creating Ticket..." : "Create Jira Ticket"}
-          </button>
-        )}
-      </div>
-    </>
-  );
-}
 
 const PLACEMENT_SUB_STEPS = [
   { num: 1, label: "Media Plan" },
@@ -3245,7 +3114,6 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
   const [comments, setComments] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(campaignSubmitted);
-  const [showToast, setShowToast] = useState(false);
 
   type PartnerReviewRow = {
     name: string;
@@ -3337,13 +3205,34 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
       setIsSubmitting(false);
       setSubmitted(true);
       onSubmitted();
-      setShowToast(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
-      setTimeout(() => setShowToast(false), 5000);
     }, 2000);
   };
 
   if (campaignSubmitted && !submitted) setSubmitted(true);
+
+  if (submitted) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
+        <div className="mb-6 flex size-16 items-center justify-center rounded-full bg-[#f0fdf4]">
+          <Check className="size-8 text-[#16a34a]" />
+        </div>
+        <h2 className="text-2xl font-semibold text-[#020617]">Campaign Submitted Successfully</h2>
+        <p className="mx-auto mt-3 max-w-[520px] text-sm leading-relaxed text-[#6b7280]">
+          Your campaign is currently under review. Our AdOps team is reviewing your setup and generating your tracking pixel. You can track the status of your pixel generation in real-time here: <a href="https://foursquare.atlassian.net/browse/PIX-4827" target="_blank" rel="noopener noreferrer" className="inline-inline-flex items-center gap-0.5 font-medium text-[#212be9] hover:underline">PIX-4827 <ExternalLink className="inline size-3" /></a>.
+        </p>
+        <p className="mx-auto mt-3 max-w-[520px] text-sm leading-relaxed text-[#6b7280]">
+          We will reach out within 1–2 business days with your implementation instructions. You will receive an email alert as soon as your campaign is approved.
+        </p>
+        <a
+          href="/projects/app/attribution"
+          className="mt-8 rounded-md bg-[#212be9] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
+        >
+          Back to Dashboard
+        </a>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -3543,18 +3432,6 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
       )}
 
       {/* Toast notification */}
-      <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-lg border border-[#16a34a] bg-white px-4 py-3 shadow-lg transition-all duration-300 ${showToast ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"}`}>
-        <div className="flex size-6 items-center justify-center rounded-full bg-[#16a34a]">
-          <Check className="size-3.5 text-white" />
-        </div>
-        <div>
-          <p className="text-sm font-medium text-[#020617]">Campaign submitted successfully!</p>
-          <p className="text-xs text-[#6b7280]">An account representative will get in touch shortly.</p>
-        </div>
-        <button onClick={() => setShowToast(false)} className="ml-4 p-1 text-[#8d8d8d] hover:text-[#020617]">
-          <X className="size-4" />
-        </button>
-      </div>
     </>
   );
 }
@@ -3774,12 +3651,11 @@ function Sidebar({ currentStep, hasUploadedFile, hasReuploaded, onUpload, isUplo
     currentStep === "map-taxonomies" ? ["campaign"] :
     currentStep === "apply-placements" ? ["campaign"] :
     currentStep === "funding" ? ["campaign", "placement"] :
-    currentStep === "pixel" ? ["campaign", "placement", "funding"] :
-    currentStep === "review" ? ["campaign", "placement", "funding", "pixel"] : [];
+    currentStep === "review" ? ["campaign", "placement", "funding"] : [];
 
   const errorSteps: Step[] = (() => {
     if (!hasReuploaded) return [];
-    const order: Step[] = ["campaign", "placement", "funding", "pixel"];
+    const order: Step[] = ["campaign", "placement", "funding"];
     const placementSubSteps: Step[] = ["placement", "map-partners", "map-taxonomies", "apply-placements"];
     const sIdx = placementSubSteps.includes(currentStep) ? order.indexOf("placement") : order.indexOf(currentStep);
     const steps: Step[] = [];
@@ -3814,7 +3690,7 @@ function Sidebar({ currentStep, hasUploadedFile, hasReuploaded, onUpload, isUplo
               {isError && !isActive && <CircleAlert className="size-4 text-[#dc2626]" />}
               {isDone && !isError && <Check className="size-4 text-[#212be9]" />}
               {isActive && !isDone && !isError && (
-                (sidebarCurrentStep === "pixel" || sidebarCurrentStep === "placement")
+                (sidebarCurrentStep === "placement")
                   ? <Loader2 className="size-4 animate-spin text-[#f59e0b]" />
                   : <CircleDashed className="size-4 text-[#020617]" />
               )}
@@ -3905,7 +3781,6 @@ function NewCampaignContent() {
   const [sfValidated, setSfValidated] = useState(false);
   const [campaignStepValid, setCampaignStepValid] = useState(false);
   const [fundingStepValid, setFundingStepValid] = useState(false);
-  const [pixelStepValid, setPixelStepValid] = useState(false);
   const [campaignSubmitted, setCampaignSubmitted] = useState(false);
   const [alreadyParsed, setAlreadyParsed] = useState(false);
   const [visitedSteps, setVisitedSteps] = useState<Set<string>>(new Set([initialStep]));
@@ -3931,16 +3806,15 @@ function NewCampaignContent() {
   }, [currentStep]);
   // #endregion
 
-  const placementStepValid = visitedSteps.has("funding") || visitedSteps.has("pixel") || visitedSteps.has("review");
+  const placementStepValid = visitedSteps.has("funding") || visitedSteps.has("review");
 
   const stepProgressMap: Record<string, number> = {
     campaign: 0,
-    placement: 14,
-    "map-partners": 24,
-    "map-taxonomies": 36,
-    "apply-placements": 48,
-    funding: 60,
-    pixel: 72,
+    placement: 16,
+    "map-partners": 28,
+    "map-taxonomies": 40,
+    "apply-placements": 52,
+    funding: 68,
     review: campaignSubmitted ? 100 : 84,
   };
 
@@ -3956,7 +3830,7 @@ function NewCampaignContent() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const STEP_ORDER: string[] = ["campaign", "placement", "map-partners", "map-taxonomies", "apply-placements", "funding", "pixel", "review"];
+  const STEP_ORDER: string[] = ["campaign", "placement", "map-partners", "map-taxonomies", "apply-placements", "funding", "review"];
   const currentIdx = STEP_ORDER.indexOf(currentStep);
 
   const stepValidityMap: Record<string, boolean> = {
@@ -3966,7 +3840,6 @@ function NewCampaignContent() {
     "map-taxonomies": true,
     "apply-placements": true,
     funding: fundingStepValid,
-    pixel: pixelStepValid,
     review: true,
   };
 
@@ -4121,7 +3994,6 @@ function NewCampaignContent() {
                 { label: "Campaign Details", status: campaignStepValid ? "success" as const : "warning" as const },
                 { label: "Placement Details", status: placementStepValid ? "success" as const : "warning" as const },
                 { label: "Funding Allocation", status: fundingStepValid ? "success" as const : "warning" as const },
-                { label: "Pixel Generation", status: pixelStepValid ? "success" as const : "warning" as const },
               ].map((item, i) => (
                 <div key={item.label} className="flex flex-1 items-stretch">
                   {i > 0 && <div className="mx-0 w-px self-stretch bg-[#e0e0e0]" />}
@@ -4200,10 +4072,9 @@ function NewCampaignContent() {
             />
           )}
           {currentStep === "funding" && <FundingAllocationContent measurementBudget={parseInt(measurementBudget.replace(/,/g, "") || "0")} onValidChange={setFundingStepValid} />}
-          {currentStep === "pixel" && <PixelGenerationContent campaignName={campaignName} onValidChange={setPixelStepValid} onBack={() => goToStep("funding")} onContinue={() => goToStep("review")} />}
           {currentStep === "review" && (
             <ReviewContent
-              onBack={() => goToStep("pixel")}
+              onBack={() => goToStep("funding")}
               onSubmitted={() => setCampaignSubmitted(true)}
               campaignSubmitted={campaignSubmitted}
               goToStep={goToStep}
@@ -4237,11 +4108,11 @@ function NewCampaignContent() {
                 Back to Apply Placements
               </button>
               <button
-                onClick={() => goToStep("pixel")}
+                onClick={() => goToStep("review")}
                 disabled={!fundingStepValid}
                 className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Continue to Pixel Generation
+                Continue to Review and Submit
               </button>
             </div>
           )}
