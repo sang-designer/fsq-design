@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 
 type Step = "campaign" | "placement" | "map-partners" | "map-taxonomies" | "apply-placements" | "funding" | "review";
 
@@ -3219,17 +3220,17 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
         </div>
         <h2 className="text-2xl font-semibold text-[#020617]">Campaign Submitted Successfully</h2>
         <p className="mx-auto mt-3 max-w-[520px] text-sm leading-relaxed text-[#6b7280]">
-          Your campaign is currently under review. Our AdOps team is reviewing your setup and generating your tracking pixel. You can track the status of your pixel generation in real-time here: <a href="https://foursquare.atlassian.net/browse/PIX-4827" target="_blank" rel="noopener noreferrer" className="inline-inline-flex items-center gap-0.5 font-medium text-[#212be9] hover:underline">PIX-4827 <ExternalLink className="inline size-3" /></a>.
+          Our AdOps team is reviewing your setup and generating your tracking pixel(s). You can track the status of your pixel generation in real-time here: <a href="https://foursquare.atlassian.net/browse/PIX-4827" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 font-medium text-[#212be9] hover:underline">PIX-4827 C <ExternalLink className="inline size-3" /></a>.
         </p>
         <p className="mx-auto mt-3 max-w-[520px] text-sm leading-relaxed text-[#6b7280]">
-          We will reach out within 1–2 business days with your implementation instructions. You will receive an email alert as soon as your campaign is approved.
+          Once your pixel(s) are ready, they will be sent to the appropriate parties for implementation. Estimated turnaround: 1-2 business days.
         </p>
-        <a
-          href="/projects/app/attribution"
-          className="mt-8 rounded-md bg-[#212be9] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
-        >
-          Back to Dashboard
-        </a>
+        <Button variant="outline" size="lg" asChild className="mt-8">
+          <Link href="/projects/app/attribution">
+            <ArrowLeft className="size-4" />
+            Back to Dashboard
+          </Link>
+        </Button>
       </div>
     );
   }
