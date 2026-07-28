@@ -1452,15 +1452,21 @@ type SystemLabel = { id: string; name: string; color: string };
 type ColumnDef = { id: string; rawName: string; sampleData: string[] };
 
 const SYSTEM_LABELS: SystemLabel[] = [
-  { id: "sl-sub-placement", name: "Sub Placement", color: "#3b82f6" },
+  { id: "sl-sub-placement", name: "Placement ID", color: "#3b82f6" },
   { id: "sl-partner", name: "Media Partner", color: "#8b5cf6" },
-  { id: "sl-channel", name: "Channel", color: "#10b981" },
+  { id: "sl-channel", name: "Media Channel", color: "#10b981" },
   { id: "sl-audience", name: "Audience", color: "#06b6d4" },
   { id: "sl-adsize", name: "Ad Size", color: "#ef4444" },
-  { id: "sl-creative", name: "Creative", color: "#f59e0b" },
+  { id: "sl-creative", name: "Creative ID", color: "#f59e0b" },
+  { id: "sl-device-type", name: "Device Type", color: "#0ea5e9" },
+  { id: "sl-ad-type", name: "Ad Type", color: "#f43f5e" },
+  { id: "sl-ad-format", name: "Ad Format", color: "#84cc16" },
+  { id: "sl-creative-name", name: "Creative Name", color: "#fb923c" },
   { id: "sl-media-cpm", name: "Media CPM", color: "#f97316" },
   { id: "sl-language", name: "Language", color: "#6366f1" },
   { id: "sl-geography", name: "Geography", color: "#ec4899" },
+  { id: "sl-market", name: "Market", color: "#14b8a6" },
+  { id: "sl-media-supplier", name: "Media Supplier", color: "#a855f7" },
   { id: "sl-ignored", name: "Ignored", color: "#6b7280" },
 ];
 
@@ -2809,12 +2815,12 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
                 />
               </th>
               <SortHeader field="status" label="Status" />
-              <SortHeader field="subPlacement" label="Sub Placement" />
+              <SortHeader field="subPlacement" label="Placement ID" />
               <SortHeader field="partner" label="Media Partner" />
-              <SortHeader field="channel" label="Channel" />
+              <SortHeader field="channel" label="Media Channel" />
               <SortHeader field="audience" label="Audience" />
               <SortHeader field="adSize" label="Ad Size" />
-              <SortHeader field="creative" label="Creative" />
+              <SortHeader field="creative" label="Creative ID" />
               <SortHeader field="mediaCpm" label="Media CPM" />
               <SortHeader field="language" label="Language" />
               <SortHeader field="geography" label="Geography" />
@@ -2971,12 +2977,12 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
 
             <div className="flex flex-col gap-4">
               {([
-                { label: "Sub Placement", field: "subPlacement" as const, options: SUB_PLACEMENT_OPTIONS_AP, editOnly: true },
+                { label: "Placement ID", field: "subPlacement" as const, options: SUB_PLACEMENT_OPTIONS_AP, editOnly: true },
                 { label: "Media Partner", field: "partner" as const, options: PARTNER_OPTIONS_AP, editOnly: false },
-                { label: "Channel", field: "channel" as const, options: CHANNEL_OPTIONS_AP, editOnly: false },
+                { label: "Media Channel", field: "channel" as const, options: CHANNEL_OPTIONS_AP, editOnly: false },
                 { label: "Audience", field: "audience" as const, options: AUDIENCE_OPTIONS_AP, editOnly: false },
                 { label: "Ad Size", field: "adSize" as const, options: AD_SIZE_OPTIONS_AP, editOnly: false },
-                { label: "Creative", field: "creative" as const, options: CREATIVE_OPTIONS_AP, editOnly: false },
+                { label: "Creative ID", field: "creative" as const, options: CREATIVE_OPTIONS_AP, editOnly: false },
                 { label: "Media CPM", field: "mediaCpm" as const, options: MEDIA_CPM_OPTIONS_AP, editOnly: false },
                 { label: "Language", field: "language" as const, options: LANGUAGE_OPTIONS_AP, editOnly: false },
                 { label: "Geography", field: "geography" as const, options: GEOGRAPHY_OPTIONS_AP, editOnly: false },
