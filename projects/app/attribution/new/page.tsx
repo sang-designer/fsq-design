@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 
 type Step = "campaign" | "placement" | "map-partners" | "map-taxonomies" | "apply-placements" | "funding" | "review";
 
@@ -1451,15 +1452,21 @@ type SystemLabel = { id: string; name: string; color: string };
 type ColumnDef = { id: string; rawName: string; sampleData: string[] };
 
 const SYSTEM_LABELS: SystemLabel[] = [
-  { id: "sl-sub-placement", name: "Sub Placement", color: "#3b82f6" },
+  { id: "sl-sub-placement", name: "Placement ID", color: "#3b82f6" },
   { id: "sl-partner", name: "Media Partner", color: "#8b5cf6" },
-  { id: "sl-channel", name: "Channel", color: "#10b981" },
+  { id: "sl-channel", name: "Media Channel", color: "#10b981" },
   { id: "sl-audience", name: "Audience", color: "#06b6d4" },
   { id: "sl-adsize", name: "Ad Size", color: "#ef4444" },
-  { id: "sl-creative", name: "Creative", color: "#f59e0b" },
+  { id: "sl-creative", name: "Creative ID", color: "#f59e0b" },
+  { id: "sl-device-type", name: "Device Type", color: "#0ea5e9" },
+  { id: "sl-ad-type", name: "Ad Type", color: "#f43f5e" },
+  { id: "sl-ad-format", name: "Ad Format", color: "#84cc16" },
+  { id: "sl-creative-name", name: "Creative Name", color: "#fb923c" },
   { id: "sl-media-cpm", name: "Media CPM", color: "#f97316" },
   { id: "sl-language", name: "Language", color: "#6366f1" },
   { id: "sl-geography", name: "Geography", color: "#ec4899" },
+  { id: "sl-market", name: "Market", color: "#14b8a6" },
+  { id: "sl-media-supplier", name: "Media Supplier", color: "#a855f7" },
   { id: "sl-ignored", name: "Ignored", color: "#6b7280" },
 ];
 
@@ -2808,12 +2815,12 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
                 />
               </th>
               <SortHeader field="status" label="Status" />
-              <SortHeader field="subPlacement" label="Sub Placement" />
+              <SortHeader field="subPlacement" label="Placement ID" />
               <SortHeader field="partner" label="Media Partner" />
-              <SortHeader field="channel" label="Channel" />
+              <SortHeader field="channel" label="Media Channel" />
               <SortHeader field="audience" label="Audience" />
               <SortHeader field="adSize" label="Ad Size" />
-              <SortHeader field="creative" label="Creative" />
+              <SortHeader field="creative" label="Creative ID" />
               <SortHeader field="mediaCpm" label="Media CPM" />
               <SortHeader field="language" label="Language" />
               <SortHeader field="geography" label="Geography" />
@@ -2970,12 +2977,12 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
 
             <div className="flex flex-col gap-4">
               {([
-                { label: "Sub Placement", field: "subPlacement" as const, options: SUB_PLACEMENT_OPTIONS_AP, editOnly: true },
+                { label: "Placement ID", field: "subPlacement" as const, options: SUB_PLACEMENT_OPTIONS_AP, editOnly: true },
                 { label: "Media Partner", field: "partner" as const, options: PARTNER_OPTIONS_AP, editOnly: false },
-                { label: "Channel", field: "channel" as const, options: CHANNEL_OPTIONS_AP, editOnly: false },
+                { label: "Media Channel", field: "channel" as const, options: CHANNEL_OPTIONS_AP, editOnly: false },
                 { label: "Audience", field: "audience" as const, options: AUDIENCE_OPTIONS_AP, editOnly: false },
                 { label: "Ad Size", field: "adSize" as const, options: AD_SIZE_OPTIONS_AP, editOnly: false },
-                { label: "Creative", field: "creative" as const, options: CREATIVE_OPTIONS_AP, editOnly: false },
+                { label: "Creative ID", field: "creative" as const, options: CREATIVE_OPTIONS_AP, editOnly: false },
                 { label: "Media CPM", field: "mediaCpm" as const, options: MEDIA_CPM_OPTIONS_AP, editOnly: false },
                 { label: "Language", field: "language" as const, options: LANGUAGE_OPTIONS_AP, editOnly: false },
                 { label: "Geography", field: "geography" as const, options: GEOGRAPHY_OPTIONS_AP, editOnly: false },
@@ -3219,17 +3226,17 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
         </div>
         <h2 className="text-2xl font-semibold text-[#020617]">Campaign Submitted Successfully</h2>
         <p className="mx-auto mt-3 max-w-[520px] text-sm leading-relaxed text-[#6b7280]">
-          Your campaign is currently under review. Our AdOps team is reviewing your setup and generating your tracking pixel. You can track the status of your pixel generation in real-time here: <a href="https://foursquare.atlassian.net/browse/PIX-4827" target="_blank" rel="noopener noreferrer" className="inline-inline-flex items-center gap-0.5 font-medium text-[#212be9] hover:underline">PIX-4827 <ExternalLink className="inline size-3" /></a>.
+          Our AdOps team is reviewing your setup and generating your tracking pixel(s). You can track the status of your pixel generation in real-time here: <a href="https://foursquare.atlassian.net/browse/PIX-4827" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 font-medium text-[#212be9] hover:underline">PIX-4827 C <ExternalLink className="inline size-3" /></a>.
         </p>
         <p className="mx-auto mt-3 max-w-[520px] text-sm leading-relaxed text-[#6b7280]">
-          We will reach out within 1–2 business days with your implementation instructions. You will receive an email alert as soon as your campaign is approved.
+          Once your pixel(s) are ready, they will be sent to the appropriate parties for implementation. Estimated turnaround: 1-2 business days.
         </p>
-        <a
-          href="/projects/app/attribution"
-          className="mt-8 rounded-md bg-[#212be9] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
-        >
-          Back to Dashboard
-        </a>
+        <Button variant="outline" size="lg" asChild className="mt-8">
+          <Link href="/projects/app/attribution">
+            <ArrowLeft className="size-4" />
+            Back to Dashboard
+          </Link>
+        </Button>
       </div>
     );
   }
