@@ -18,12 +18,13 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 
-type Step = "campaign" | "placement" | "map-partners" | "map-taxonomies" | "apply-placements" | "funding" | "review";
+type Step = "campaign" | "placement" | "map-partners" | "map-taxonomies" | "apply-placements" | "funding" | "pixel-generation" | "review";
 
 const SIDEBAR_STEPS = [
   { key: "campaign" as Step, label: "Campaign Details" },
   { key: "placement" as Step, label: "Placement Details" },
   { key: "funding" as Step, label: "Funding Allocation" },
+  { key: "pixel-generation" as Step, label: "Pixel Generation" },
   { key: "review" as Step, label: "Review and Submit" },
 ];
 
@@ -1200,6 +1201,220 @@ function FundingAllocationContent({ measurementBudget, onValidChange }: { measur
             })}
           </tbody>
         </table>
+      </div>
+    </>
+  );
+}
+
+/* ───── Pixel Generation ───── */
+
+type PixelRow = {
+  id: string;
+  partner: string;
+  adServers: string[];
+  mediaChannel: string;
+  tagImplementation: string | null;
+};
+
+const PIXEL_AD_SERVER_OPTIONS = ["CM360", "DV360", "Google Campaign Manager", "Sizmek", "Flashtalking", "Innovid", "Extreme Reach"];
+const PIXEL_TAG_IMPLEMENTATION_OPTIONS = ["Partner", "Agency", "Both"];
+
+// Mock pixel rows based on partners and their media channels
+const INITIAL_PIXEL_ROWS: PixelRow[] = [
+  { id: "px-1", partner: "Viant", adServers: [], mediaChannel: "Display", tagImplementation: null },
+  { id: "px-2", partner: "Viant", adServers: [], mediaChannel: "Mobile", tagImplementation: null },
+  { id: "px-3", partner: "Adtheorent", adServers: [], mediaChannel: "Mobile", tagImplementation: null },
+  { id: "px-4", partner: "Nexxen", adServers: [], mediaChannel: "Video", tagImplementation: null },
+  { id: "px-5", partner: "Nexxen", adServers: [], mediaChannel: "CTV", tagImplementation: null },
+];
+
+function PixelGenerationContent({ campaignName, onValidChange, onBack, onContinue }: { campaignName: string; onValidChange?: (valid: boolean) => void; onBack: () => void; onContinue: () => void }) {
+  const [rows, setRows] = useState<PixelRow[]>(INITIAL_PIXEL_ROWS);
+  const [selectAllOpen, setSelectAllOpen] = useState<Record<string, boolean>>({});
+  const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      Object.entries(dropdownRefs.current).forEach(([id, ref]) => {
+        if (ref && !ref.contains(e.target as Node)) {
+          setSelectAllOpen((prev) => ({ ...prev, [id]: false }));
+        }
+      });
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const updateAdServers = (id: string, servers: string[]) => {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, adServers: servers } : r)));
+  };
+
+  const updateTagImplementation = (id: string, value: string) => {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, tagImplementation: value, adServers: value === "Partner" ? [] : r.adServers } : r)));
+  };
+
+  const toggleAdServer = (id: string, server: string) => {
+    const row = rows.find((r) => r.id === id);
+    if (!row) return;
+    const hasServer = row.adServers.includes(server);
+    const newServers = hasServer ? row.adServers.filter((s) => s !== server) : [...row.adServers, server];
+    updateAdServers(id, newServers);
+  };
+
+  const selectAllServers = (id: string) => {
+    updateAdServers(id, [...PIXEL_AD_SERVER_OPTIONS]);
+    setSelectAllOpen((prev) => ({ ...prev, [id]: false }));
+  };
+
+  const resetServers = (id: string) => {
+    updateAdServers(id, []);
+    setSelectAllOpen((prev) => ({ ...prev, [id]: false }));
+  };
+
+  const isValid = rows.every((r) => r.tagImplementation && (r.tagImplementation === "Partner" || r.adServers.length > 0));
+
+  useEffect(() => {
+    onValidChange?.(isValid);
+  }, [isValid, onValidChange]);
+
+  return (
+    <>
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-[#020617]">Pixel Generation</h2>
+        <div className="mt-1 text-sm leading-5 text-[#646464]">
+          <p>Confirm or update the ad server for the media partner before generating pixels.</p>
+        </div>
+      </div>
+
+      <div className="mb-6 h-px w-full bg-[#e2e8f0]" />
+
+      <Alert className="mb-6 border-[#bfdbfe] bg-[#eff6ff]">
+        <Info className="size-4 text-[#3b82f6]" />
+        <AlertTitle className="text-[#1e40af]">Review ad server assignment</AlertTitle>
+        <AlertDescription className="text-[#1e40af]/80">
+          Ensure the partner has the correct ad server and pixel type selected. You can update selections before proceeding.
+        </AlertDescription>
+      </Alert>
+
+      <div className="mb-6 overflow-visible rounded-xl border border-[#e2e8f0]">
+        <table className="w-full overflow-visible">
+          <thead className="overflow-visible">
+            <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Partner</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Media Channel</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Tag Implementation</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Ad Server</th>
+            </tr>
+          </thead>
+          <tbody className="overflow-visible">
+            {rows.map((row, idx) => {
+              const isPartnerImplementing = row.tagImplementation === "Partner";
+              return (
+              <tr key={row.id} className="border-b border-[#e2e8f0] last:border-b-0">
+                <td className="px-4 py-3 text-sm font-medium text-[#020617]">{row.partner}</td>
+                <td className="px-4 py-3 text-sm text-[#64748b]">{row.mediaChannel}</td>
+                <td className="px-4 py-3">
+                  <Select value={row.tagImplementation || undefined} onValueChange={(val) => updateTagImplementation(row.id, val)}>
+                    <SelectTrigger className={`w-full ${row.tagImplementation ? "" : "border-[#ef4444]"}`} size="sm">
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PIXEL_TAG_IMPLEMENTATION_OPTIONS.map((opt) => (
+                        <SelectItem key={opt} value={opt}>
+                          {opt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </td>
+                <td className="px-4 py-3">
+                  {isPartnerImplementing ? (
+                    <span className="text-sm text-[#9ca3af]">—</span>
+                  ) : (
+                  <div className="relative" ref={(el) => (dropdownRefs.current[row.id] = el)}>
+                    <div
+                      className={`flex min-h-[40px] w-full items-center gap-2 rounded-md border px-3 py-2 ${
+                        row.tagImplementation && row.tagImplementation !== "Partner" && row.adServers.length === 0 ? "border-[#ef4444]" : "border-[#e2e8f0]"
+                      }`}
+                    >
+                      <div className="flex flex-1 flex-wrap items-center gap-1.5">
+                        {row.adServers.length > 0 ? (
+                          row.adServers.map((server) => (
+                            <div
+                              key={server}
+                              className="flex items-center gap-1 rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-medium text-[#334155]"
+                            >
+                              <span>{server}</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleAdServer(row.id, server);
+                                }}
+                                className="rounded-full hover:bg-[#e2e8f0]"
+                              >
+                                <X className="size-3" />
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <span className="text-sm text-[#9ca3af]">Select ad servers...</span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setSelectAllOpen((prev) => ({ ...prev, [row.id]: !prev[row.id] }))}
+                        className="shrink-0"
+                      >
+                        <ChevronDown className="size-4 text-[#64748b]" />
+                      </button>
+                    </div>
+                    {selectAllOpen[row.id] && (
+                      <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-[#e2e8f0] bg-white shadow-lg">
+                        <div className="flex items-center justify-between border-b border-[#e2e8f0] px-3 py-2">
+                          <button onClick={() => selectAllServers(row.id)} className="text-xs font-medium text-[#212be9] hover:underline">
+                            Select All
+                          </button>
+                          <button onClick={() => resetServers(row.id)} className="text-xs font-medium text-[#ef4444] hover:underline">
+                            Reset
+                          </button>
+                        </div>
+                        <div className="p-2">
+                          {PIXEL_AD_SERVER_OPTIONS.map((server) => (
+                            <label key={server} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-[#f8fafc]">
+                              <Checkbox
+                                checked={row.adServers.includes(server)}
+                                onCheckedChange={() => toggleAdServer(row.id, server)}
+                                className="data-[state=checked]:bg-[#212be9] data-[state=checked]:border-[#212be9]"
+                              />
+                              <span className="text-[#020617]">{server}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  )}
+                </td>
+              </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-8 flex items-center justify-between py-4">
+        <button
+          onClick={onBack}
+          className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
+        >
+          Back to Funding Allocation
+        </button>
+        <button
+          onClick={onContinue}
+          disabled={!isValid}
+          className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Continue to Review
+        </button>
       </div>
     </>
   );
@@ -2443,24 +2658,24 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
         </table>
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
-        <p className="text-xs text-[#94a3b8]">Showing {startIdx + 1}–{endIdx} of {totalRows} rows</p>
-        <div className="flex items-center gap-2">
+      <div className="mt-6 flex items-center justify-center">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="flex size-8 items-center justify-center rounded-md border border-[#e2e8f0] text-[#64748b] transition-colors hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-[#64748b] transition-colors hover:text-[#020617] disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronLeft className="size-4" />
+            Previous
           </button>
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
               onClick={() => setCurrentPage(page)}
-              className={`flex size-8 items-center justify-center rounded-md text-xs font-medium transition-colors ${
+              className={`flex size-10 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                 page === currentPage
-                  ? "bg-[#020617] text-white"
-                  : "border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8fafc]"
+                  ? "border-2 border-[#020617] text-[#020617]"
+                  : "text-[#64748b] hover:bg-[#f8fafc]"
               }`}
             >
               {page}
@@ -2469,8 +2684,9 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="flex size-8 items-center justify-center rounded-md border border-[#e2e8f0] text-[#64748b] transition-colors hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-[#64748b] transition-colors hover:text-[#020617] disabled:cursor-not-allowed disabled:opacity-40"
           >
+            Next
             <ChevronRight className="size-4" />
           </button>
         </div>
@@ -2914,7 +3130,7 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
 
       {/* Pagination */}
       {rows.length > 10 && (
-      <div className="mt-6 flex items-center justify-end gap-1">
+      <div className="mt-6 flex items-center justify-center gap-1">
         <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-[#64748b] hover:bg-gray-50">
           <ChevronLeft className="size-4" />
           Previous
@@ -3142,25 +3358,87 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
     value: string;
     required: boolean;
     type: "text" | "currency" | "number" | "link" | "date-range";
+    editable?: boolean;
+  };
+
+  const generateInternalCampaignName = () => {
+    const advertiserField = fields.find((f) => f.key === "advertiser");
+    const countryField = fields.find((f) => f.key === "country");
+    const geoScopeField = fields.find((f) => f.key === "geoScope");
+    const conversionTypeField = fields.find((f) => f.key === "conversionType");
+    const campaignPeriodField = fields.find((f) => f.key === "campaignPeriod");
+
+    const advertiser = advertiserField?.value || "N/A";
+    const lob = "N/A";
+    const reportType = "SPR";
+    const partner = partnerRows.map((p) => p.name).join("_") || "N/A";
+    
+    let country = "N/A";
+    if (countryField?.value) {
+      if (countryField.value.toLowerCase().includes("united states")) country = "National";
+      else country = countryField.value;
+    }
+    
+    const market = geoScopeField?.value && geoScopeField.value !== "National" ? geoScopeField.value : "N/A";
+    const audienceTarget = "N/A";
+    
+    let year = "N/A";
+    if (campaignPeriodField?.value) {
+      const yearMatch = campaignPeriodField.value.match(/\d{4}/);
+      if (yearMatch) year = yearMatch[0];
+    }
+    
+    let timeframe = "N/A";
+    if (campaignPeriodField?.value) {
+      if (campaignPeriodField.value.includes("Apr") || campaignPeriodField.value.includes("May") || campaignPeriodField.value.includes("Jun")) {
+        timeframe = "Q2";
+      } else if (campaignPeriodField.value.includes("Jan") || campaignPeriodField.value.includes("Feb") || campaignPeriodField.value.includes("Mar")) {
+        timeframe = "Q1";
+      } else if (campaignPeriodField.value.includes("Jul") || campaignPeriodField.value.includes("Aug") || campaignPeriodField.value.includes("Sep")) {
+        timeframe = "Q3";
+      } else if (campaignPeriodField.value.includes("Oct") || campaignPeriodField.value.includes("Nov") || campaignPeriodField.value.includes("Dec")) {
+        timeframe = "Q4";
+      }
+    }
+    
+    const channel = "Digital";
+    
+    let conversionMetric = "N/A";
+    if (conversionTypeField?.value) {
+      if (conversionTypeField.value.toLowerCase().includes("visits") && conversionTypeField.value.toLowerCase().includes("sales")) {
+        conversionMetric = "Both";
+      } else if (conversionTypeField.value.toLowerCase().includes("visits")) {
+        conversionMetric = "Visits";
+      } else if (conversionTypeField.value.toLowerCase().includes("sales")) {
+        conversionMetric = "Sales";
+      }
+    }
+    
+    const wildcard1 = "N/A";
+    const wildcard2 = "N/A";
+
+    return `${advertiser}_${lob}_${reportType}_${partner}_${country}_${market}_${audienceTarget}_${year}_${timeframe}_${channel}_${conversionMetric}_${wildcard1}_${wildcard2}`;
   };
 
   const [fields, setFields] = useState<ReviewField[]>([
-    { key: "campaignName", label: "Campaign Name", value: "QSR Q2 2026", required: true, type: "text" },
-    { key: "advertiser", label: "Advertiser", value: "QSR Brand", required: true, type: "text" },
-    { key: "agency", label: "Agency", value: "Starcom", required: true, type: "text" },
-    { key: "campaignPeriod", label: "Campaign Period", value: "Apr 1, 2026 – Jun 30, 2026", required: true, type: "date-range" },
-    { key: "storeChains", label: "Store Chains to be Measured", value: "QSR Brand US", required: true, type: "text" },
-    { key: "country", label: "Country", value: "United States", required: true, type: "text" },
-    { key: "geoScope", label: "Geographical Scope", value: "National", required: true, type: "text" },
-    { key: "conversionType", label: "Conversion Type", value: "Visits and Sales Impact", required: true, type: "text" },
-    { key: "totalSpend", label: "Total Estimated Ad Spend", value: "$380,000", required: true, type: "currency" },
-    { key: "totalImpressions", label: "Total Estimated Impressions", value: "98,000,000", required: true, type: "number" },
+    { key: "campaignName", label: "Campaign Name", value: "QSR Q2 2026", required: true, type: "text", editable: true },
+    { key: "campaignNameInternal", label: "Campaign Name (Internal Only)", value: "QSR Brand_N/A_SPR_Viant_Adtheorent_The Trade Desk_Amazon DSP_DV360_National_N/A_N/A_2026_Q2_Digital_Both_N/A_N/A", required: false, type: "text", editable: false },
+    { key: "advertiser", label: "Advertiser", value: "QSR Brand", required: true, type: "text", editable: true },
+    { key: "agency", label: "Agency", value: "Starcom", required: true, type: "text", editable: true },
+    { key: "campaignPeriod", label: "Campaign Period", value: "Apr 1, 2026 – Jun 30, 2026", required: true, type: "date-range", editable: true },
+    { key: "storeChains", label: "Store Chains to be Measured", value: "QSR Brand US", required: true, type: "text", editable: true },
+    { key: "country", label: "Country", value: "United States", required: true, type: "text", editable: true },
+    { key: "geoScope", label: "Geographical Scope", value: "National", required: true, type: "text", editable: true },
+    { key: "conversionType", label: "Conversion Type", value: "Visits and Sales Impact", required: true, type: "text", editable: true },
+    { key: "totalSpend", label: "Total Estimated Ad Spend", value: "$380,000", required: true, type: "currency", editable: true },
+    { key: "totalImpressions", label: "Total Estimated Impressions", value: "98,000,000", required: true, type: "number", editable: true },
 
-    { key: "sfOpportunity", label: "Salesforce Opportunity ID", value: "https://foursquare.lightning.force.com/lightning/r/Opportunity/006Hs00001026QSR/view", required: true, type: "link" },
+    { key: "sfOpportunity", label: "Salesforce Opportunity ID", value: "https://foursquare.lightning.force.com/lightning/r/Opportunity/006Hs00001026QSR/view", required: true, type: "link", editable: true },
   ]);
 
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const editRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -3168,13 +3446,80 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
   }, [editingKey]);
 
   const startEdit = (field: ReviewField) => {
-    if (submitted) return;
+    if (submitted || field.editable === false) return;
     setEditingKey(field.key);
     setEditValue(field.value);
   };
 
   const commitEdit = (key: string) => {
-    setFields((prev) => prev.map((f) => f.key === key ? { ...f, value: editValue.trim() } : f));
+    setFields((prev) => {
+      const updated = prev.map((f) => f.key === key ? { ...f, value: editValue.trim() } : f);
+      
+      // Regenerate internal campaign name after any field change
+      const advertiserField = updated.find((f) => f.key === "advertiser");
+      const countryField = updated.find((f) => f.key === "country");
+      const geoScopeField = updated.find((f) => f.key === "geoScope");
+      const conversionTypeField = updated.find((f) => f.key === "conversionType");
+      const campaignPeriodField = updated.find((f) => f.key === "campaignPeriod");
+
+      const advertiser = advertiserField?.value || "N/A";
+      const lob = "N/A";
+      const reportType = "SPR";
+      const partner = partnerRows.map((p) => p.name).join("_") || "N/A";
+      
+      let country = "N/A";
+      if (countryField?.value) {
+        if (countryField.value.toLowerCase().includes("united states")) country = "National";
+        else country = countryField.value;
+      }
+      
+      const market = geoScopeField?.value && geoScopeField.value !== "National" ? geoScopeField.value : "N/A";
+      const audienceTarget = "N/A";
+      
+      let year = "N/A";
+      if (campaignPeriodField?.value) {
+        const yearMatch = campaignPeriodField.value.match(/\d{4}/);
+        if (yearMatch) year = yearMatch[0];
+      }
+      
+      let timeframe = "N/A";
+      if (campaignPeriodField?.value) {
+        if (campaignPeriodField.value.includes("Apr") || campaignPeriodField.value.includes("May") || campaignPeriodField.value.includes("Jun")) {
+          timeframe = "Q2";
+        } else if (campaignPeriodField.value.includes("Jan") || campaignPeriodField.value.includes("Feb") || campaignPeriodField.value.includes("Mar")) {
+          timeframe = "Q1";
+        } else if (campaignPeriodField.value.includes("Jul") || campaignPeriodField.value.includes("Aug") || campaignPeriodField.value.includes("Sep")) {
+          timeframe = "Q3";
+        } else if (campaignPeriodField.value.includes("Oct") || campaignPeriodField.value.includes("Nov") || campaignPeriodField.value.includes("Dec")) {
+          timeframe = "Q4";
+        }
+      }
+      
+      const channel = "Digital";
+      
+      let conversionMetric = "N/A";
+      if (conversionTypeField?.value) {
+        if (conversionTypeField.value.toLowerCase().includes("visits") && conversionTypeField.value.toLowerCase().includes("sales")) {
+          conversionMetric = "Both";
+        } else if (conversionTypeField.value.toLowerCase().includes("visits")) {
+          conversionMetric = "Visits";
+        } else if (conversionTypeField.value.toLowerCase().includes("sales")) {
+          conversionMetric = "Sales";
+        }
+      }
+      
+      const wildcard1 = "N/A";
+      const wildcard2 = "N/A";
+
+      const internalName = `${advertiser}_${lob}_${reportType}_${partner}_${country}_${market}_${audienceTarget}_${year}_${timeframe}_${channel}_${conversionMetric}_${wildcard1}_${wildcard2}`;
+      
+      const internalNameField = updated.find((f) => f.key === "campaignNameInternal");
+      if (internalNameField) {
+        internalNameField.value = internalName;
+      }
+      
+      return updated;
+    });
     setEditingKey(null);
     setEditValue("");
   };
@@ -3193,8 +3538,37 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
   const allFieldsValid = missingRequired.length === 0;
   const canSubmit = allFieldsValid && authorized;
 
+  const copyToClipboard = (text: string, fieldKey: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedField(fieldKey);
+      setTimeout(() => setCopiedField(null), 2000);
+    });
+  };
+
   const formatDisplayValue = (field: ReviewField) => {
     if (!field.value.trim()) return null;
+    
+    if (field.key === "campaignNameInternal") {
+      return (
+        <div className="flex flex-1 items-center gap-2">
+          <code className="flex-1 rounded bg-[#f1f5f9] px-2 py-1 text-xs font-mono text-[#334155]">
+            {field.value}
+          </code>
+          <button
+            onClick={() => copyToClipboard(field.value, field.key)}
+            className="shrink-0 rounded p-1.5 text-[#64748b] transition-colors hover:bg-[#f1f5f9] hover:text-[#020617]"
+            title="Copy to clipboard"
+          >
+            {copiedField === field.key ? (
+              <Check className="size-4 text-[#16a34a]" />
+            ) : (
+              <Copy className="size-4" />
+            )}
+          </button>
+        </div>
+      );
+    }
+    
     if (field.type === "link") {
       return (
         <a href={field.value} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-[#212be9] hover:underline">
@@ -3316,14 +3690,20 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
                       </button>
                     ) : (
                       <>
-                        <div className="flex-1">{formatDisplayValue(field)}</div>
-                        {!submitted && (
-                          <button
-                            onClick={() => startEdit(field)}
-                            className="rounded p-1 text-[#9ca3af] opacity-0 transition-opacity hover:bg-[#f1f5f9] hover:text-[#020617] group-hover:opacity-100"
-                          >
-                            <SquarePen className="size-4" />
-                          </button>
+                        {field.key === "campaignNameInternal" ? (
+                          formatDisplayValue(field)
+                        ) : (
+                          <>
+                            <div className="flex-1">{formatDisplayValue(field)}</div>
+                            {!submitted && field.editable !== false && (
+                              <button
+                                onClick={() => startEdit(field)}
+                                className="rounded p-1 text-[#9ca3af] opacity-0 transition-opacity hover:bg-[#f1f5f9] hover:text-[#020617] group-hover:opacity-100"
+                              >
+                                <SquarePen className="size-4" />
+                              </button>
+                            )}
+                          </>
                         )}
                       </>
                     )}
@@ -3658,7 +4038,8 @@ function Sidebar({ currentStep, hasUploadedFile, hasReuploaded, onUpload, isUplo
     currentStep === "map-taxonomies" ? ["campaign"] :
     currentStep === "apply-placements" ? ["campaign"] :
     currentStep === "funding" ? ["campaign", "placement"] :
-    currentStep === "review" ? ["campaign", "placement", "funding"] : [];
+    currentStep === "pixel-generation" ? ["campaign", "placement", "funding"] :
+    currentStep === "review" ? ["campaign", "placement", "funding", "pixel-generation"] : [];
 
   const errorSteps: Step[] = (() => {
     if (!hasReuploaded) return [];
@@ -3788,6 +4169,7 @@ function NewCampaignContent() {
   const [sfValidated, setSfValidated] = useState(false);
   const [campaignStepValid, setCampaignStepValid] = useState(false);
   const [fundingStepValid, setFundingStepValid] = useState(false);
+  const [pixelStepValid, setPixelStepValid] = useState(false);
   const [campaignSubmitted, setCampaignSubmitted] = useState(false);
   const [alreadyParsed, setAlreadyParsed] = useState(false);
   const [visitedSteps, setVisitedSteps] = useState<Set<string>>(new Set([initialStep]));
@@ -3817,11 +4199,12 @@ function NewCampaignContent() {
 
   const stepProgressMap: Record<string, number> = {
     campaign: 0,
-    placement: 16,
-    "map-partners": 28,
-    "map-taxonomies": 40,
-    "apply-placements": 52,
-    funding: 68,
+    placement: 14,
+    "map-partners": 25,
+    "map-taxonomies": 36,
+    "apply-placements": 47,
+    funding: 60,
+    "pixel-generation": 72,
     review: campaignSubmitted ? 100 : 84,
   };
 
@@ -3837,7 +4220,7 @@ function NewCampaignContent() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const STEP_ORDER: string[] = ["campaign", "placement", "map-partners", "map-taxonomies", "apply-placements", "funding", "review"];
+  const STEP_ORDER: string[] = ["campaign", "placement", "map-partners", "map-taxonomies", "apply-placements", "funding", "pixel-generation", "review"];
   const currentIdx = STEP_ORDER.indexOf(currentStep);
 
   const stepValidityMap: Record<string, boolean> = {
@@ -3847,6 +4230,7 @@ function NewCampaignContent() {
     "map-taxonomies": true,
     "apply-placements": true,
     funding: fundingStepValid,
+    "pixel-generation": pixelStepValid,
     review: true,
   };
 
@@ -4079,9 +4463,10 @@ function NewCampaignContent() {
             />
           )}
           {currentStep === "funding" && <FundingAllocationContent measurementBudget={parseInt(measurementBudget.replace(/,/g, "") || "0")} onValidChange={setFundingStepValid} />}
+          {currentStep === "pixel-generation" && <PixelGenerationContent campaignName={campaignName} onValidChange={setPixelStepValid} onBack={() => goToStep("funding")} onContinue={() => goToStep("review")} />}
           {currentStep === "review" && (
             <ReviewContent
-              onBack={() => goToStep("funding")}
+              onBack={() => goToStep("pixel-generation")}
               onSubmitted={() => setCampaignSubmitted(true)}
               campaignSubmitted={campaignSubmitted}
               goToStep={goToStep}
@@ -4115,11 +4500,11 @@ function NewCampaignContent() {
                 Back to Apply Placements
               </button>
               <button
-                onClick={() => goToStep("review")}
+                onClick={() => goToStep("pixel-generation")}
                 disabled={!fundingStepValid}
                 className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Continue to Review and Submit
+                Continue to Pixel Generation
               </button>
             </div>
           )}
@@ -4158,7 +4543,7 @@ function NewCampaignContent() {
                 </p>
               </div>
             </div>
-            <div className="mt-6 flex items-center justify-end gap-3">
+            <div className="mt-6 flex items-center justify-center gap-3">
               <button
                 onClick={() => setShowReplaceConfirm(false)}
                 className="rounded-md border border-border px-4 py-2 text-sm font-medium text-[#171417] transition-colors hover:bg-gray-50"
