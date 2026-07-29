@@ -18,12 +18,13 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 
-type Step = "campaign" | "placement" | "map-partners" | "map-taxonomies" | "apply-placements" | "funding" | "review";
+type Step = "campaign" | "placement" | "map-partners" | "map-taxonomies" | "apply-placements" | "funding" | "pixel-generation" | "review";
 
 const SIDEBAR_STEPS = [
   { key: "campaign" as Step, label: "Campaign Details" },
   { key: "placement" as Step, label: "Placement Details" },
   { key: "funding" as Step, label: "Funding Allocation" },
+  { key: "pixel-generation" as Step, label: "Pixel Generation" },
   { key: "review" as Step, label: "Review and Submit" },
 ];
 
@@ -1200,6 +1201,212 @@ function FundingAllocationContent({ measurementBudget, onValidChange }: { measur
             })}
           </tbody>
         </table>
+      </div>
+    </>
+  );
+}
+
+/* ───── Pixel Generation ───── */
+
+type PixelRow = {
+  id: string;
+  partner: string;
+  adServers: string[];
+  mediaChannel: string;
+  tagImplementation: string | null;
+};
+
+const PIXEL_AD_SERVER_OPTIONS = ["CM360", "DV360", "Google Campaign Manager", "Sizmek", "Flashtalking", "Innovid", "Extreme Reach"];
+const PIXEL_TAG_IMPLEMENTATION_OPTIONS = ["Partner", "Agency", "Both"];
+
+// Mock pixel rows based on partners and their media channels
+const INITIAL_PIXEL_ROWS: PixelRow[] = [
+  { id: "px-1", partner: "Viant", adServers: ["CM360", "DV360"], mediaChannel: "Display", tagImplementation: null },
+  { id: "px-2", partner: "Viant", adServers: ["CM360", "DV360"], mediaChannel: "Mobile", tagImplementation: null },
+  { id: "px-3", partner: "Adtheorent", adServers: [], mediaChannel: "Mobile", tagImplementation: null },
+  { id: "px-4", partner: "Nexxen", adServers: ["DV360"], mediaChannel: "Video", tagImplementation: null },
+  { id: "px-5", partner: "Nexxen", adServers: ["DV360"], mediaChannel: "CTV", tagImplementation: null },
+];
+
+function PixelGenerationContent({ campaignName, onValidChange, onBack, onContinue }: { campaignName: string; onValidChange?: (valid: boolean) => void; onBack: () => void; onContinue: () => void }) {
+  const [rows, setRows] = useState<PixelRow[]>(INITIAL_PIXEL_ROWS);
+  const [selectAllOpen, setSelectAllOpen] = useState<Record<string, boolean>>({});
+  const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      Object.entries(dropdownRefs.current).forEach(([id, ref]) => {
+        if (ref && !ref.contains(e.target as Node)) {
+          setSelectAllOpen((prev) => ({ ...prev, [id]: false }));
+        }
+      });
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const updateAdServers = (id: string, servers: string[]) => {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, adServers: servers } : r)));
+  };
+
+  const updateTagImplementation = (id: string, value: string) => {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, tagImplementation: value } : r)));
+  };
+
+  const toggleAdServer = (id: string, server: string) => {
+    const row = rows.find((r) => r.id === id);
+    if (!row) return;
+    const hasServer = row.adServers.includes(server);
+    const newServers = hasServer ? row.adServers.filter((s) => s !== server) : [...row.adServers, server];
+    updateAdServers(id, newServers);
+  };
+
+  const selectAllServers = (id: string) => {
+    updateAdServers(id, [...PIXEL_AD_SERVER_OPTIONS]);
+    setSelectAllOpen((prev) => ({ ...prev, [id]: false }));
+  };
+
+  const resetServers = (id: string) => {
+    updateAdServers(id, []);
+    setSelectAllOpen((prev) => ({ ...prev, [id]: false }));
+  };
+
+  const isValid = rows.every((r) => r.adServers.length > 0 && r.tagImplementation);
+
+  useEffect(() => {
+    onValidChange?.(isValid);
+  }, [isValid, onValidChange]);
+
+  return (
+    <>
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-[#020617]">Pixel Generation</h2>
+        <div className="mt-1 text-sm leading-5 text-[#646464]">
+          <p>Confirm or update the ad server for the media partner before generating pixels.</p>
+        </div>
+      </div>
+
+      <div className="mb-6 h-px w-full bg-[#e2e8f0]" />
+
+      <Alert className="mb-6 border-[#bfdbfe] bg-[#eff6ff]">
+        <Info className="size-4 text-[#3b82f6]" />
+        <AlertTitle className="text-[#1e40af]">Review ad server assignment</AlertTitle>
+        <AlertDescription className="text-[#1e40af]/80">
+          Ensure the partner has the correct ad server and pixel type selected. You can update selections before proceeding.
+        </AlertDescription>
+      </Alert>
+
+      <div className="mb-6 overflow-hidden rounded-xl border border-[#e2e8f0]">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Partner</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Ad Server</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Media Channel</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Tag Implementation</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, idx) => (
+              <tr key={row.id} className="border-b border-[#e2e8f0] last:border-b-0">
+                <td className="px-4 py-3 text-sm font-medium text-[#020617]">{row.partner}</td>
+                <td className="px-4 py-3">
+                  <div className="relative" ref={(el) => (dropdownRefs.current[row.id] = el)}>
+                    <div
+                      className={`flex min-h-[40px] w-full items-center gap-2 rounded-md border px-3 py-2 ${
+                        row.adServers.length === 0 ? "border-[#ef4444]" : "border-[#e2e8f0]"
+                      }`}
+                    >
+                      <div className="flex flex-1 flex-wrap items-center gap-1.5">
+                        {row.adServers.length > 0 ? (
+                          row.adServers.map((server) => (
+                            <div
+                              key={server}
+                              className="flex items-center gap-1 rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-medium text-[#334155]"
+                            >
+                              <span>{server}</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleAdServer(row.id, server);
+                                }}
+                                className="rounded-full hover:bg-[#e2e8f0]"
+                              >
+                                <X className="size-3" />
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <span className="text-sm text-[#9ca3af]">Select ad servers...</span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setSelectAllOpen((prev) => ({ ...prev, [row.id]: !prev[row.id] }))}
+                        className="shrink-0"
+                      >
+                        <ChevronDown className="size-4 text-[#64748b]" />
+                      </button>
+                    </div>
+                    {selectAllOpen[row.id] && (
+                      <div className="absolute left-0 top-full z-10 mt-1 w-full rounded-lg border border-[#e2e8f0] bg-white shadow-lg">
+                        <div className="flex items-center justify-between border-b border-[#e2e8f0] px-3 py-2">
+                          <button onClick={() => selectAllServers(row.id)} className="text-xs font-medium text-[#212be9] hover:underline">
+                            Select All
+                          </button>
+                          <button onClick={() => resetServers(row.id)} className="text-xs font-medium text-[#64748b] hover:underline">
+                            Reset
+                          </button>
+                        </div>
+                        <div className="max-h-[240px] overflow-y-auto p-2">
+                          {PIXEL_AD_SERVER_OPTIONS.map((server) => (
+                            <label key={server} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-[#f8fafc]">
+                              <Checkbox
+                                checked={row.adServers.includes(server)}
+                                onCheckedChange={() => toggleAdServer(row.id, server)}
+                              />
+                              <span className="text-[#020617]">{server}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-sm text-[#64748b]">{row.mediaChannel}</td>
+                <td className="px-4 py-3">
+                  <Select value={row.tagImplementation || undefined} onValueChange={(val) => updateTagImplementation(row.id, val)}>
+                    <SelectTrigger className={`w-full ${row.tagImplementation ? "" : "border-[#ef4444]"}`} size="sm">
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PIXEL_TAG_IMPLEMENTATION_OPTIONS.map((opt) => (
+                        <SelectItem key={opt} value={opt}>
+                          {opt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-8 flex items-center justify-between py-4">
+        <button
+          onClick={onBack}
+          className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
+        >
+          Back to Funding Allocation
+        </button>
+        <button
+          onClick={onContinue}
+          disabled={!isValid}
+          className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Continue to Review
+        </button>
       </div>
     </>
   );
@@ -3658,7 +3865,8 @@ function Sidebar({ currentStep, hasUploadedFile, hasReuploaded, onUpload, isUplo
     currentStep === "map-taxonomies" ? ["campaign"] :
     currentStep === "apply-placements" ? ["campaign"] :
     currentStep === "funding" ? ["campaign", "placement"] :
-    currentStep === "review" ? ["campaign", "placement", "funding"] : [];
+    currentStep === "pixel-generation" ? ["campaign", "placement", "funding"] :
+    currentStep === "review" ? ["campaign", "placement", "funding", "pixel-generation"] : [];
 
   const errorSteps: Step[] = (() => {
     if (!hasReuploaded) return [];
@@ -3788,6 +3996,7 @@ function NewCampaignContent() {
   const [sfValidated, setSfValidated] = useState(false);
   const [campaignStepValid, setCampaignStepValid] = useState(false);
   const [fundingStepValid, setFundingStepValid] = useState(false);
+  const [pixelStepValid, setPixelStepValid] = useState(false);
   const [campaignSubmitted, setCampaignSubmitted] = useState(false);
   const [alreadyParsed, setAlreadyParsed] = useState(false);
   const [visitedSteps, setVisitedSteps] = useState<Set<string>>(new Set([initialStep]));
@@ -3817,11 +4026,12 @@ function NewCampaignContent() {
 
   const stepProgressMap: Record<string, number> = {
     campaign: 0,
-    placement: 16,
-    "map-partners": 28,
-    "map-taxonomies": 40,
-    "apply-placements": 52,
-    funding: 68,
+    placement: 14,
+    "map-partners": 25,
+    "map-taxonomies": 36,
+    "apply-placements": 47,
+    funding: 60,
+    "pixel-generation": 72,
     review: campaignSubmitted ? 100 : 84,
   };
 
@@ -3837,7 +4047,7 @@ function NewCampaignContent() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const STEP_ORDER: string[] = ["campaign", "placement", "map-partners", "map-taxonomies", "apply-placements", "funding", "review"];
+  const STEP_ORDER: string[] = ["campaign", "placement", "map-partners", "map-taxonomies", "apply-placements", "funding", "pixel-generation", "review"];
   const currentIdx = STEP_ORDER.indexOf(currentStep);
 
   const stepValidityMap: Record<string, boolean> = {
@@ -3847,6 +4057,7 @@ function NewCampaignContent() {
     "map-taxonomies": true,
     "apply-placements": true,
     funding: fundingStepValid,
+    "pixel-generation": pixelStepValid,
     review: true,
   };
 
@@ -4079,9 +4290,10 @@ function NewCampaignContent() {
             />
           )}
           {currentStep === "funding" && <FundingAllocationContent measurementBudget={parseInt(measurementBudget.replace(/,/g, "") || "0")} onValidChange={setFundingStepValid} />}
+          {currentStep === "pixel-generation" && <PixelGenerationContent campaignName={campaignName} onValidChange={setPixelStepValid} onBack={() => goToStep("funding")} onContinue={() => goToStep("review")} />}
           {currentStep === "review" && (
             <ReviewContent
-              onBack={() => goToStep("funding")}
+              onBack={() => goToStep("pixel-generation")}
               onSubmitted={() => setCampaignSubmitted(true)}
               campaignSubmitted={campaignSubmitted}
               goToStep={goToStep}
@@ -4115,11 +4327,11 @@ function NewCampaignContent() {
                 Back to Apply Placements
               </button>
               <button
-                onClick={() => goToStep("review")}
+                onClick={() => goToStep("pixel-generation")}
                 disabled={!fundingStepValid}
                 className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Continue to Review and Submit
+                Continue to Pixel Generation
               </button>
             </div>
           )}
