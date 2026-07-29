@@ -3358,25 +3358,87 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
     value: string;
     required: boolean;
     type: "text" | "currency" | "number" | "link" | "date-range";
+    editable?: boolean;
+  };
+
+  const generateInternalCampaignName = () => {
+    const advertiserField = fields.find((f) => f.key === "advertiser");
+    const countryField = fields.find((f) => f.key === "country");
+    const geoScopeField = fields.find((f) => f.key === "geoScope");
+    const conversionTypeField = fields.find((f) => f.key === "conversionType");
+    const campaignPeriodField = fields.find((f) => f.key === "campaignPeriod");
+
+    const advertiser = advertiserField?.value || "N/A";
+    const lob = "N/A";
+    const reportType = "SPR";
+    const partner = partnerRows.map((p) => p.name).join("_") || "N/A";
+    
+    let country = "N/A";
+    if (countryField?.value) {
+      if (countryField.value.toLowerCase().includes("united states")) country = "National";
+      else country = countryField.value;
+    }
+    
+    const market = geoScopeField?.value && geoScopeField.value !== "National" ? geoScopeField.value : "N/A";
+    const audienceTarget = "N/A";
+    
+    let year = "N/A";
+    if (campaignPeriodField?.value) {
+      const yearMatch = campaignPeriodField.value.match(/\d{4}/);
+      if (yearMatch) year = yearMatch[0];
+    }
+    
+    let timeframe = "N/A";
+    if (campaignPeriodField?.value) {
+      if (campaignPeriodField.value.includes("Apr") || campaignPeriodField.value.includes("May") || campaignPeriodField.value.includes("Jun")) {
+        timeframe = "Q2";
+      } else if (campaignPeriodField.value.includes("Jan") || campaignPeriodField.value.includes("Feb") || campaignPeriodField.value.includes("Mar")) {
+        timeframe = "Q1";
+      } else if (campaignPeriodField.value.includes("Jul") || campaignPeriodField.value.includes("Aug") || campaignPeriodField.value.includes("Sep")) {
+        timeframe = "Q3";
+      } else if (campaignPeriodField.value.includes("Oct") || campaignPeriodField.value.includes("Nov") || campaignPeriodField.value.includes("Dec")) {
+        timeframe = "Q4";
+      }
+    }
+    
+    const channel = "Digital";
+    
+    let conversionMetric = "N/A";
+    if (conversionTypeField?.value) {
+      if (conversionTypeField.value.toLowerCase().includes("visits") && conversionTypeField.value.toLowerCase().includes("sales")) {
+        conversionMetric = "Both";
+      } else if (conversionTypeField.value.toLowerCase().includes("visits")) {
+        conversionMetric = "Visits";
+      } else if (conversionTypeField.value.toLowerCase().includes("sales")) {
+        conversionMetric = "Sales";
+      }
+    }
+    
+    const wildcard1 = "N/A";
+    const wildcard2 = "N/A";
+
+    return `${advertiser}_${lob}_${reportType}_${partner}_${country}_${market}_${audienceTarget}_${year}_${timeframe}_${channel}_${conversionMetric}_${wildcard1}_${wildcard2}`;
   };
 
   const [fields, setFields] = useState<ReviewField[]>([
-    { key: "campaignName", label: "Campaign Name", value: "QSR Q2 2026", required: true, type: "text" },
-    { key: "advertiser", label: "Advertiser", value: "QSR Brand", required: true, type: "text" },
-    { key: "agency", label: "Agency", value: "Starcom", required: true, type: "text" },
-    { key: "campaignPeriod", label: "Campaign Period", value: "Apr 1, 2026 – Jun 30, 2026", required: true, type: "date-range" },
-    { key: "storeChains", label: "Store Chains to be Measured", value: "QSR Brand US", required: true, type: "text" },
-    { key: "country", label: "Country", value: "United States", required: true, type: "text" },
-    { key: "geoScope", label: "Geographical Scope", value: "National", required: true, type: "text" },
-    { key: "conversionType", label: "Conversion Type", value: "Visits and Sales Impact", required: true, type: "text" },
-    { key: "totalSpend", label: "Total Estimated Ad Spend", value: "$380,000", required: true, type: "currency" },
-    { key: "totalImpressions", label: "Total Estimated Impressions", value: "98,000,000", required: true, type: "number" },
+    { key: "campaignName", label: "Campaign Name", value: "QSR Q2 2026", required: true, type: "text", editable: true },
+    { key: "campaignNameInternal", label: "Campaign Name (Internal Only)", value: "QSR Brand_N/A_SPR_Viant_Adtheorent_The Trade Desk_Amazon DSP_DV360_National_N/A_N/A_2026_Q2_Digital_Both_N/A_N/A", required: false, type: "text", editable: false },
+    { key: "advertiser", label: "Advertiser", value: "QSR Brand", required: true, type: "text", editable: true },
+    { key: "agency", label: "Agency", value: "Starcom", required: true, type: "text", editable: true },
+    { key: "campaignPeriod", label: "Campaign Period", value: "Apr 1, 2026 – Jun 30, 2026", required: true, type: "date-range", editable: true },
+    { key: "storeChains", label: "Store Chains to be Measured", value: "QSR Brand US", required: true, type: "text", editable: true },
+    { key: "country", label: "Country", value: "United States", required: true, type: "text", editable: true },
+    { key: "geoScope", label: "Geographical Scope", value: "National", required: true, type: "text", editable: true },
+    { key: "conversionType", label: "Conversion Type", value: "Visits and Sales Impact", required: true, type: "text", editable: true },
+    { key: "totalSpend", label: "Total Estimated Ad Spend", value: "$380,000", required: true, type: "currency", editable: true },
+    { key: "totalImpressions", label: "Total Estimated Impressions", value: "98,000,000", required: true, type: "number", editable: true },
 
-    { key: "sfOpportunity", label: "Salesforce Opportunity ID", value: "https://foursquare.lightning.force.com/lightning/r/Opportunity/006Hs00001026QSR/view", required: true, type: "link" },
+    { key: "sfOpportunity", label: "Salesforce Opportunity ID", value: "https://foursquare.lightning.force.com/lightning/r/Opportunity/006Hs00001026QSR/view", required: true, type: "link", editable: true },
   ]);
 
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const editRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -3384,13 +3446,80 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
   }, [editingKey]);
 
   const startEdit = (field: ReviewField) => {
-    if (submitted) return;
+    if (submitted || field.editable === false) return;
     setEditingKey(field.key);
     setEditValue(field.value);
   };
 
   const commitEdit = (key: string) => {
-    setFields((prev) => prev.map((f) => f.key === key ? { ...f, value: editValue.trim() } : f));
+    setFields((prev) => {
+      const updated = prev.map((f) => f.key === key ? { ...f, value: editValue.trim() } : f);
+      
+      // Regenerate internal campaign name after any field change
+      const advertiserField = updated.find((f) => f.key === "advertiser");
+      const countryField = updated.find((f) => f.key === "country");
+      const geoScopeField = updated.find((f) => f.key === "geoScope");
+      const conversionTypeField = updated.find((f) => f.key === "conversionType");
+      const campaignPeriodField = updated.find((f) => f.key === "campaignPeriod");
+
+      const advertiser = advertiserField?.value || "N/A";
+      const lob = "N/A";
+      const reportType = "SPR";
+      const partner = partnerRows.map((p) => p.name).join("_") || "N/A";
+      
+      let country = "N/A";
+      if (countryField?.value) {
+        if (countryField.value.toLowerCase().includes("united states")) country = "National";
+        else country = countryField.value;
+      }
+      
+      const market = geoScopeField?.value && geoScopeField.value !== "National" ? geoScopeField.value : "N/A";
+      const audienceTarget = "N/A";
+      
+      let year = "N/A";
+      if (campaignPeriodField?.value) {
+        const yearMatch = campaignPeriodField.value.match(/\d{4}/);
+        if (yearMatch) year = yearMatch[0];
+      }
+      
+      let timeframe = "N/A";
+      if (campaignPeriodField?.value) {
+        if (campaignPeriodField.value.includes("Apr") || campaignPeriodField.value.includes("May") || campaignPeriodField.value.includes("Jun")) {
+          timeframe = "Q2";
+        } else if (campaignPeriodField.value.includes("Jan") || campaignPeriodField.value.includes("Feb") || campaignPeriodField.value.includes("Mar")) {
+          timeframe = "Q1";
+        } else if (campaignPeriodField.value.includes("Jul") || campaignPeriodField.value.includes("Aug") || campaignPeriodField.value.includes("Sep")) {
+          timeframe = "Q3";
+        } else if (campaignPeriodField.value.includes("Oct") || campaignPeriodField.value.includes("Nov") || campaignPeriodField.value.includes("Dec")) {
+          timeframe = "Q4";
+        }
+      }
+      
+      const channel = "Digital";
+      
+      let conversionMetric = "N/A";
+      if (conversionTypeField?.value) {
+        if (conversionTypeField.value.toLowerCase().includes("visits") && conversionTypeField.value.toLowerCase().includes("sales")) {
+          conversionMetric = "Both";
+        } else if (conversionTypeField.value.toLowerCase().includes("visits")) {
+          conversionMetric = "Visits";
+        } else if (conversionTypeField.value.toLowerCase().includes("sales")) {
+          conversionMetric = "Sales";
+        }
+      }
+      
+      const wildcard1 = "N/A";
+      const wildcard2 = "N/A";
+
+      const internalName = `${advertiser}_${lob}_${reportType}_${partner}_${country}_${market}_${audienceTarget}_${year}_${timeframe}_${channel}_${conversionMetric}_${wildcard1}_${wildcard2}`;
+      
+      const internalNameField = updated.find((f) => f.key === "campaignNameInternal");
+      if (internalNameField) {
+        internalNameField.value = internalName;
+      }
+      
+      return updated;
+    });
     setEditingKey(null);
     setEditValue("");
   };
@@ -3409,8 +3538,37 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
   const allFieldsValid = missingRequired.length === 0;
   const canSubmit = allFieldsValid && authorized;
 
+  const copyToClipboard = (text: string, fieldKey: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedField(fieldKey);
+      setTimeout(() => setCopiedField(null), 2000);
+    });
+  };
+
   const formatDisplayValue = (field: ReviewField) => {
     if (!field.value.trim()) return null;
+    
+    if (field.key === "campaignNameInternal") {
+      return (
+        <div className="flex flex-1 items-center gap-2">
+          <code className="flex-1 rounded bg-[#f1f5f9] px-2 py-1 text-xs font-mono text-[#334155]">
+            {field.value}
+          </code>
+          <button
+            onClick={() => copyToClipboard(field.value, field.key)}
+            className="shrink-0 rounded p-1.5 text-[#64748b] transition-colors hover:bg-[#f1f5f9] hover:text-[#020617]"
+            title="Copy to clipboard"
+          >
+            {copiedField === field.key ? (
+              <Check className="size-4 text-[#16a34a]" />
+            ) : (
+              <Copy className="size-4" />
+            )}
+          </button>
+        </div>
+      );
+    }
+    
     if (field.type === "link") {
       return (
         <a href={field.value} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-[#212be9] hover:underline">
@@ -3532,14 +3690,20 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
                       </button>
                     ) : (
                       <>
-                        <div className="flex-1">{formatDisplayValue(field)}</div>
-                        {!submitted && (
-                          <button
-                            onClick={() => startEdit(field)}
-                            className="rounded p-1 text-[#9ca3af] opacity-0 transition-opacity hover:bg-[#f1f5f9] hover:text-[#020617] group-hover:opacity-100"
-                          >
-                            <SquarePen className="size-4" />
-                          </button>
+                        {field.key === "campaignNameInternal" ? (
+                          formatDisplayValue(field)
+                        ) : (
+                          <>
+                            <div className="flex-1">{formatDisplayValue(field)}</div>
+                            {!submitted && field.editable !== false && (
+                              <button
+                                onClick={() => startEdit(field)}
+                                className="rounded p-1 text-[#9ca3af] opacity-0 transition-opacity hover:bg-[#f1f5f9] hover:text-[#020617] group-hover:opacity-100"
+                              >
+                                <SquarePen className="size-4" />
+                              </button>
+                            )}
+                          </>
                         )}
                       </>
                     )}
