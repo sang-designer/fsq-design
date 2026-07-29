@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, Suspense, DragEvent } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, Suspense, DragEvent } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -428,7 +428,7 @@ function SinglePartnerCampaignContent() {
                 </p>
               </div>
             </div>
-            <div className="mt-6 flex items-center justify-end gap-3">
+            <div className="mt-6 flex items-center justify-center gap-3">
               <button
                 onClick={() => setShowReplaceConfirm(false)}
                 className="rounded-md border border-border px-4 py-2 text-sm font-medium text-[#171417] transition-colors hover:bg-gray-50"
@@ -1516,167 +1516,355 @@ const MAP_TAXONOMIES: TaxCategory[] = [
   { id: "ignored", name: "Ignored", count: 0, tokens: [] },
 ];
 
+type SystemLabel = { id: string; name: string; color: string };
+type ColumnDef = { id: string; rawName: string; sampleData: string[] };
+
+const SYSTEM_LABELS: SystemLabel[] = [
+  { id: "sl-sub-placement", name: "Placement ID", color: "#3b82f6" },
+  { id: "sl-channel", name: "Media Channel", color: "#10b981" },
+  { id: "sl-audience", name: "Audience", color: "#06b6d4" },
+  { id: "sl-adsize", name: "Ad Size", color: "#ef4444" },
+  { id: "sl-creative", name: "Creative ID", color: "#f59e0b" },
+  { id: "sl-device-type", name: "Device Type", color: "#0ea5e9" },
+  { id: "sl-ad-type", name: "Ad Type", color: "#f43f5e" },
+  { id: "sl-ad-format", name: "Ad Format", color: "#84cc16" },
+  { id: "sl-creative-name", name: "Creative Name", color: "#fb923c" },
+  { id: "sl-media-cpm", name: "Media CPM", color: "#f97316" },
+  { id: "sl-language", name: "Language", color: "#6366f1" },
+  { id: "sl-geography", name: "Geography", color: "#ec4899" },
+  { id: "sl-market", name: "Market", color: "#14b8a6" },
+  { id: "sl-media-supplier", name: "Media Supplier", color: "#a855f7" },
+  { id: "sl-ignored", name: "Ignored", color: "#6b7280" },
+];
+
+const PARSED_COLUMNS: ColumnDef[] = [
+  { id: "col-1", rawName: "Placement_Name", sampleData: ["Pandora_2025_Display_Q1", "Streamline_2025_Video_Q1", "FitTrack_2025_Mobile_Q2", "TechSavvy_2025_Display_Q1", "TravelQuest_2025_CTV_Q2", "CulinaryDelight_2025_Social", "HealthTech_2025_Native_Q3", "SportsFan_2025_CTV_Q2", "EcoLiving_2025_Display_Q1", "AutoDrive_2025_Video_Q3", "PetCare_2025_Mobile_Q1", "FinanceHub_2025_Display_Q2", "StyleBox_2025_Social_Q1", "GameStream_2025_CTV_Q3", "WellnessPlus_2025_Native_Q2", "SmartHome_2025_Display_Q3", "FoodieApp_2025_Mobile_Q2", "TechGear_2025_Video_Q1", "TravelEasy_2025_CTV_Q1", "MusicLive_2025_Audio_Q2"] },
+  { id: "col-2", rawName: "Media Type", sampleData: ["Display", "Video", "Mobile", "Display", "CTV", "Social", "Native", "CTV", "Display", "Video", "Mobile", "Display", "Social", "CTV", "Native", "Display", "Mobile", "Video", "CTV", "Audio"] },
+  { id: "col-3", rawName: "Target Group", sampleData: ["Audience_Seg_01", "Audience_Seg_08", "Audience_Seg_12", "Audience_Seg_15", "Audience_Seg_20", "Audience_Seg_22", "Audience_Seg_01", "Audience_Seg_12", "Audience_Seg_05", "Audience_Seg_03", "Audience_Seg_08", "Audience_Seg_15", "Audience_Seg_22", "Audience_Seg_20", "Audience_Seg_01", "Audience_Seg_05", "Audience_Seg_12", "Audience_Seg_08", "Audience_Seg_03", "Audience_Seg_15"] },
+  { id: "col-4", rawName: "Ad_Unit", sampleData: ["300x50", "728x90", "320x50", "300x600", "970x250", "300x250", "728x90", "970x250", "300x600", "728x90", "320x50", "300x250", "300x50", "970x250", "728x90", "300x600", "320x50", "728x90", "970x250", "320x50"] },
+  { id: "col-5", rawName: "Creative Format", sampleData: ["Standard_Banner", "Video_Pre_Roll", "Interactive", "Native_Content", "Rich_Media", "Standard_Banner", "Native_Content", "Video_Pre_Roll", "Rich_Media", "Video_Pre_Roll", "Interactive", "Standard_Banner", "Rich_Media", "Video_Pre_Roll", "Native_Content", "Rich_Media", "Interactive", "Video_Pre_Roll", "Native_Content", "Interactive"] },
+  { id: "col-6", rawName: "Rate", sampleData: ["$3.75", "$12.00", "$4.25", "$6.50", "$15.75", "$5.00", "$8.50", "$18.50", "$6.50", "$10.50", "$4.25", "$5.00", "$3.75", "$18.50", "$8.50", "$6.50", "$4.25", "$12.00", "$15.75", "$10.50"] },
+  { id: "col-7", rawName: "Locale", sampleData: ["English", "English", "Spanish", "English", "English", "English", "English", "English", "Spanish", "English", "English", "French", "English", "English", "English", "English", "Spanish", "English", "English", "English"] },
+  { id: "col-8", rawName: "DMA_Region", sampleData: ["Los_Angeles", "Houston", "Dallas", "San_Francisco", "Seattle", "Denver", "New_York", "Phoenix", "Dallas", "New_York", "Chicago", "Philadelphia", "Los_Angeles", "Phoenix", "New_York", "San_Francisco", "Dallas", "Houston", "Seattle", "Chicago"] },
+];
+
 function MapTaxonomiesSubStep({ onBack, onContinue }: { onBack: () => void; onContinue: () => void }) {
-  const [unassigned, setUnassigned] = useState<TaxToken[]>(MAP_TOKENS);
-  const [taxonomies, setTaxonomies] = useState<TaxCategory[]>(MAP_TAXONOMIES);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [showAllTokens, setShowAllTokens] = useState<Set<string>>(new Set());
-  const [dragTokenIds, setDragTokenIds] = useState<string[]>([]);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const dragCounter = useRef<Record<string, number>>({});
-  const dragGhostRef = useRef<HTMLDivElement>(null);
+  const [mappings, setMappings] = useState<Record<string, string | null>>(() => {
+    const m: Record<string, string | null> = {};
+    PARSED_COLUMNS.forEach((col) => { m[col.id] = null; });
+    return m;
+  });
+  const [draggingLabel, setDraggingLabel] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [customLabels, setCustomLabels] = useState<SystemLabel[]>([]);
+  const [isAddingCustom, setIsAddingCustom] = useState(false);
+  const [customLabelName, setCustomLabelName] = useState("");
+  const PAGE_SIZE = 15;
+  const totalRows = PARSED_COLUMNS[0].sampleData.length;
+  const totalPages = Math.ceil(totalRows / PAGE_SIZE);
+  const startIdx = (currentPage - 1) * PAGE_SIZE;
+  const endIdx = Math.min(startIdx + PAGE_SIZE, totalRows);
 
-  const selectedCount = selected.size;
-  const allSelected = unassigned.length > 0 && selectedCount === unassigned.length;
+  const allLabels = useMemo(() => [...SYSTEM_LABELS, ...customLabels], [customLabels]);
 
-  const toggleSelect = (id: string) => {
-    setSelected((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
-  };
-  const toggleSelectAll = () => {
-    if (allSelected) setSelected(new Set()); else setSelected(new Set(unassigned.map((t) => t.id)));
-  };
-  const toggleExpand = (id: string) => {
-    setExpanded((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const assignedLabelIds = useMemo(() => {
+    const assigned = new Set<string>();
+    Object.values(mappings).forEach((labelId) => {
+      if (labelId) assigned.add(labelId);
+    });
+    return assigned;
+  }, [mappings]);
+
+  const unassignedLabels = allLabels.filter((l) => !assignedLabelIds.has(l.id));
+  const mappedCount = Object.values(mappings).filter(Boolean).length;
+
+  const assignLabel = (colId: string, labelId: string) => {
+    setMappings((prev) => {
+      const next = { ...prev };
+      const existingCol = Object.entries(next).find(([, v]) => v === labelId);
+      if (existingCol) next[existingCol[0]] = null;
+      next[colId] = labelId;
+      return next;
+    });
   };
 
-  const handleDragStart = useCallback((e: DragEvent, tokenId: string) => {
-    const ids = selected.has(tokenId) && selected.size > 1 ? Array.from(selected) : [tokenId];
-    setDragTokenIds(ids);
-    e.dataTransfer.setData("text/plain", JSON.stringify(ids));
+  const unassignLabel = (colId: string) => {
+    setMappings((prev) => ({ ...prev, [colId]: null }));
+  };
+
+  const handleDragStart = useCallback((e: DragEvent, labelId: string) => {
+    setDraggingLabel(labelId);
+    e.dataTransfer.setData("text/plain", labelId);
     e.dataTransfer.effectAllowed = "move";
-    if (ids.length > 1 && dragGhostRef.current) {
-      dragGhostRef.current.textContent = `${ids.length} items`;
-      dragGhostRef.current.style.display = "flex";
-      e.dataTransfer.setDragImage(dragGhostRef.current, 40, 20);
-      requestAnimationFrame(() => { if (dragGhostRef.current) dragGhostRef.current.style.display = "none"; });
-    }
-  }, [selected]);
-
-  const handleDragOver = useCallback((e: DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }, []);
-  const handleDragEnter = useCallback((e: DragEvent, catId: string) => { e.preventDefault(); dragCounter.current[catId] = (dragCounter.current[catId] || 0) + 1; setDragOverId(catId); }, []);
-  const handleDragLeave = useCallback((catId: string) => { dragCounter.current[catId] = (dragCounter.current[catId] || 0) - 1; if (dragCounter.current[catId] <= 0) { dragCounter.current[catId] = 0; setDragOverId((prev) => (prev === catId ? null : prev)); } }, []);
-
-  const handleDrop = useCallback((e: DragEvent, catId: string) => {
-    e.preventDefault();
-    dragCounter.current[catId] = 0;
-    setDragOverId(null);
-    let ids: string[];
-    try { ids = JSON.parse(e.dataTransfer.getData("text/plain")); } catch { ids = dragTokenIds; }
-    if (!ids.length) return;
-    const droppedTokens = unassigned.filter((t) => ids.includes(t.id));
-    if (!droppedTokens.length) return;
-    setUnassigned((prev) => prev.filter((t) => !ids.includes(t.id)));
-    setTaxonomies((prev) => prev.map((cat) => cat.id === catId ? { ...cat, count: cat.count + droppedTokens.length, tokens: [...cat.tokens, ...droppedTokens] } : cat));
-    setSelected((prev) => { const next = new Set(prev); ids.forEach((id) => next.delete(id)); return next; });
-    setDragTokenIds([]);
-  }, [unassigned, dragTokenIds]);
-
-  const handleDragEnd = useCallback(() => { setDragTokenIds([]); setDragOverId(null); dragCounter.current = {}; }, []);
-
-  const removeToken = useCallback((catId: string, token: TaxToken) => {
-    setTaxonomies((prev) => prev.map((cat) => cat.id === catId ? { ...cat, count: cat.count - 1, tokens: cat.tokens.filter((t) => t.id !== token.id) } : cat));
-    setUnassigned((prev) => [...prev, token]);
   }, []);
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const dragCounterRef = useRef<Record<string, number>>({});
+
+  const handleDragEnter = useCallback((e: DragEvent, colId: string) => {
+    e.preventDefault();
+    dragCounterRef.current[colId] = (dragCounterRef.current[colId] || 0) + 1;
+    setDragOverCol(colId);
+  }, []);
+
+  const handleDragLeave = useCallback((_e: DragEvent, colId: string) => {
+    dragCounterRef.current[colId] = (dragCounterRef.current[colId] || 0) - 1;
+    if (dragCounterRef.current[colId] <= 0) {
+      dragCounterRef.current[colId] = 0;
+      setDragOverCol((prev) => (prev === colId ? null : prev));
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: DragEvent, colId: string) => {
+    e.preventDefault();
+    dragCounterRef.current = {};
+    setDragOverCol(null);
+    const labelId = e.dataTransfer.getData("text/plain") || draggingLabel;
+    if (labelId) assignLabel(colId, labelId);
+    setDraggingLabel(null);
+  }, [draggingLabel]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggingLabel(null);
+    setDragOverCol(null);
+    dragCounterRef.current = {};
+  }, []);
+
+  const getLabelForCol = (colId: string) => {
+    const labelId = mappings[colId];
+    if (!labelId) return null;
+    return allLabels.find((l) => l.id === labelId) || null;
+  };
 
   return (
     <>
-      <div ref={dragGhostRef} className="pointer-events-none fixed left-[-9999px] top-[-9999px] z-[9999] hidden items-center gap-1.5 rounded-lg bg-[#1f2937] px-3 py-1.5 text-xs font-medium text-white shadow-lg" />
+      <p className="mb-6 text-sm text-[#6b7280]">Match your external column names to the system&apos;s internal labels. Use the dropdown in each column header or drag labels from the bar above.</p>
 
-      <p className="mb-6 text-sm text-[#6b7280]">Map unassigned values on the left to an assigned common media taxonomy on the right. You can assign one or more values at a time.</p>
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-sm text-[#646464]">
+          <span className="font-medium text-[#020617]">{mappedCount}</span> of <span className="font-medium text-[#020617]">{PARSED_COLUMNS.length}</span> columns mapped
+        </p>
+        {mappedCount === PARSED_COLUMNS.length && (
+          <span className="flex items-center gap-1 text-sm font-medium text-[#16a34a]">
+            <Check className="size-4" /> All columns mapped
+          </span>
+        )}
+      </div>
 
-      <div className="flex gap-4">
-        {/* Unassigned */}
-        <div className="flex-1">
-          <h3 className="mb-2 text-base font-semibold text-[#1f2430]">Unassigned Values</h3>
-          <div className="rounded-lg border border-border">
-            <div className="flex items-center gap-4 border-b border-border px-4 py-2">
-              <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="size-4 rounded border-gray-300 accent-[#2d46f6]" />
-              <span className="text-xs text-[#6b7280]">select all ({selectedCount} selected)</span>
-            </div>
-            <div className="max-h-[540px] overflow-y-auto">
-              {unassigned.map((token) => {
-                const isDragging = dragTokenIds.includes(token.id);
-                return (
-                  <div
-                    key={token.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, token.id)}
-                    onDragEnd={handleDragEnd}
-                    className={`group flex cursor-grab items-center gap-3 border-b border-border/50 px-4 py-1.5 text-sm transition-colors active:cursor-grabbing ${selected.has(token.id) ? "bg-[#eef2ff]" : "hover:bg-gray-50"} ${isDragging ? "opacity-40" : ""}`}
+      {/* Pill bar of available system labels */}
+      <div className="mb-6 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-4">
+        <p className="mb-2 text-xs font-medium text-[#64748b]">Available Labels — Drag Onto Columns or Use the Dropdown</p>
+        <div className="flex flex-wrap gap-2">
+          {allLabels.map((label) => {
+            const isAssigned = assignedLabelIds.has(label.id);
+            const isCustom = label.id.startsWith("custom-");
+            return (
+              <div
+                key={label.id}
+                draggable={!isAssigned}
+                onDragStart={(e) => handleDragStart(e, label.id)}
+                onDragEnd={handleDragEnd}
+                className={`flex cursor-grab items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all active:cursor-grabbing ${
+                  isAssigned
+                    ? "cursor-default bg-[#f1f5f9] text-[#94a3b8] line-through opacity-50"
+                    : "border border-[#e2e8f0] bg-white text-[#020617] shadow-sm hover:shadow-md"
+                } ${draggingLabel === label.id ? "scale-95 opacity-60" : ""}`}
+              >
+                <GripVertical className={`size-3 ${isAssigned ? "text-[#cbd5e1]" : "text-[#9ca3af]"}`} />
+                {label.name}
+                {isCustom && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMappings((prev) => {
+                        const next = { ...prev };
+                        Object.entries(next).forEach(([k, v]) => { if (v === label.id) next[k] = null; });
+                        return next;
+                      });
+                      setCustomLabels((prev) => prev.filter((l) => l.id !== label.id));
+                    }}
+                    className="ml-0.5 rounded-full p-0.5 text-[#94a3b8] transition-colors hover:bg-[#fee2e2] hover:text-[#dc2626]"
                   >
-                    <GripVertical className="size-4 shrink-0 text-[#9ca3af] opacity-0 transition-opacity group-hover:opacity-100" />
-                    <input type="checkbox" checked={selected.has(token.id)} onChange={() => toggleSelect(token.id)} className="size-4 shrink-0 rounded border-gray-300 accent-[#2d46f6]" />
-                    <span className="text-[#1f2430]">{token.name}</span>
-                  </div>
-                );
-              })}
-              {unassigned.length === 0 && (
-                <div className="px-4 py-8 text-center text-sm text-[#6b7280]">All tokens have been assigned.</div>
-              )}
+                    <X className="size-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {isAddingCustom ? (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={customLabelName}
+                onChange={(e) => setCustomLabelName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && customLabelName.trim()) {
+                    setCustomLabels((prev) => [...prev, { id: `custom-${Date.now()}`, name: customLabelName.trim(), color: "#6b7280" }]);
+                    setCustomLabelName("");
+                    setIsAddingCustom(false);
+                  }
+                  if (e.key === "Escape") { setCustomLabelName(""); setIsAddingCustom(false); }
+                }}
+                autoFocus
+                placeholder="Label name..."
+                className="h-7 w-[140px] rounded-full border border-[#212be9] bg-white px-3 text-xs outline-none placeholder:text-[#9ca3af] focus:ring-2 focus:ring-[#212be9]/20"
+              />
+              <button
+                onClick={() => {
+                  if (customLabelName.trim()) {
+                    setCustomLabels((prev) => [...prev, { id: `custom-${Date.now()}`, name: customLabelName.trim(), color: "#6b7280" }]);
+                    setCustomLabelName("");
+                    setIsAddingCustom(false);
+                  }
+                }}
+                className="flex size-7 items-center justify-center rounded-full bg-[#212be9] text-white transition-colors hover:bg-[#1a22c4]"
+              >
+                <Check className="size-3.5" />
+              </button>
+              <button
+                onClick={() => { setCustomLabelName(""); setIsAddingCustom(false); }}
+                className="flex size-7 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#64748b] transition-colors hover:bg-gray-50"
+              >
+                <X className="size-3.5" />
+              </button>
             </div>
-          </div>
-        </div>
-
-        {/* Assigned Taxonomy Values */}
-        <div className="w-[420px] shrink-0">
-          <h3 className="mb-2 text-base font-semibold text-[#1f2430]">Assigned Taxonomy Values</h3>
-          <div className="rounded-lg border border-border">
-            <div className="max-h-[540px] space-y-1.5 overflow-y-auto p-2">
-              {taxonomies.map((cat) => {
-                const isOver = dragOverId === cat.id;
-                const isExpanded = expanded.has(cat.id);
-                return (
-                  <div
-                    key={cat.id}
-                    onDragOver={handleDragOver}
-                    onDragEnter={(e) => handleDragEnter(e, cat.id)}
-                    onDragLeave={() => handleDragLeave(cat.id)}
-                    onDrop={(e) => handleDrop(e, cat.id)}
-                    className={`rounded-lg border transition-all ${isOver ? "border-[#2d46f6] bg-[#eef2ff] shadow-sm" : "border-border bg-white"}`}
-                  >
-                    <button onClick={() => toggleExpand(cat.id)} className="flex w-full items-center gap-2 px-3 py-3 text-left">
-                      <span className="flex-1 text-sm font-medium text-[#1f2430]">{cat.name}</span>
-                      <Info className="size-4 text-[#9ca3af]" />
-                      <span className="min-w-[24px] text-right text-sm tabular-nums text-[#6b7280]">{cat.count}</span>
-                      {isExpanded ? <ChevronUp className="size-4 text-[#6b7280]" /> : <ChevronDown className="size-4 text-[#6b7280]" />}
-                    </button>
-                    {isExpanded && cat.tokens.length > 0 && (
-                      <div className="border-t border-border px-3 pb-3 pt-2">
-                        <div className="flex flex-wrap gap-1.5">
-                          {(showAllTokens.has(cat.id) ? cat.tokens : cat.tokens.slice(0, 5)).map((t) => (
-                            <Badge key={t.id} className="gap-1 bg-[#f3f4f6] pr-1 text-[#1f2430]">
-                              {t.name}
-                              <button onClick={(e) => { e.stopPropagation(); removeToken(cat.id, t); }} className="rounded-full p-0.5 text-[#9ca3af] hover:bg-[#e5e7eb] hover:text-[#374151]">
-                                <X className="size-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                        {cat.tokens.length > 5 && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setShowAllTokens((prev) => { const next = new Set(prev); if (next.has(cat.id)) next.delete(cat.id); else next.add(cat.id); return next; }); }}
-                            className="mt-2 text-xs font-medium text-[#2d46f6] hover:underline"
-                          >
-                            {showAllTokens.has(cat.id) ? "Show less" : `+${cat.tokens.length - 5} more`}
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    {isExpanded && cat.tokens.length === 0 && (
-                      <div className="border-t border-border px-3 py-3 text-xs text-[#6b7280]">Drop tokens here to assign them.</div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          ) : (
+            <button
+              onClick={() => setIsAddingCustom(true)}
+              className="flex items-center gap-1 rounded-full border border-dashed border-[#cbd5e1] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:border-[#212be9] hover:text-[#212be9]"
+            >
+              <Plus className="size-3" />
+              Add Custom
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="mt-8 flex items-center justify-between">
-        <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-4 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back</button>
-        <button onClick={onContinue} className="rounded-md bg-[#212be9] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]">Continue to Apply Placements</button>
+      {/* Data table with mappable column headers */}
+      <div className="w-full overflow-x-auto rounded-lg border border-[#e2e8f0]">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-[#e2e8f0]">
+              {PARSED_COLUMNS.map((col) => {
+                const assignedLabel = getLabelForCol(col.id);
+                const isOver = dragOverCol === col.id;
+                const isDragging = !!draggingLabel;
+                return (
+                  <th
+                    key={col.id}
+                    onDragOver={handleDragOver}
+                    onDragEnter={(e) => handleDragEnter(e, col.id)}
+                    onDragLeave={(e) => handleDragLeave(e, col.id)}
+                    onDrop={(e) => handleDrop(e, col.id)}
+                    className={`relative min-w-[140px] px-3 py-3 text-left transition-all ${
+                      isOver ? "bg-[#dbeafe] ring-2 ring-inset ring-[#212be9] shadow-[inset_0_0_0_1px_#212be9]" :
+                      isDragging && !assignedLabel ? "bg-[#f8fafc] ring-1 ring-inset ring-[#cbd5e1] ring-dashed" : ""
+                    }`}
+                  >
+                    <div className="flex flex-col gap-1">
+                      {assignedLabel ? (
+                        <>
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="flex items-center gap-1 whitespace-nowrap rounded-full border border-[#e2e8f0] bg-[#f1f5f9] px-2 py-0.5 text-xs font-semibold text-[#020617]"
+                            >
+                              {assignedLabel.name}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); unassignLabel(col.id); }}
+                                className="ml-0.5 rounded-full p-0.5 text-[#64748b] transition-colors hover:bg-[#e2e8f0] hover:text-[#020617]"
+                              >
+                                <X className="size-2.5" />
+                              </button>
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-[#94a3b8]">{col.rawName}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xs font-medium text-[#020617]">{col.rawName}</span>
+                          <Select onValueChange={(labelId) => assignLabel(col.id, labelId)}>
+                            <SelectTrigger className="h-6 w-auto gap-1 border-dashed border-[#cbd5e1] px-2 text-[10px] text-[#64748b] shadow-none hover:border-[#212be9] hover:text-[#212be9]">
+                              <SelectValue placeholder="Select Label" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[240px]">
+                              {allLabels.map((label) => {
+                                const isUsed = assignedLabelIds.has(label.id);
+                                return (
+                                  <SelectItem
+                                    key={label.id}
+                                    value={label.id}
+                                    disabled={isUsed}
+                                  >
+                                    {label.name}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        </>
+                      )}
+                    </div>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: endIdx - startIdx }, (_, i) => startIdx + i).map((rowIdx) => (
+              <tr key={rowIdx} className="border-b border-[#e2e8f0]/50">
+                {PARSED_COLUMNS.map((col) => (
+                  <td key={col.id} className="px-3 py-2.5 text-sm text-[#374151]">
+                    {col.sampleData[rowIdx] || "—"}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-6 flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-[#64748b] transition-colors hover:text-[#020617] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ChevronLeft className="size-4" />
+            Previous
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`flex size-10 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                page === currentPage
+                  ? "border-2 border-[#020617] text-[#020617]"
+                  : "text-[#64748b] hover:bg-[#f8fafc]"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-[#64748b] transition-colors hover:text-[#020617] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Next
+            <ChevronRight className="size-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-8 flex items-center justify-between py-4">
+        <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back to Media Plan</button>
+        <button onClick={onContinue} className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]">Continue to Apply Placements</button>
       </div>
     </>
   );

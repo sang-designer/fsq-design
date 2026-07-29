@@ -1221,11 +1221,11 @@ const PIXEL_TAG_IMPLEMENTATION_OPTIONS = ["Partner", "Agency", "Both"];
 
 // Mock pixel rows based on partners and their media channels
 const INITIAL_PIXEL_ROWS: PixelRow[] = [
-  { id: "px-1", partner: "Viant", adServers: ["CM360", "DV360"], mediaChannel: "Display", tagImplementation: null },
-  { id: "px-2", partner: "Viant", adServers: ["CM360", "DV360"], mediaChannel: "Mobile", tagImplementation: null },
+  { id: "px-1", partner: "Viant", adServers: [], mediaChannel: "Display", tagImplementation: null },
+  { id: "px-2", partner: "Viant", adServers: [], mediaChannel: "Mobile", tagImplementation: null },
   { id: "px-3", partner: "Adtheorent", adServers: [], mediaChannel: "Mobile", tagImplementation: null },
-  { id: "px-4", partner: "Nexxen", adServers: ["DV360"], mediaChannel: "Video", tagImplementation: null },
-  { id: "px-5", partner: "Nexxen", adServers: ["DV360"], mediaChannel: "CTV", tagImplementation: null },
+  { id: "px-4", partner: "Nexxen", adServers: [], mediaChannel: "Video", tagImplementation: null },
+  { id: "px-5", partner: "Nexxen", adServers: [], mediaChannel: "CTV", tagImplementation: null },
 ];
 
 function PixelGenerationContent({ campaignName, onValidChange, onBack, onContinue }: { campaignName: string; onValidChange?: (valid: boolean) => void; onBack: () => void; onContinue: () => void }) {
@@ -1250,7 +1250,7 @@ function PixelGenerationContent({ campaignName, onValidChange, onBack, onContinu
   };
 
   const updateTagImplementation = (id: string, value: string) => {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, tagImplementation: value } : r)));
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, tagImplementation: value, adServers: value === "Partner" ? [] : r.adServers } : r)));
   };
 
   const toggleAdServer = (id: string, server: string) => {
@@ -1271,7 +1271,7 @@ function PixelGenerationContent({ campaignName, onValidChange, onBack, onContinu
     setSelectAllOpen((prev) => ({ ...prev, [id]: false }));
   };
 
-  const isValid = rows.every((r) => r.adServers.length > 0 && r.tagImplementation);
+  const isValid = rows.every((r) => r.tagImplementation && (r.tagImplementation === "Partner" || r.adServers.length > 0));
 
   useEffect(() => {
     onValidChange?.(isValid);
@@ -1296,25 +1296,45 @@ function PixelGenerationContent({ campaignName, onValidChange, onBack, onContinu
         </AlertDescription>
       </Alert>
 
-      <div className="mb-6 overflow-hidden rounded-xl border border-[#e2e8f0]">
-        <table className="w-full">
-          <thead>
+      <div className="mb-6 overflow-visible rounded-xl border border-[#e2e8f0]">
+        <table className="w-full overflow-visible">
+          <thead className="overflow-visible">
             <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
               <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Partner</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Ad Server</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Media Channel</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Tag Implementation</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Ad Server</th>
             </tr>
           </thead>
-          <tbody>
-            {rows.map((row, idx) => (
+          <tbody className="overflow-visible">
+            {rows.map((row, idx) => {
+              const isPartnerImplementing = row.tagImplementation === "Partner";
+              return (
               <tr key={row.id} className="border-b border-[#e2e8f0] last:border-b-0">
                 <td className="px-4 py-3 text-sm font-medium text-[#020617]">{row.partner}</td>
+                <td className="px-4 py-3 text-sm text-[#64748b]">{row.mediaChannel}</td>
                 <td className="px-4 py-3">
+                  <Select value={row.tagImplementation || undefined} onValueChange={(val) => updateTagImplementation(row.id, val)}>
+                    <SelectTrigger className={`w-full ${row.tagImplementation ? "" : "border-[#ef4444]"}`} size="sm">
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PIXEL_TAG_IMPLEMENTATION_OPTIONS.map((opt) => (
+                        <SelectItem key={opt} value={opt}>
+                          {opt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </td>
+                <td className="px-4 py-3">
+                  {isPartnerImplementing ? (
+                    <span className="text-sm text-[#9ca3af]">—</span>
+                  ) : (
                   <div className="relative" ref={(el) => (dropdownRefs.current[row.id] = el)}>
                     <div
                       className={`flex min-h-[40px] w-full items-center gap-2 rounded-md border px-3 py-2 ${
-                        row.adServers.length === 0 ? "border-[#ef4444]" : "border-[#e2e8f0]"
+                        row.tagImplementation && row.tagImplementation !== "Partner" && row.adServers.length === 0 ? "border-[#ef4444]" : "border-[#e2e8f0]"
                       }`}
                     >
                       <div className="flex flex-1 flex-wrap items-center gap-1.5">
@@ -1348,21 +1368,22 @@ function PixelGenerationContent({ campaignName, onValidChange, onBack, onContinu
                       </button>
                     </div>
                     {selectAllOpen[row.id] && (
-                      <div className="absolute left-0 top-full z-10 mt-1 w-full rounded-lg border border-[#e2e8f0] bg-white shadow-lg">
+                      <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-[#e2e8f0] bg-white shadow-lg">
                         <div className="flex items-center justify-between border-b border-[#e2e8f0] px-3 py-2">
                           <button onClick={() => selectAllServers(row.id)} className="text-xs font-medium text-[#212be9] hover:underline">
                             Select All
                           </button>
-                          <button onClick={() => resetServers(row.id)} className="text-xs font-medium text-[#64748b] hover:underline">
+                          <button onClick={() => resetServers(row.id)} className="text-xs font-medium text-[#ef4444] hover:underline">
                             Reset
                           </button>
                         </div>
-                        <div className="max-h-[240px] overflow-y-auto p-2">
+                        <div className="p-2">
                           {PIXEL_AD_SERVER_OPTIONS.map((server) => (
                             <label key={server} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-[#f8fafc]">
                               <Checkbox
                                 checked={row.adServers.includes(server)}
                                 onCheckedChange={() => toggleAdServer(row.id, server)}
+                                className="data-[state=checked]:bg-[#212be9] data-[state=checked]:border-[#212be9]"
                               />
                               <span className="text-[#020617]">{server}</span>
                             </label>
@@ -1371,24 +1392,11 @@ function PixelGenerationContent({ campaignName, onValidChange, onBack, onContinu
                       </div>
                     )}
                   </div>
-                </td>
-                <td className="px-4 py-3 text-sm text-[#64748b]">{row.mediaChannel}</td>
-                <td className="px-4 py-3">
-                  <Select value={row.tagImplementation || undefined} onValueChange={(val) => updateTagImplementation(row.id, val)}>
-                    <SelectTrigger className={`w-full ${row.tagImplementation ? "" : "border-[#ef4444]"}`} size="sm">
-                      <SelectValue placeholder="Select..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PIXEL_TAG_IMPLEMENTATION_OPTIONS.map((opt) => (
-                        <SelectItem key={opt} value={opt}>
-                          {opt}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  )}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -2650,24 +2658,24 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
         </table>
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
-        <p className="text-xs text-[#94a3b8]">Showing {startIdx + 1}–{endIdx} of {totalRows} rows</p>
-        <div className="flex items-center gap-2">
+      <div className="mt-6 flex items-center justify-center">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="flex size-8 items-center justify-center rounded-md border border-[#e2e8f0] text-[#64748b] transition-colors hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-[#64748b] transition-colors hover:text-[#020617] disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronLeft className="size-4" />
+            Previous
           </button>
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
               onClick={() => setCurrentPage(page)}
-              className={`flex size-8 items-center justify-center rounded-md text-xs font-medium transition-colors ${
+              className={`flex size-10 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                 page === currentPage
-                  ? "bg-[#020617] text-white"
-                  : "border border-[#e2e8f0] text-[#64748b] hover:bg-[#f8fafc]"
+                  ? "border-2 border-[#020617] text-[#020617]"
+                  : "text-[#64748b] hover:bg-[#f8fafc]"
               }`}
             >
               {page}
@@ -2676,8 +2684,9 @@ function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: (
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="flex size-8 items-center justify-center rounded-md border border-[#e2e8f0] text-[#64748b] transition-colors hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-[#64748b] transition-colors hover:text-[#020617] disabled:cursor-not-allowed disabled:opacity-40"
           >
+            Next
             <ChevronRight className="size-4" />
           </button>
         </div>
@@ -3121,7 +3130,7 @@ function ApplyPlacementsContent({ onBack, onContinue }: { onBack: () => void; on
 
       {/* Pagination */}
       {rows.length > 10 && (
-      <div className="mt-6 flex items-center justify-end gap-1">
+      <div className="mt-6 flex items-center justify-center gap-1">
         <button className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-[#64748b] hover:bg-gray-50">
           <ChevronLeft className="size-4" />
           Previous
@@ -4370,7 +4379,7 @@ function NewCampaignContent() {
                 </p>
               </div>
             </div>
-            <div className="mt-6 flex items-center justify-end gap-3">
+            <div className="mt-6 flex items-center justify-center gap-3">
               <button
                 onClick={() => setShowReplaceConfirm(false)}
                 className="rounded-md border border-border px-4 py-2 text-sm font-medium text-[#171417] transition-colors hover:bg-gray-50"
