@@ -19,6 +19,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { Header } from "../_components/campaign-header";
 import { SelectField, DateField, InputField, BrandSearchSelect } from "../_components/form-fields";
 import { CampaignSidebar } from "../_components/campaign-sidebar";
@@ -116,14 +118,14 @@ function SinglePartnerCampaignContent() {
       if (isReupload) {
         setHasReuploaded(true);
       }
-      setCampaignName("McDonalds Q1-Q2 2025");
-      setMeasurementBudget("420,000");
+      setCampaignName("QSR Q2 2026");
+      setMeasurementBudget("380,000");
       setMetric("Visits and Sales");
       setPartnerData({
         "Partner/Platform Name": "Viant",
         "Ad Server": "Google Campaign Manager",
-        "Ad Run Start Date": "2025-04-01",
-        "Ad Run End Date": "2025-06-30",
+        "Ad Run Start Date": "2026-04-01",
+        "Ad Run End Date": "2026-06-30",
         "Agency or Site Served": "Starcom",
         "Estimated Total Ad Spend": "$125,000",
         "FSQ Pixel Implementation": "Standard Tag",
@@ -133,7 +135,7 @@ function SinglePartnerCampaignContent() {
         "Estimated Impressions": "5,000,000",
         "Pricing Method for Visits": "CPM",
         "Rate Card for Visits": "Standard Rate",
-        "Funding Name for Visits": "Starcom_Visits_2025",
+        "Funding Name for Visits": "Starcom_Visits_2026",
         "Funding Email for Visits": "funding@starcom.com",
         "Sales/Account Manager Name": "Sarah Johnson",
         "Sales/Account Manager Email": "sarah.johnson@starcom.com",
@@ -203,7 +205,7 @@ function SinglePartnerCampaignContent() {
     setTimeout(() => {
       if (pendingDelimitersRef.current !== newDelimiters) return;
       setIsReparsing(false);
-      setCampaignName("McDonalds Q1-Q2 2025");
+      setCampaignName("QSR Q2 2026");
       setUploadBannerDismissed(false);
     }, 2000);
   };
@@ -677,6 +679,7 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
     "00341": { brand: "McDonalds", budget: "420,000", metric: "Visits and Sales" },
     "00555": { brand: "Starbucks", budget: "250,000", metric: "Visits" },
     "00789": { brand: "Target", budget: "310,000", metric: "Visits and Sales" },
+    "01026": { brand: "QSR Brand", budget: "380,000", metric: "Visits and Sales" },
   };
 
   const normalize = (v: string) => v.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
@@ -713,6 +716,17 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
         setBrand(data.brand);
         onMeasurementBudgetChange(data.budget);
         onMetricChange(data.metric);
+        
+        // Set campaign name based on the SF ID
+        if (id === "01026") {
+          onCampaignNameChange("QSR Q2 2026");
+        } else if (id === "00341") {
+          onCampaignNameChange("McDonalds Q1-Q2 2025");
+        } else if (id === "00555") {
+          onCampaignNameChange("Starbucks Campaign");
+        } else if (id === "00789") {
+          onCampaignNameChange("Target Campaign");
+        }
       } else if (sfOpportunity.includes("error")) {
         setSfError("Unable to verify ID. Try again later.");
       } else {
@@ -723,24 +737,25 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
 
   useEffect(() => {
     if (hasUploadedFile) {
-      setAdvertiser("McDonalds");
-      setStartDate("2025-01-15");
-      setEndDate("2025-06-30");
+      onCampaignNameChange("QSR Q2 2026");
+      setAdvertiser("QSR Brand");
+      setStartDate("2026-04-01");
+      setEndDate("2026-06-30");
       setConversionWindow("30 Days");
       setAdServer("Google Campaign Manager");
-      setAgencyName("Nexxen");
+      setAgencyName("Starcom");
       setOwnerType("Agency");
       setContactName("Sarah Mitchell");
       setEmail("s.mitchell@starcom.com");
       setCountry("United States");
-      setStoreChains("McDonalds US");
+      setStoreChains("QSR Brand US");
       setGeoTargeting("National");
       setGeoLocations("All US Markets");
-      setNotes("Q1-Q2 2025 brand awareness campaign across digital channels.");
+      setNotes("Q2 2026 brand awareness campaign across digital channels.");
       if (!sfValidated) {
-        setSfOpportunity("https://salesforce.com/opp/00341");
+        setSfOpportunity("https://foursquare.lightning.force.com/lightning/r/Opportunity/006Hs00001026QSR/view");
         setSfValidated(true);
-        const sfData = { brand: "McDonalds", budget: "420,000", metric: "Visits and Sales" };
+        const sfData = { brand: "QSR Brand", budget: "380,000", metric: "Visits and Sales" };
         setSfOriginal(sfData);
         setBrand(sfData.brand);
         onMeasurementBudgetChange(sfData.budget);
@@ -1403,6 +1418,10 @@ function PlacementDetailsStep({ partnerName, hasUploadedFile, hasReuploaded, isU
 }) {
   const [activeSubStep, setActiveSubStep] = useState(1);
   const [applyValid, setApplyValid] = useState(false);
+  const [selectedKeysTab, setSelectedKeysTab] = useState<string>("");
+  const [alreadyParsed, setAlreadyParsed] = useState(false);
+
+  const DETECTED_TABS = ["Media Plan Q2", "Media Plan Q3", "Budget Summary", "Placement Keys", "Campaign Overview", "Partner List"];
 
   useEffect(() => {
     onValidChange?.(activeSubStep < 3 || applyValid);
@@ -1424,19 +1443,54 @@ function PlacementDetailsStep({ partnerName, hasUploadedFile, hasReuploaded, isU
         <>
           {hasUploadedFile ? (
             <>
-              <div className="mb-6 text-sm leading-5 text-[#646464]">
-                <p>Your uploaded media plan has been parsed.</p>
-                <p>Next you&apos;ll map taxonomies found in the placement data.</p>
-              </div>
-              <div className="mb-4">
-                <p className="mb-3 text-sm font-semibold text-[#020617]">Processed Placement Data Results</p>
-                <div className="flex items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-4 py-3">
-                  <span className="text-sm font-medium text-[#020617]">{hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}</span>
-                  <div className="flex items-center gap-6">
-                    <span className="flex items-center gap-1 text-sm"><Check className="size-4 text-[#16a34a]" /><span className="font-medium text-[#16a34a]">103 Mapped Values</span></span>
-                    <span className="flex items-center gap-1 text-sm"><X className="size-4 text-[#dc2626]" /><span className="font-medium text-[#dc2626]">91 Unmapped Values</span></span>
-                    <span className="text-sm font-medium text-[#020617]">194 Unique Values Found</span>
+              <div className="mb-5">
+                <p className="mb-1.5 text-sm font-semibold text-[#020617]">Processed File</p>
+                <div className="flex max-w-[480px] items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-4 py-3">
+                  <span className="text-sm font-medium text-[#020617]">{hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026"}</span>
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center gap-1 text-sm">
+                      <FileText className="size-4 text-[#64748b]" />
+                      <span className="text-[#64748b]">{DETECTED_TABS.length} tabs detected</span>
+                    </span>
                   </div>
+                </div>
+              </div>
+
+              {/* Identify Keys Tab */}
+              <div className="mb-4">
+                <p className="mb-1.5 text-sm text-[#646464]">Select the tab that contains the taxonomy &quot;Keys&quot; — the mapping reference for placement values.</p>
+                <label className="mb-1 block text-sm font-semibold text-[#020617]">Identify Keys</label>
+                <Select
+                  value={selectedKeysTab}
+                  onValueChange={setSelectedKeysTab}
+                  disabled={alreadyParsed}
+                >
+                  <SelectTrigger className={`max-w-[480px] h-11 text-base ${alreadyParsed ? "cursor-not-allowed opacity-50" : ""}`}>
+                    <SelectValue placeholder="Select the keys tab..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DETECTED_TABS.map((tab) => (
+                      <SelectItem key={tab} value={tab}>{tab}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Already Parsed Checkbox */}
+              <div className="mb-6 flex items-start gap-3">
+                <Checkbox
+                  id="already-parsed"
+                  checked={alreadyParsed}
+                  onCheckedChange={(checked) => setAlreadyParsed(checked === true)}
+                  className="mt-0.5"
+                />
+                <div>
+                  <label htmlFor="already-parsed" className="cursor-pointer text-sm font-medium text-[#020617]">
+                    Taxonomy values are already parsed out
+                  </label>
+                  <p className="mt-0.5 text-xs text-[#646464]">
+                    Check this if the media plan file already has taxonomy values broken into separate columns. The Keys tab selection will be disabled.
+                  </p>
                 </div>
               </div>
             </>
@@ -1455,12 +1509,20 @@ function PlacementDetailsStep({ partnerName, hasUploadedFile, hasReuploaded, isU
                     </div>
                   </div>
                 ) : (
-                  <button onClick={onUpload} className="flex h-16 w-full items-center justify-center rounded-lg border-2 border-dashed border-[#e0e0e0] bg-[#f9f9f9] transition-colors hover:border-[#212be9] hover:bg-[#f8f9ff]">
+                  <div
+                    onClick={onUpload}
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-[#212be9]", "bg-[#f8f9ff]"); }}
+                    onDragLeave={(e) => { e.currentTarget.classList.remove("border-[#212be9]", "bg-[#f8f9ff]"); }}
+                    onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-[#212be9]", "bg-[#f8f9ff]"); onUpload(); }}
+                    className="flex h-16 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-[#e0e0e0] bg-[#f9f9f9] transition-colors hover:border-[#212be9] hover:bg-[#f8f9ff]"
+                  >
                     <div className="flex items-center gap-2">
                       <Upload className="size-4 text-[#020617]" />
-                      <span className="text-sm text-[#020617]">Drop here or <span className="cursor-pointer text-[#3333ff]">browse from your files</span></span>
+                      <span className="text-sm text-[#020617]">
+                        Drop here or <span className="cursor-pointer text-[#3333ff]">browse from your files</span>
+                      </span>
                     </div>
-                  </button>
+                  </div>
                 )}
                 <p className="mt-2 text-sm text-[#8d8d8d]">Supported file types: .xls, .xlsx, .csv</p>
               </div>
@@ -2278,33 +2340,20 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded, onValidChan
 
 const PIXEL_AD_SERVER_OPTIONS = ["CM360", "DV360", "Google Campaign Manager", "Sizmek", "Flashtalking", "Innovid", "Extreme Reach"];
 const SINGLE_PIXEL_TYPE_OPTIONS = ["In-App", "Cross-Device / CTV", "Cross-Device Redirect"];
+const PIXEL_TAG_IMPLEMENTATION_OPTIONS = ["Partner", "Agency", "Both"];
 
-const PIXEL_SUB_STEPS = [
-  { num: 1, label: "Confirm Ad Server" },
-  { num: 2, label: "Manage Generated Pixels" },
+type SinglePixelRow = {
+  id: string;
+  partner: string;
+  mediaChannel: string;
+  tagImplementation: string | null;
+  adServers: string[];
+};
+
+const INITIAL_SINGLE_PIXEL_ROWS: SinglePixelRow[] = [
+  { id: "spx-1", partner: "Viant", mediaChannel: "Display", tagImplementation: null, adServers: [] },
+  { id: "spx-2", partner: "Viant", mediaChannel: "Mobile", tagImplementation: null, adServers: [] },
 ];
-
-function PixelSubSteps({ activeStep }: { activeStep: number }) {
-  return (
-    <div className="mb-6">
-      <div className="mb-3 flex gap-1">
-        {PIXEL_SUB_STEPS.map((s) => (
-          <div key={s.num} className={`h-1 flex-1 ${s.num <= activeStep ? "bg-[#020617]" : "bg-[#e2e8f0]"} ${s.num === 1 ? "rounded-l-full" : ""} ${s.num === 2 ? "rounded-r-full" : ""}`} />
-        ))}
-      </div>
-      <div className="flex gap-4">
-        {PIXEL_SUB_STEPS.map((s) => (
-          <div key={s.num} className="flex items-center gap-2">
-            <div className={`flex size-6 items-center justify-center rounded-full text-xs font-medium ${s.num < activeStep ? "bg-[#020617] text-white" : s.num === activeStep ? "bg-[#020617] text-white" : "bg-[#e2e8f0] text-[#757575]"}`}>
-              {s.num < activeStep ? <Check className="size-3.5" /> : s.num}
-            </div>
-            <span className={`text-sm ${s.num === activeStep ? "font-semibold text-[#020617]" : s.num < activeStep ? "text-[#020617]" : "text-[#757575]"}`}>{s.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function SingleMultiSelectDropdown({ options, selected, onChange, placeholder, hasWarning }: {
   options: string[];
@@ -2396,193 +2445,177 @@ function SingleMultiSelectDropdown({ options, selected, onChange, placeholder, h
 function DataIngestionStep({ partnerName, onBack, onContinue }: {
   partnerName: string; onBack: () => void; onContinue: () => void;
 }) {
-  const [activePixelSubStep, setActivePixelSubStep] = useState(1);
-  const [adServerList, setAdServerList] = useState<string[]>([]);
-  const [pixelTypeList, setPixelTypeList] = useState<string[]>([]);
-  const pixelId = "PXL-" + (partnerName || "DRAFT").slice(0, 4).toUpperCase() + "01";
-  const pixelImg = `<img src="https://p.placed.com/api/v2/sync/${pixelId}?campaign=single" height="1" width="1" />`;
-  const [tracking, setTracking] = useState("");
-  const [viewPixel, setViewPixel] = useState(false);
-  const [copiedPixel, setCopiedPixel] = useState(false);
-  const [openAction, setOpenAction] = useState(false);
-  const pixelPopoverRef = useRef<HTMLDivElement>(null);
+  const [rows, setRows] = useState<SinglePixelRow[]>(
+    INITIAL_SINGLE_PIXEL_ROWS.map(row => ({ ...row, partner: partnerName || "Viant" }))
+  );
+  const [selectAllOpen, setSelectAllOpen] = useState<Record<string, boolean>>({});
+  const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
-    if (!viewPixel) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (pixelPopoverRef.current && !pixelPopoverRef.current.contains(e.target as Node)) {
-        setViewPixel(false);
-        setCopiedPixel(false);
-      }
+      Object.entries(dropdownRefs.current).forEach(([id, ref]) => {
+        if (ref && !ref.contains(e.target as Node)) {
+          setSelectAllOpen((prev) => ({ ...prev, [id]: false }));
+        }
+      });
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [viewPixel]);
+  }, []);
+
+  const updateAdServers = (id: string, servers: string[]) => {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, adServers: servers } : r)));
+  };
+
+  const updateTagImplementation = (id: string, value: string) => {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, tagImplementation: value, adServers: value === "Partner" ? [] : r.adServers } : r)));
+  };
+
+  const toggleAdServer = (id: string, server: string) => {
+    const row = rows.find((r) => r.id === id);
+    if (!row) return;
+    const hasServer = row.adServers.includes(server);
+    const newServers = hasServer ? row.adServers.filter((s) => s !== server) : [...row.adServers, server];
+    updateAdServers(id, newServers);
+  };
+
+  const selectAllServers = (id: string) => {
+    updateAdServers(id, [...PIXEL_AD_SERVER_OPTIONS]);
+    setSelectAllOpen((prev) => ({ ...prev, [id]: false }));
+  };
+
+  const resetServers = (id: string) => {
+    updateAdServers(id, []);
+    setSelectAllOpen((prev) => ({ ...prev, [id]: false }));
+  };
+
+  const isValid = rows.every((r) => r.tagImplementation && (r.tagImplementation === "Partner" || r.adServers.length > 0));
 
   return (
     <>
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-[#020617]">Pixel Generation</h2>
-        <div className="mt-1 text-sm leading-5 text-[#646464]">
-          <p>Manage generated pixels here. Pixels are auto-generated using provided Salesforce data and partner details.</p>
-          <p><span className="cursor-pointer text-[#212be9]">Learn more</span> about self-directed pixel generation.</p>
-        </div>
+        <p className="mt-1 text-sm leading-5 text-[#646464]">Confirm or update the ad server for the media partner before generating pixels.</p>
       </div>
 
       <div className="mb-6 h-px w-full bg-[#e2e8f0]" />
 
-      <PixelSubSteps activeStep={activePixelSubStep} />
-
-      {activePixelSubStep === 1 ? (
-        <>
-          <p className="mb-4 text-sm text-[#64748b]">Confirm or update the ad server for the media partner before generating pixels.</p>
-          <Alert className="mb-6 border-[#bfdbfe] bg-[#eff6ff]">
-            <Info className="size-4 text-[#3b82f6]" />
-            <AlertTitle className="text-[#1e40af]">Review ad server assignment</AlertTitle>
-            <AlertDescription className="text-[#1e40af]/80">Ensure the partner has the correct ad server and pixel type selected. You can update selections before proceeding.</AlertDescription>
-          </Alert>
-          <div className="relative w-full">
-            <table className="w-full table-fixed">
-              <thead>
-                <tr className="border-b border-[#e2e8f0]">
-                  <th className="w-[20%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
-                  <th className="w-[40%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
-                  <th className="w-[40%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
+      <Alert className="mb-6 border-[#bfdbfe] bg-[#eff6ff]">
+        <Info className="size-4 text-[#3b82f6]" />
+        <AlertTitle className="text-[#1e40af]">Review ad server assignment</AlertTitle>
+        <AlertDescription className="text-[#1e40af]/80">Ensure the partner has the correct ad server and pixel type selected. You can update selections before proceeding.</AlertDescription>
+      </Alert>
+          <div className="mb-6 overflow-visible rounded-xl border border-[#e2e8f0]">
+            <table className="w-full overflow-visible">
+              <thead className="overflow-visible">
+                <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Partner</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Media Channel</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Tag Implementation</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-[#64748b]">Ad Server</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr className="border-b border-[#e2e8f0]">
-                  <td className="px-4 py-4 text-sm font-medium text-black">{partnerName || "Partner"}</td>
-                  <td className="px-4 py-4">
-                    <SingleMultiSelectDropdown
-                      options={PIXEL_AD_SERVER_OPTIONS}
-                      selected={adServerList}
-                      onChange={setAdServerList}
-                      placeholder="Select ad servers..."
-                      hasWarning={adServerList.length === 0}
-                    />
-                  </td>
-                  <td className="px-4 py-4">
-                    <SingleMultiSelectDropdown
-                      options={SINGLE_PIXEL_TYPE_OPTIONS}
-                      selected={pixelTypeList}
-                      onChange={setPixelTypeList}
-                      placeholder="Select pixel types..."
-                      hasWarning={pixelTypeList.length === 0}
-                    />
-                  </td>
-                </tr>
+              <tbody className="overflow-visible">
+                {rows.map((row) => {
+                  const isPartnerImplementing = row.tagImplementation === "Partner";
+                  return (
+                    <tr key={row.id} className="border-b border-[#e2e8f0] last:border-b-0">
+                      <td className="px-4 py-3 text-sm font-medium text-[#020617]">{row.partner}</td>
+                      <td className="px-4 py-3 text-sm text-[#64748b]">{row.mediaChannel}</td>
+                      <td className="px-4 py-3">
+                        <Select value={row.tagImplementation || undefined} onValueChange={(val) => updateTagImplementation(row.id, val)}>
+                          <SelectTrigger className={`w-full ${row.tagImplementation ? "" : "border-[#ef4444]"}`} size="sm">
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PIXEL_TAG_IMPLEMENTATION_OPTIONS.map((opt) => (
+                              <SelectItem key={opt} value={opt}>
+                                {opt}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-4 py-3">
+                        {isPartnerImplementing ? (
+                          <span className="text-sm text-[#9ca3af]">—</span>
+                        ) : (
+                          <div className="relative" ref={(el) => (dropdownRefs.current[row.id] = el)}>
+                            <div
+                              className={`flex min-h-[40px] w-full items-center gap-2 rounded-md border px-3 py-2 ${
+                                row.tagImplementation && row.tagImplementation !== "Partner" && row.adServers.length === 0 ? "border-[#ef4444]" : "border-[#e2e8f0]"
+                              }`}
+                            >
+                              <div className="flex flex-1 flex-wrap items-center gap-1.5">
+                                {row.adServers.length > 0 ? (
+                                  row.adServers.map((server) => (
+                                    <div
+                                      key={server}
+                                      className="flex items-center gap-1 rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-medium text-[#334155]"
+                                    >
+                                      <span>{server}</span>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          toggleAdServer(row.id, server);
+                                        }}
+                                        className="rounded-full hover:bg-[#e2e8f0]"
+                                      >
+                                        <X className="size-3" />
+                                      </button>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <span className="text-sm text-[#9ca3af]">Select ad servers...</span>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => setSelectAllOpen((prev) => ({ ...prev, [row.id]: !prev[row.id] }))}
+                                className="shrink-0"
+                              >
+                                <ChevronDown className="size-4 text-[#64748b]" />
+                              </button>
+                            </div>
+                            {selectAllOpen[row.id] && (
+                              <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-[#e2e8f0] bg-white shadow-lg">
+                                <div className="flex items-center justify-between border-b border-[#e2e8f0] px-3 py-2">
+                                  <button onClick={() => selectAllServers(row.id)} className="text-xs font-medium text-[#212be9] hover:underline">
+                                    Select All
+                                  </button>
+                                  <button onClick={() => resetServers(row.id)} className="text-xs font-medium text-[#ef4444] hover:underline">
+                                    Reset
+                                  </button>
+                                </div>
+                                <div className="p-2">
+                                  {PIXEL_AD_SERVER_OPTIONS.map((server) => (
+                                    <label key={server} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-[#f8fafc]">
+                                      <Checkbox
+                                        checked={row.adServers.includes(server)}
+                                        onCheckedChange={() => toggleAdServer(row.id, server)}
+                                        className="data-[state=checked]:bg-[#212be9] data-[state=checked]:border-[#212be9]"
+                                      />
+                                      <span className="text-[#020617]">{server}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
           <div className="mt-6 flex items-center justify-between">
             <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-4 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back</button>
-            <button onClick={() => setActivePixelSubStep(2)} disabled={adServerList.length === 0 || pixelTypeList.length === 0} className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50">Continue to Manage Pixels</button>
+            <button onClick={onContinue} disabled={!isValid} className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50">Continue to Review & Submit</button>
           </div>
-        </>
-      ) : (
-        <>
-          <Alert className="mb-6 border-[#bfdbfe] bg-[#eff6ff]">
-            <Info className="size-4 text-[#3b82f6]" />
-            <AlertTitle className="text-[#1e40af]">Assign tagging for the pixel</AlertTitle>
-            <AlertDescription className="text-[#1e40af]/80">Select whether the pixel should be tagged by the Partner, Agency, or Both.</AlertDescription>
-          </Alert>
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm text-[#171417]"><span className="text-[#757575]">Showing </span><span className="font-medium">1</span><span className="text-[#757575]"> of </span><span className="font-medium">1</span><span className="text-[#757575]"> results</span></p>
-            <div className="flex items-center gap-2">
-              <div className="flex w-[200px] items-center rounded-md border border-[#e2e8f0] bg-white px-3 py-2">
-                <Search className="mr-2 size-4 text-[#64748b]" />
-                <span className="text-sm text-[#64748b]">Search</span>
-              </div>
-              <button className="rounded-md border border-[#e2e8f0] bg-white p-2 hover:bg-gray-50"><Copy className="size-4 text-[#64748b]" /></button>
-              <button className="rounded-md border border-[#e2e8f0] bg-white p-2 hover:bg-gray-50"><Mail className="size-4 text-[#64748b]" /></button>
-              <button className="group relative rounded-md border border-[#212be9] bg-[#fcfcfc] p-2 text-[#212be9] transition-colors hover:bg-[#ebf1ff]">
-                <Download className="size-4" />
-                <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#0f172a] px-2.5 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">Download All<span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-[#0f172a]" /></span>
-              </button>
-            </div>
-          </div>
-          <div className="relative w-full">
-            <table className="w-full table-fixed">
-              <thead>
-                <tr className="border-b border-[#e2e8f0]">
-                  <th className="w-[40px] px-4 py-3" />
-                  <th className="w-[12%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Partner</th>
-                  <th className="w-[18%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Ad Server</th>
-                  <th className="w-[22%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel Type</th>
-                  <th className="w-[12%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Tagging</th>
-                  <th className="w-[12%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel ID</th>
-                  <th className="w-[10%] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Pixel</th>
-                  <th className="w-[80px] px-4 py-3 text-left text-sm font-medium text-[#64748b]">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-[#e2e8f0]">
-                  <td className="w-10 px-4 py-4"><div className="size-4 rounded border border-[#0f172a]" /></td>
-                  <td className="px-4 py-4 text-sm font-medium text-black">{partnerName || "Partner"}</td>
-                  <td className="px-4 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {adServerList.map((s) => (
-                        <span key={s} className="rounded bg-[#f1f5f9] px-1.5 py-0.5 text-xs font-medium text-[#020617]">{s}</span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {pixelTypeList.length > 0 ? pixelTypeList.map((t) => (
-                        <span key={t} className="rounded bg-[#f1f5f9] px-1.5 py-0.5 text-xs font-medium text-[#020617]">{t}</span>
-                      )) : (
-                        <span className="text-xs text-[#94a3b8]">—</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <Select value={tracking || undefined} onValueChange={setTracking}>
-                      <SelectTrigger className={`w-[120px] ${tracking ? "" : "border-[#ef4444]"}`} size="sm"><SelectValue placeholder="Select..." /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Partner">Partner</SelectItem>
-                        <SelectItem value="Agency">Agency</SelectItem>
-                        <SelectItem value="Both">Both</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </td>
-                  <td className="px-4 py-4 text-sm text-black">{pixelId}</td>
-                  <td className="relative px-4 py-4">
-                    <button onClick={() => setViewPixel(!viewPixel)} className="rounded px-2 py-1 text-xs font-medium text-[#212be9] transition-colors hover:bg-[#f0f1ff]">View</button>
-                    {viewPixel && (
-                      <div ref={pixelPopoverRef} className="absolute bottom-full left-1/2 z-20 mb-2 w-[360px] -translate-x-1/2 rounded-lg border border-[#e2e8f0] bg-white p-3 shadow-lg">
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="text-xs font-medium text-[#64748b]">Pixel Tag</span>
-                          <button onClick={() => { navigator.clipboard.writeText(pixelImg); setCopiedPixel(true); setTimeout(() => setCopiedPixel(false), 2000); }} className={`rounded px-1.5 py-0.5 text-xs font-medium ${copiedPixel ? "text-[#16a34a]" : "text-[#212be9] hover:bg-[#f0f1ff]"}`}>{copiedPixel ? "Copied" : "Copy"}</button>
-                        </div>
-                        <code className="block break-all rounded-md bg-[#f8fafc] p-2.5 text-xs leading-relaxed text-[#334155]">{pixelImg}</code>
-                        <div className="absolute left-1/2 top-full -mt-px -translate-x-1/2 border-[6px] border-transparent border-t-white drop-shadow-sm" />
-                      </div>
-                    )}
-                  </td>
-                  <td className="relative w-[80px] px-4 py-4 text-center">
-                    <button onClick={() => setOpenAction(!openAction)} className="rounded-md p-1 hover:bg-gray-100"><MoreHorizontal className="size-4 text-[#64748b]" /></button>
-                    {openAction && (
-                      <div className="absolute right-4 top-12 z-10 w-40 rounded-lg border border-[#e2e8f0] bg-white py-1 shadow-lg">
-                        <button className="flex w-full items-center px-4 py-2 text-left text-sm text-[#020617] hover:bg-gray-50">Email</button>
-                        <button className="flex w-full items-center px-4 py-2 text-left text-sm text-[#020617] hover:bg-gray-50">Download</button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-6 flex items-center justify-between">
-            <button onClick={() => setActivePixelSubStep(1)} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-4 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back to Confirm Ad Server</button>
-            <button onClick={onContinue} disabled={!tracking} className="rounded-md bg-[#212be9] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50">Continue to Review</button>
-          </div>
-        </>
-      )}
     </>
   );
 }
-
 function ReviewStep({ campaignName, measurementBudget, metric, partnerName, partnerData, fundingVisits, fundingSalesImpact, authorized, onAuthorizedChange, onBack, onSubmitted, onEditStep }: {
   campaignName: string; measurementBudget: string; metric: string;
   partnerName: string;
@@ -2598,26 +2631,82 @@ function ReviewStep({ campaignName, measurementBudget, metric, partnerName, part
   const [showToast, setShowToast] = useState(false);
   const [comments, setComments] = useState("");
 
-  type ReviewField = { key: string; label: string; value: string; required: boolean; type: "text" | "currency" | "number" | "link" | "date-range" };
+  // Internal Campaign Name sections
+  const [internalAdvertiser, setInternalAdvertiser] = useState("QSR Brand");
+  const [internalLOB, setInternalLOB] = useState("N/A");
+  const [internalReportType, setInternalReportType] = useState("SPR");
+  const [internalPartner, setInternalPartner] = useState(partnerName || "Viant");
+  const [internalCountry, setInternalCountry] = useState("National");
+  const [internalMarket, setInternalMarket] = useState("N/A");
+  const [internalAudienceTarget, setInternalAudienceTarget] = useState("N/A");
+  const [internalYear, setInternalYear] = useState("2026");
+  const [internalTimeframe, setInternalTimeframe] = useState("Q2");
+  const [internalChannel, setInternalChannel] = useState("Digital");
+  const [internalConversionMetric, setInternalConversionMetric] = useState("Both");
+  const [internalWildcard1, setInternalWildcard1] = useState("N/A");
+  const [internalWildcard2, setInternalWildcard2] = useState("N/A");
+
+  type ReviewField = { 
+    key: string; 
+    label: string; 
+    value: string; 
+    required: boolean; 
+    type: "text" | "currency" | "number" | "link" | "date-range";
+    editable?: boolean;
+  };
+
+  const generateInternalCampaignName = () => {
+    const advertiser = "QSR Brand";
+    const lob = "N/A";
+    const reportType = "SPR";
+    const partner = partnerName || "Viant";
+    
+    let country = "National";
+    
+    const market = "N/A";
+    const audienceTarget = "N/A";
+    
+    let year = "2026";
+    let timeframe = "Q2";
+    
+    const channel = "Digital";
+    
+    let conversionMetric = "Both";
+    if (metric) {
+      if (metric.toLowerCase().includes("visits") && metric.toLowerCase().includes("sales")) {
+        conversionMetric = "Both";
+      } else if (metric.toLowerCase().includes("visits")) {
+        conversionMetric = "Visits";
+      } else if (metric.toLowerCase().includes("sales")) {
+        conversionMetric = "Sales";
+      }
+    }
+    
+    const wildcard1 = "N/A";
+    const wildcard2 = "N/A";
+
+    return `${advertiser}_${lob}_${reportType}_${partner}_${country}_${market}_${audienceTarget}_${year}_${timeframe}_${channel}_${conversionMetric}_${wildcard1}_${wildcard2}`;
+  };
 
   const [fields, setFields] = useState<ReviewField[]>([
-    { key: "campaignName", label: "Campaign Name", value: campaignName || "McDonalds Q1-Q2 2025", required: true, type: "text" },
-    { key: "advertiser", label: "Advertiser", value: "McDonald's Corporation", required: true, type: "text" },
-    { key: "agency", label: "Agency", value: partnerData["Agency or Site Served"] || "Starcom", required: true, type: "text" },
-    { key: "campaignPeriod", label: "Campaign Period", value: "Apr 1, 2025 – Jun 30, 2025", required: true, type: "date-range" },
-    { key: "storeChains", label: "Store Chains to be Measured", value: "McDonald's US", required: true, type: "text" },
-    { key: "country", label: "Country", value: "United States", required: true, type: "text" },
-    { key: "geoScope", label: "Geographical Scope", value: "National", required: true, type: "text" },
-    { key: "conversionType", label: "Conversion Type", value: metric || "Visits and Sales Impact", required: true, type: "text" },
-    { key: "adServer", label: "Ad Server", value: partnerData["Ad Server"] || "Google Campaign Manager", required: true, type: "text" },
-    { key: "totalSpend", label: "Total Estimated Ad Spend", value: measurementBudget ? `$${measurementBudget}` : "$420,000", required: true, type: "currency" },
-    { key: "totalImpressions", label: "Total Estimated Impressions", value: partnerData["Estimated Impressions"] || "5,000,000", required: true, type: "number" },
+    { key: "campaignName", label: "Campaign Name", value: campaignName || "QSR Q2 2026", required: true, type: "text", editable: true },
+    { key: "campaignNameInternal", label: "Campaign Name (Internal Only)", value: generateInternalCampaignName(), required: false, type: "text", editable: false },
+    { key: "advertiser", label: "Advertiser", value: "QSR Brand", required: true, type: "text", editable: true },
+    { key: "agency", label: "Agency", value: partnerData["Agency or Site Served"] || "Starcom", required: true, type: "text", editable: true },
+    { key: "campaignPeriod", label: "Campaign Period", value: "Apr 1, 2026 – Jun 30, 2026", required: true, type: "date-range", editable: true },
+    { key: "storeChains", label: "Store Chains to be Measured", value: "QSR Brand US", required: true, type: "text", editable: true },
+    { key: "country", label: "Country", value: "United States", required: true, type: "text", editable: true },
+    { key: "geoScope", label: "Geographical Scope", value: "National", required: true, type: "text", editable: true },
+    { key: "conversionType", label: "Conversion Type", value: metric || "Visits and Sales Impact", required: true, type: "text", editable: true },
+    { key: "totalSpend", label: "Total Estimated Ad Spend", value: measurementBudget ? `$${measurementBudget}` : "$380,000", required: true, type: "currency", editable: true },
+    { key: "totalImpressions", label: "Total Estimated Impressions", value: partnerData["Estimated Impressions"] || "5,000,000", required: true, type: "number", editable: true },
 
-    { key: "sfOpportunity", label: "Salesforce Opportunity ID", value: "https://foursquare.lightning.force.com/lightning/r/Opportunity/006Hs00001abc123/view", required: true, type: "link" },
+    { key: "sfOpportunity", label: "Salesforce Opportunity ID", value: "https://foursquare.lightning.force.com/lightning/r/Opportunity/006Hs00001026QSR/view", required: true, type: "link", editable: true },
   ]);
 
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const editRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -2625,12 +2714,57 @@ function ReviewStep({ campaignName, measurementBudget, metric, partnerName, part
   }, [editingKey]);
 
   const startEdit = (field: ReviewField) => {
-    if (submitted) return;
+    if (submitted || field.editable === false) return;
     setEditingKey(field.key);
     setEditValue(field.value);
   };
+
+  const copyToClipboard = (text: string, fieldKey: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedField(fieldKey);
+      setTimeout(() => setCopiedField(null), 2000);
+    });
+  };
+
   const commitEdit = (key: string) => {
-    setFields((prev) => prev.map((f) => f.key === key ? { ...f, value: editValue.trim() } : f));
+    setFields((prev) => {
+      const updated = prev.map((f) => f.key === key ? { ...f, value: editValue.trim() } : f);
+      
+      // Regenerate internal campaign name after any field change
+      const advertiser = "QSR Brand";
+      const lob = "N/A";
+      const reportType = "SPR";
+      const partner = partnerName || "Viant";
+      
+      let country = "National";
+      
+      const market = "N/A";
+      const audienceTarget = "N/A";
+      
+      let year = "2026";
+      let timeframe = "Q2";
+      
+      const channel = "Digital";
+      
+      let conversionMetric = "Both";
+      const conversionTypeField = updated.find((f) => f.key === "conversionType");
+      if (conversionTypeField?.value) {
+        if (conversionTypeField.value.toLowerCase().includes("visits") && conversionTypeField.value.toLowerCase().includes("sales")) {
+          conversionMetric = "Both";
+        } else if (conversionTypeField.value.toLowerCase().includes("visits")) {
+          conversionMetric = "Visits";
+        } else if (conversionTypeField.value.toLowerCase().includes("sales")) {
+          conversionMetric = "Sales";
+        }
+      }
+      
+      const wildcard1 = "N/A";
+      const wildcard2 = "N/A";
+
+      const newInternalName = `${advertiser}_${lob}_${reportType}_${partner}_${country}_${market}_${audienceTarget}_${year}_${timeframe}_${channel}_${conversionMetric}_${wildcard1}_${wildcard2}`;
+      
+      return updated.map((f) => f.key === "campaignNameInternal" ? { ...f, value: newInternalName } : f);
+    });
     setEditingKey(null);
     setEditValue("");
   };
@@ -2644,8 +2778,194 @@ function ReviewStep({ campaignName, measurementBudget, metric, partnerName, part
   const allFieldsValid = missingRequired.length === 0;
   const canSubmit = allFieldsValid && authorized;
 
+  // Dropdown options for internal campaign name sections
+  const ADVERTISER_OPTIONS = ["QSR Brand", "McDonalds", "Starbucks", "Target", "N/A"];
+  const LOB_OPTIONS = ["N/A", "Electronics", "Food & Beverage", "Retail", "Automotive"];
+  const REPORT_TYPE_OPTIONS = ["SPR", "DV360", "Custom"];
+  const PARTNER_OPTIONS = ["Viant", "DV360", "N/A", "A Code Media", "A&E", "A&E (Linear TV)", "ABC (Linear TV)", "Acast", "Adams Outdoor", "Adelphic", "AdsMovil", "AdTheorent", "Amazon", "Ampersand", "Animal Planet", "Atmosphere", "Audacy", "Azerion", "Azteca America", "B Code Media", "Barstool Sports", "BBC America (Linear TV)"];
+  const COUNTRY_OPTIONS = ["National", "United States", "Canada", "Mexico", "N/A"];
+  const MARKET_OPTIONS = ["N/A", "Northeast", "Southeast", "Midwest", "Southwest", "West", "National & Local"];
+  const AUDIENCE_TARGET_OPTIONS = ["N/A", "General", "Premium", "Custom"];
+  const YEAR_OPTIONS = ["2024", "2025", "2026", "2027"];
+  const TIMEFRAME_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "H1", "H2", "Full Year"];
+  const CHANNEL_OPTIONS = ["Digital", "TV", "Radio", "Print", "OOH", "Multi-Channel"];
+  const CONVERSION_METRIC_OPTIONS = ["Both", "Visits", "Sales", "N/A"];
+  const WILDCARD_OPTIONS = ["N/A", "Test", "Pilot", "Expansion"];
+
+  const updateInternalCampaignName = () => {
+    const newValue = `${internalAdvertiser}_${internalLOB}_${internalReportType}_${internalPartner}_${internalCountry}_${internalMarket}_${internalAudienceTarget}_${internalYear}_${internalTimeframe}_${internalChannel}_${internalConversionMetric}_${internalWildcard1}_${internalWildcard2}`;
+    setFields((prev) => prev.map((f) => f.key === "campaignNameInternal" ? { ...f, value: newValue } : f));
+  };
+
+  useEffect(() => {
+    updateInternalCampaignName();
+  }, [internalAdvertiser, internalLOB, internalReportType, internalPartner, internalCountry, internalMarket, internalAudienceTarget, internalYear, internalTimeframe, internalChannel, internalConversionMetric, internalWildcard1, internalWildcard2]);
+
   const formatDisplayValue = (field: ReviewField) => {
     if (!field.value.trim()) return null;
+
+    if (field.key === "campaignNameInternal") {
+      return (
+        <div className="flex-1 space-y-2">
+          <div className="flex flex-wrap items-center gap-1">
+            <Select value={internalAdvertiser} onValueChange={setInternalAdvertiser}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[90px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ADVERTISER_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalLOB} onValueChange={setInternalLOB}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LOB_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalReportType} onValueChange={setInternalReportType}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REPORT_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalPartner} onValueChange={setInternalPartner}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[100px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PARTNER_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalCountry} onValueChange={setInternalCountry}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[80px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {COUNTRY_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalMarket} onValueChange={setInternalMarket}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MARKET_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalAudienceTarget} onValueChange={setInternalAudienceTarget}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {AUDIENCE_TARGET_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalYear} onValueChange={setInternalYear}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {YEAR_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalTimeframe} onValueChange={setInternalTimeframe}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[50px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIMEFRAME_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalChannel} onValueChange={setInternalChannel}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[70px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CHANNEL_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalConversionMetric} onValueChange={setInternalConversionMetric}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CONVERSION_METRIC_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalWildcard1} onValueChange={setInternalWildcard1}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WILDCARD_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalWildcard2} onValueChange={setInternalWildcard2}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WILDCARD_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <button
+              onClick={() => copyToClipboard(field.value, field.key)}
+              className="ml-2 shrink-0 rounded p-1 text-[#64748b] transition-colors hover:bg-[#f1f5f9] hover:text-[#020617]"
+              title="Copy to clipboard"
+            >
+              {copiedField === field.key ? (
+                <Check className="size-3.5 text-[#16a34a]" />
+              ) : (
+                <Copy className="size-3.5" />
+              )}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     if (field.type === "link") {
       return (
         <a href={field.value} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-[#212be9] hover:underline">
@@ -2663,35 +2983,46 @@ function ReviewStep({ campaignName, measurementBudget, metric, partnerName, part
       setSubmitting(false);
       setSubmitted(true);
       onSubmitted();
-      setShowToast(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
-      setTimeout(() => setShowToast(false), 5000);
     }, 2000);
   };
+
+  if (submitted) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
+        <div className="mb-6 flex size-16 items-center justify-center rounded-full bg-[#f0fdf4]">
+          <Check className="size-8 text-[#16a34a]" />
+        </div>
+        <h2 className="text-2xl font-semibold text-[#020617]">Campaign Submitted Successfully</h2>
+        <p className="mx-auto mt-3 max-w-[520px] text-sm leading-relaxed text-[#6b7280]">
+          Our AdOps team is reviewing your setup and generating your tracking pixel(s). You can track the status of your pixel generation in real-time here: <a href="https://foursquare.atlassian.net/browse/PIX-4827" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 font-medium text-[#212be9] hover:underline">PIX-4827 C <ExternalLink className="inline size-3" /></a>.
+        </p>
+        <p className="mx-auto mt-3 max-w-[520px] text-sm leading-relaxed text-[#6b7280]">
+          Once your pixel(s) are ready, they will be sent to the appropriate parties for implementation. Estimated turnaround: 1-2 business days.
+        </p>
+        <Button variant="outline" size="lg" asChild className="mt-8">
+          <Link href="/projects/app/attribution">
+            <ArrowLeft className="size-4" />
+            Back to Dashboard
+          </Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="mb-6">
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-semibold text-[#020617]">Review &amp; Submit</h2>
-          {submitted && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f0fdf4] px-3 py-1 text-xs font-semibold text-[#16a34a] ring-1 ring-inset ring-[#16a34a]/20">
-              <Check className="size-3.5" />
-              Submitted
-            </span>
-          )}
         </div>
-        {submitted ? (
-          <p className="mt-1 text-sm text-[#646464]">Submitted by you on {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} at {new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</p>
-        ) : (
-          <div className="mt-1 text-sm leading-5 text-[#646464]">
-            <p>Review your campaign summary below. Click the pencil icon to edit any field inline.</p>
-            <p>Once a campaign is approved, an account representative will get in touch to finalize details and set up billing.</p>
-          </div>
-        )}
+        <div className="mt-1 text-sm leading-5 text-[#646464]">
+          <p>Review your campaign summary below. Click the pencil icon to edit any field inline.</p>
+          <p>Once a campaign is approved, an account representative will get in touch to finalize details and set up billing.</p>
+        </div>
       </div>
 
-      {!submitted && missingRequired.length > 0 && (
+      {missingRequired.length > 0 && (
         <Alert className="mb-6 border-[#fbbf24] bg-[#fffbeb]">
           <CircleAlert className="size-4 text-[#d97706]" />
           <AlertTitle className="text-[#92400e]">Missing required fields</AlertTitle>
@@ -2733,10 +3064,12 @@ function ReviewStep({ campaignName, measurementBudget, metric, partnerName, part
                       <button onClick={() => startEdit(field)} className="flex flex-1 items-center">
                         <span className="rounded-md border border-dashed border-[#dc2626] bg-[#fef2f2] px-3 py-1.5 text-sm text-[#dc2626]">Enter {field.label.toLowerCase()}</span>
                       </button>
+                    ) : field.key === "campaignNameInternal" ? (
+                      formatDisplayValue(field)
                     ) : (
                       <>
                         <div className="flex-1">{formatDisplayValue(field)}</div>
-                        {!submitted && (
+                        {field.editable !== false && (
                           <button onClick={() => startEdit(field)} className="rounded p-1 text-[#9ca3af] opacity-0 transition-opacity hover:bg-[#f1f5f9] hover:text-[#020617] group-hover:opacity-100">
                             <SquarePen className="size-4" />
                           </button>
@@ -2899,7 +3232,7 @@ function UploadMediaPlanModal({ open, onClose, onUpload, initialDelimiters, drop
   };
 
   const handleClickUploadZone = () => {
-    setFileName("MediaPlan_McDonalds_2025.xlsx");
+    setFileName("MediaPlan_QSR_2026.xlsx");
   };
 
   const handleSubmit = () => {

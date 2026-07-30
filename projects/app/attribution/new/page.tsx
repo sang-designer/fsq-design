@@ -3338,6 +3338,21 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(campaignSubmitted);
 
+  // Internal Campaign Name sections
+  const [internalAdvertiser, setInternalAdvertiser] = useState("QSR Brand");
+  const [internalLOB, setInternalLOB] = useState("N/A");
+  const [internalReportType, setInternalReportType] = useState("SPR");
+  const [internalPartner, setInternalPartner] = useState("Viant");
+  const [internalCountry, setInternalCountry] = useState("National");
+  const [internalMarket, setInternalMarket] = useState("N/A");
+  const [internalAudienceTarget, setInternalAudienceTarget] = useState("N/A");
+  const [internalYear, setInternalYear] = useState("2026");
+  const [internalTimeframe, setInternalTimeframe] = useState("Q2");
+  const [internalChannel, setInternalChannel] = useState("Digital");
+  const [internalConversionMetric, setInternalConversionMetric] = useState("Both");
+  const [internalWildcard1, setInternalWildcard1] = useState("N/A");
+  const [internalWildcard2, setInternalWildcard2] = useState("N/A");
+
   type PartnerReviewRow = {
     name: string;
     types: string;
@@ -3545,26 +3560,190 @@ function ReviewContent({ onBack, onSubmitted, campaignSubmitted, goToStep }: { o
     });
   };
 
+  // Dropdown options for internal campaign name sections
+  const ADVERTISER_OPTIONS = ["QSR Brand", "McDonalds", "Starbucks", "Target", "N/A"];
+  const LOB_OPTIONS = ["N/A", "Electronics", "Food & Beverage", "Retail", "Automotive"];
+  const REPORT_TYPE_OPTIONS = ["SPR", "DV360", "Custom"];
+  const PARTNER_OPTIONS = ["Viant", "DV360", "N/A", "A Code Media", "A&E", "A&E (Linear TV)", "ABC (Linear TV)", "Acast", "Adams Outdoor", "Adelphic", "AdsMovil", "AdTheorent", "Amazon", "Ampersand", "Animal Planet", "Atmosphere", "Audacy", "Azerion", "Azteca America", "B Code Media", "Barstool Sports", "BBC America (Linear TV)"];
+  const COUNTRY_OPTIONS = ["National", "United States", "Canada", "Mexico", "N/A"];
+  const MARKET_OPTIONS = ["N/A", "Northeast", "Southeast", "Midwest", "Southwest", "West", "National & Local"];
+  const AUDIENCE_TARGET_OPTIONS = ["N/A", "General", "Premium", "Custom"];
+  const YEAR_OPTIONS = ["2024", "2025", "2026", "2027"];
+  const TIMEFRAME_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "H1", "H2", "Full Year"];
+  const CHANNEL_OPTIONS = ["Digital", "TV", "Radio", "Print", "OOH", "Multi-Channel"];
+  const CONVERSION_METRIC_OPTIONS = ["Both", "Visits", "Sales", "N/A"];
+  const WILDCARD_OPTIONS = ["N/A", "Test", "Pilot", "Expansion"];
+
+  const updateInternalCampaignName = () => {
+    const newValue = `${internalAdvertiser}_${internalLOB}_${internalReportType}_${internalPartner}_${internalCountry}_${internalMarket}_${internalAudienceTarget}_${internalYear}_${internalTimeframe}_${internalChannel}_${internalConversionMetric}_${internalWildcard1}_${internalWildcard2}`;
+    setFields((prev) => prev.map((f) => f.key === "campaignNameInternal" ? { ...f, value: newValue } : f));
+  };
+
+  useEffect(() => {
+    updateInternalCampaignName();
+  }, [internalAdvertiser, internalLOB, internalReportType, internalPartner, internalCountry, internalMarket, internalAudienceTarget, internalYear, internalTimeframe, internalChannel, internalConversionMetric, internalWildcard1, internalWildcard2]);
+
   const formatDisplayValue = (field: ReviewField) => {
     if (!field.value.trim()) return null;
     
     if (field.key === "campaignNameInternal") {
       return (
-        <div className="flex flex-1 items-center gap-2">
-          <code className="flex-1 rounded bg-[#f1f5f9] px-2 py-1 text-xs font-mono text-[#334155]">
-            {field.value}
-          </code>
-          <button
-            onClick={() => copyToClipboard(field.value, field.key)}
-            className="shrink-0 rounded p-1.5 text-[#64748b] transition-colors hover:bg-[#f1f5f9] hover:text-[#020617]"
-            title="Copy to clipboard"
-          >
-            {copiedField === field.key ? (
-              <Check className="size-4 text-[#16a34a]" />
-            ) : (
-              <Copy className="size-4" />
-            )}
-          </button>
+        <div className="flex-1 space-y-2">
+          <div className="flex flex-wrap items-center gap-1">
+            <Select value={internalAdvertiser} onValueChange={setInternalAdvertiser}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[90px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ADVERTISER_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalLOB} onValueChange={setInternalLOB}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LOB_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalReportType} onValueChange={setInternalReportType}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REPORT_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalPartner} onValueChange={setInternalPartner}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[100px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PARTNER_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalCountry} onValueChange={setInternalCountry}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[80px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {COUNTRY_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalMarket} onValueChange={setInternalMarket}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MARKET_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalAudienceTarget} onValueChange={setInternalAudienceTarget}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {AUDIENCE_TARGET_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalYear} onValueChange={setInternalYear}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {YEAR_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalTimeframe} onValueChange={setInternalTimeframe}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[50px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIMEFRAME_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalChannel} onValueChange={setInternalChannel}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[70px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CHANNEL_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalConversionMetric} onValueChange={setInternalConversionMetric}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CONVERSION_METRIC_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalWildcard1} onValueChange={setInternalWildcard1}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WILDCARD_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-[#94a3b8]">_</span>
+            <Select value={internalWildcard2} onValueChange={setInternalWildcard2}>
+              <SelectTrigger size="sm" className="h-7 w-auto min-w-[60px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WILDCARD_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <button
+              onClick={() => copyToClipboard(field.value, field.key)}
+              className="ml-2 shrink-0 rounded p-1 text-[#64748b] transition-colors hover:bg-[#f1f5f9] hover:text-[#020617]"
+              title="Copy to clipboard"
+            >
+              {copiedField === field.key ? (
+                <Check className="size-3.5 text-[#16a34a]" />
+              ) : (
+                <Copy className="size-3.5" />
+              )}
+            </button>
+          </div>
         </div>
       );
     }
