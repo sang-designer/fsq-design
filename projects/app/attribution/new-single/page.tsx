@@ -284,7 +284,7 @@ function SinglePartnerCampaignContent() {
               <p className="text-base font-semibold text-black">Upload Results</p>
               <div className="flex items-center gap-1">
                 <FileText className="size-4 text-[#8d8d8d]" />
-                <span className="text-xs text-black">{hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}</span>
+                <span className="text-xs text-black">{hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026"}</span>
               </div>
             </div>
             <div className="flex flex-1 items-stretch">
@@ -326,7 +326,7 @@ function SinglePartnerCampaignContent() {
           disabledSteps={disabledSteps}
           onStepClick={(s) => !campaignSubmitted && goToStep(s as Step)}
           hasUploadedFile={hasUploadedFile}
-          fileName={hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}
+          fileName={hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026"}
           onUpload={currentStep === "campaign" ? handleCampaignUpload : handleUpload}
           isUploading={isUploading || isReparsing}
           disabled={campaignSubmitted}
@@ -934,7 +934,7 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
             </div>
           ) : hasUploadedFile ? (
             <SingleInlineUploadedCard
-              fileName={hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}
+              fileName={hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026"}
               delimiters={delimiters}
               onDelimitersChange={onDelimitersChange}
               onReplace={onUpload}
@@ -2124,7 +2124,7 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded, onValidChan
       {/* File summary banner */}
       <div className="mb-6 flex items-center justify-between rounded-lg border border-border bg-white px-5 py-3.5">
         <div>
-          <p className="text-sm font-semibold text-[#1f2430]">{hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}</p>
+          <p className="text-sm font-semibold text-[#1f2430]">{hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026"}</p>
           <p className="text-xs text-[#6b7280]">Uploaded by Sang Yeo</p>
         </div>
         <div className="flex items-center gap-5">
