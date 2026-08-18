@@ -1438,7 +1438,7 @@ function PlacementSubSteps({ activeStep, hasReuploaded }: { activeStep: number; 
         {PLACEMENT_SUB_STEPS.map((s) => (
           <div
             key={s.num}
-            className={`h-1 flex-1 ${s.num <= activeStep ? "bg-[#020617]" : "bg-[#e2e8f0]"} ${s.num === 1 ? "rounded-l-full" : ""} ${s.num === PLACEMENT_SUB_STEPS.length ? "rounded-r-full" : ""}`}
+            className={`h-1 flex-1 ${s.num <= activeStep ? "bg-[#64748b]" : "bg-[#e2e8f0]"} ${s.num === 1 ? "rounded-l-full" : ""} ${s.num === PLACEMENT_SUB_STEPS.length ? "rounded-r-full" : ""}`}
           />
         ))}
       </div>
@@ -1450,13 +1450,13 @@ function PlacementSubSteps({ activeStep, hasReuploaded }: { activeStep: number; 
                 s.num < activeStep
                   ? "border border-[#d1d5db] bg-white text-[#9ca3af]"
                   : s.num === activeStep
-                    ? "border-2 border-[#020617] bg-[#020617] text-white"
+                    ? "border-2 border-[#64748b] bg-[#64748b] text-white"
                     : "border-2 border-gray-300 text-gray-400"
               }`}
             >
               {s.num < activeStep ? <Check className="size-3.5" /> : s.num}
             </div>
-            <span className={`text-sm ${s.num === activeStep ? "font-semibold text-[#020617]" : s.num < activeStep ? "text-[#020617]" : "text-[#757575]"}`}>
+            <span className={`text-sm ${s.num === activeStep ? "font-semibold text-[#64748b]" : s.num < activeStep ? "text-[#64748b]" : "text-[#757575]"}`}>
               {s.label}
             </span>
           </div>
