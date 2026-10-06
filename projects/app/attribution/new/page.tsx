@@ -1,6 +1,7 @@
 "use client";
 
-import { Upload, ChevronDown, ChevronUp, Calendar as CalendarIcon, CircleDashed, Check, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Search, Download, Copy, Mail, X, Loader2, GripVertical, ArrowRight, OctagonAlert, SquarePen, Trash2, FileText, Info, CircleAlert, ArrowUpDown, SlidersHorizontal, ExternalLink, ArrowLeft, MousePointerClick } from "lucide-react";
+import { Upload, ChevronDown, ChevronUp, Calendar as CalendarIcon, CircleDashed, Check, Plus, MoreHorizontal, ChevronLeft, ChevronRight, Search, Download, Copy, Mail, X, Loader2, GripVertical, ArrowRight, OctagonAlert, SquarePen, Trash2, FileText, Info, CircleAlert, ArrowUpDown, SlidersHorizontal, ExternalLink, ArrowLeft, MousePointerClick, LayoutTemplate } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useRef, useCallback, useEffect, useMemo, DragEvent, Suspense } from "react";
@@ -110,6 +111,116 @@ function SelectField({ label, placeholder = "Type or Select", helpText, value, o
       </div>
       {error && <p className="text-xs leading-4 text-[#dc2626]">This field is required</p>}
       {helpText && !error && <p className="text-xs leading-4 text-[#8d8d8d]">{helpText}</p>}
+    </div>
+  );
+}
+
+function ComboField({ label, placeholder = "Type or Select", value, onChange, error, options, required }: {
+  label: string;
+  placeholder?: string;
+  value?: string;
+  onChange?: (v: string) => void;
+  error?: boolean;
+  options: string[];
+  required?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [highlightIdx, setHighlightIdx] = useState(-1);
+  const ref = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const query = value ?? "";
+  const filtered = options.filter((o) => o.toLowerCase().includes(query.toLowerCase()));
+  const showCreate = query.trim().length > 0 && !options.some((o) => o.toLowerCase() === query.trim().toLowerCase());
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    if (highlightIdx >= 0 && listRef.current) {
+      const el = listRef.current.children[highlightIdx] as HTMLElement | undefined;
+      el?.scrollIntoView({ block: "nearest" });
+    }
+  }, [highlightIdx]);
+
+  const commit = (v: string) => {
+    onChange?.(v);
+    setOpen(false);
+    setHighlightIdx(-1);
+  };
+
+  const itemCount = filtered.length + (showCreate ? 1 : 0);
+
+  return (
+    <div className="relative flex flex-1 flex-col gap-2 min-w-[280px]" ref={ref}>
+      <label className={`text-sm font-semibold ${error ? "text-[#dc2626]" : "text-black"}`}>{label}{required && <span className="text-[#dc2626]"> *</span>}</label>
+      <div className="relative flex items-center">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => {
+            onChange?.(e.target.value);
+            setOpen(true);
+            setHighlightIdx(-1);
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setOpen(true);
+              setHighlightIdx((i) => Math.min(i + 1, itemCount - 1));
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setHighlightIdx((i) => Math.max(i - 1, 0));
+            } else if (e.key === "Enter") {
+              e.preventDefault();
+              if (highlightIdx >= 0 && highlightIdx < filtered.length) commit(filtered[highlightIdx]);
+              else if (showCreate && (highlightIdx === filtered.length || highlightIdx < 0)) commit(query.trim());
+              else if (filtered.length === 1) commit(filtered[0]);
+              else setOpen(false);
+            } else if (e.key === "Escape") {
+              setOpen(false);
+            }
+          }}
+          placeholder={placeholder}
+          className={`w-full rounded-md border py-2 pl-3 pr-9 text-sm text-[#020617] outline-none placeholder:text-[#8d8d8d] ${error ? "border-[#dc2626] bg-[#fef2f2] focus:border-[#dc2626]" : "border-[#f0f0f0] bg-[#fcfcfc] focus:border-[#212be9]"}`}
+        />
+        <ChevronDown className="pointer-events-none absolute right-3 size-4 text-[#8d8d8d]" />
+      </div>
+      {open && (
+        <div ref={listRef} className="absolute left-0 top-full z-50 mt-1 max-h-[240px] w-full overflow-y-auto rounded-md border border-[#e2e8f0] bg-white py-1 shadow-md">
+          {filtered.map((opt, i) => (
+            <button
+              key={opt}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => commit(opt)}
+              className={`flex w-full items-center px-3 py-2 text-left text-sm ${i === highlightIdx ? "bg-[#ebf1ff] text-[#212be9]" : "text-[#020617] hover:bg-[#f8fafc]"}`}
+            >
+              {opt}
+            </button>
+          ))}
+          {showCreate && (
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => commit(query.trim())}
+              className={`flex w-full items-center px-3 py-2 text-left text-sm ${highlightIdx === filtered.length ? "bg-[#ebf1ff] text-[#212be9]" : "text-[#020617] hover:bg-[#f8fafc]"}`}
+            >
+              Use “{query.trim()}”
+            </button>
+          )}
+          {filtered.length === 0 && !showCreate && (
+            <p className="px-3 py-2 text-sm text-[#8d8d8d]">No matching partners</p>
+          )}
+        </div>
+      )}
+      {error && <p className="text-xs leading-4 text-[#dc2626]">This field is required</p>}
     </div>
   );
 }
@@ -567,7 +678,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
 
   const isStepValid = sfValidated && !!brand.trim() && !!measurementBudget.trim() && !!metric.trim() && (
     hasUploadedFile || (
-      !!campaignName.trim() && !!advertiser.trim() && !!startDate && !!endDate && !!agencyName.trim() && !!country.trim() && !!storeChains.trim()
+      !!campaignName.trim() && !!startDate && !!endDate && !!agencyName.trim() && !!ownerType.trim() && !!country.trim()
     )
   );
 
@@ -791,7 +902,7 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
               <p className="text-xs font-semibold text-[#646464]">Ownership</p>
               <div className="flex flex-col gap-4">
                 <div className="flex gap-4">
-                  <SelectField label="Agency/Partner Name" value={agencyName} onChange={setAgencyName} required />
+                  <SelectField label="Agency/Partner Name" value={agencyName} onChange={setAgencyName} required options={AGENCY_OPTIONS} />
                   <SelectField label="Owner Type" value={ownerType} onChange={setOwnerType} required options={["I represent an agency working with the advertiser", "I represent a partner or publisher on this campaign", "I represent the advertiser"]} />
                 </div>
                 <div className="flex gap-4">
@@ -805,9 +916,9 @@ function CampaignDetailsContent({ showForm, onShowForm, campaignName, onCampaign
               <p className="text-xs font-semibold text-[#646464]">Conversions</p>
               <div className="flex flex-col gap-4">
                 <div className="flex gap-4">
-                  <SelectField label="Country" value={country} onChange={setCountry} required />
+                  <SelectField label="Country" value={country} onChange={setCountry} required options={["United States", "Canada", "Mexico", "United Kingdom"]} />
                   <div className="flex flex-1 flex-col gap-2 min-w-[280px]">
-                    <label className="text-sm font-semibold text-black">Store Chains to be measured <span className="text-[#dc2626]">*</span></label>
+                    <label className="text-sm font-semibold text-black">Store Chains to be measured</label>
                     <div className="relative flex items-center">
                       <select
                         value={storeChains}
@@ -960,21 +1071,34 @@ const SALES_MANAGER_OPTIONS = ["Sarah Johnson", "Michael Chen", "Emily Rodriguez
 const AD_OPS_OPTIONS = ["James Lee", "Lisa Wang", "Robert Brown", "Jennifer Taylor", "Kevin Martinez"];
 
 function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValues = {} }: { mode: "add" | "edit"; onDiscard: () => void; onSave: (formData: Record<string, string>) => void; errorFields?: string[]; initialValues?: Record<string, string> }) {
-  const [mediaTypeOpen, setMediaTypeOpen] = useState(true);
-
-  const initialMediaTypes = (() => {
-    const types: { id: number; value: string }[] = [];
+  const initialSelectedTypes = (() => {
+    if (initialValues["Media Types"]) {
+      return initialValues["Media Types"].split(",").map((t) => t.trim()).filter(Boolean);
+    }
+    const types: string[] = [];
     let i = 0;
     while (initialValues[`Media Type ${i}`]) {
-      types.push({ id: i + 1, value: initialValues[`Media Type ${i}`] });
+      types.push(initialValues[`Media Type ${i}`]);
       i++;
     }
-    return types.length > 0 ? types : [{ id: 1, value: "" }];
+    return types;
   })();
-  const [mediaTypes, setMediaTypes] = useState(initialMediaTypes);
+  const [selectedMediaTypes, setSelectedMediaTypes] = useState<string[]>(initialSelectedTypes);
+  const [mediaTypeMenuOpen, setMediaTypeMenuOpen] = useState(false);
+  const mediaTypeMenuRef = useRef<HTMLDivElement>(null);
 
   const [formValues, setFormValues] = useState<Record<string, string>>(initialValues);
   const [clearedErrors, setClearedErrors] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (mediaTypeMenuRef.current && !mediaTypeMenuRef.current.contains(e.target as Node)) {
+        setMediaTypeMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const hasError = (field: string) => errorFields.includes(field) && !clearedErrors.has(field) && !formValues[field];
 
@@ -991,95 +1115,121 @@ function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValu
     }
   };
 
+  const toggleMediaType = (type: string) => {
+    setSelectedMediaTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  };
+
+  const handleSave = () => {
+    const next: Record<string, string> = { ...formValues };
+    Object.keys(next).forEach((k) => {
+      if (k.startsWith("Media Type ") || k.startsWith("Estimated Ad Spend")) delete next[k];
+    });
+    next["Media Types"] = selectedMediaTypes.join(", ");
+    selectedMediaTypes.forEach((type, i) => {
+      next[`Media Type ${i}`] = type;
+    });
+    onSave(next);
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <p className="text-base font-semibold text-black">{mode === "add" ? "Add" : "Edit"} Media Partner</p>
 
-      <div className="flex flex-col gap-12">
+      <div className="flex flex-col gap-4">
         {/* Partner/Platform Setup */}
         <div className="flex flex-col gap-2">
           <p className="text-xs font-semibold text-[#646464]">Partner/Platform Setup</p>
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-8">
-              <SelectField label="Partner/Platform Name" value={formValues["Partner/Platform Name"] ?? ""} onChange={(v) => updateField("Partner/Platform Name", v)} options={PARTNER_NAME_OPTIONS} />
-              <SelectField label="Ad Server" value={formValues["Ad Server"] ?? ""} onChange={(v) => updateField("Ad Server", v)} error={hasError("Ad Server")} options={AD_SERVER_OPTIONS} />
-            </div>
-            <div className="flex gap-8">
-              <DateField label="Ad Run Start Date" value={formValues["Ad Run Start Date"] ?? ""} onChange={(v) => updateField("Ad Run Start Date", v)} error={hasError("Ad Run Start Date")} />
-              <DateField label="Ad Run End Date" value={formValues["Ad Run End Date"] ?? ""} onChange={(v) => updateField("Ad Run End Date", v)} error={hasError("Ad Run End Date")} min={formValues["Ad Run Start Date"] ?? ""} />
-            </div>
-            <div className="flex gap-8">
-              <SelectField label="Agency or Site Served" value={formValues["Agency or Site Served"] ?? ""} onChange={(v) => updateField("Agency or Site Served", v)} error={hasError("Agency or Site Served")} options={AGENCY_OPTIONS} />
-              <InputField label="Estimated Total Ad Spend" placeholder="Ad Spend value..." value={formValues["Estimated Total Ad Spend"] ?? ""} onChange={(v) => updateField("Estimated Total Ad Spend", v)} error={hasError("Estimated Total Ad Spend")} />
-            </div>
-            <div className="flex gap-8">
-              <div className="flex flex-1 flex-col gap-2 min-w-[280px]">
-                <SelectField label="FSQ Pixel Implementation" value={formValues["FSQ Pixel Implementation"] ?? ""} onChange={(v) => updateField("FSQ Pixel Implementation", v)} options={PIXEL_IMPL_OPTIONS} />
-              </div>
-              <div className="flex-1 min-w-[280px]" />
-            </div>
+          <div className="flex gap-8">
+            <ComboField label="Partner/Platform Name" placeholder="Type or Select" value={formValues["Partner/Platform Name"] ?? ""} onChange={(v) => updateField("Partner/Platform Name", v)} options={PARTNER_NAME_OPTIONS} />
+            <div className="flex-1 min-w-[280px]" />
           </div>
         </div>
 
         {/* Media Types */}
         <div className="flex flex-col gap-4">
           <p className="text-xs font-semibold text-[#646464]">Media Types</p>
-          {mediaTypes.map((mt, idx) => (
-            <div key={mt.id} className="rounded-md border border-[#e0e0e0] px-4 py-4">
-              <button
-                onClick={() => setMediaTypeOpen(!mediaTypeOpen)}
-                className="flex w-full items-center gap-4"
-              >
-                <div className="flex flex-1 flex-col gap-1">
-                  <p className="text-xs font-semibold text-[#646464]">Media Type {mediaTypes.length > 1 ? idx + 1 : ""} Details</p>
-                </div>
-                {mediaTypeOpen ? <ChevronUp className="size-4 text-[#8d8d8d]" /> : <ChevronDown className="size-4 text-[#8d8d8d]" />}
-              </button>
-              {mediaTypeOpen && (
-                <div className="mt-4 flex flex-col gap-4">
-                  <div className="flex gap-8">
-                    <SelectField label="Media Type" value={formValues[`Media Type ${idx}`] ?? ""} onChange={(v) => updateField(`Media Type ${idx}`, v)} options={MEDIA_TYPE_OPTIONS} />
-                    <SelectField label="Conversion Funding Report Type" value={formValues[`Conversion Report ${idx}`] ?? formValues["Conversion Funding Report Type"] ?? ""} onChange={(v) => updateField(`Conversion Report ${idx}`, v)} error={hasError("Conversion Funding Report Type")} options={CONVERSION_TYPE_OPTIONS} />
+          <div className="flex gap-8">
+            <div className="flex flex-1 flex-col gap-2 min-w-[280px]">
+              <label className="text-sm font-semibold text-black">Media Type</label>
+              <div className="relative" ref={mediaTypeMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setMediaTypeMenuOpen((o) => !o)}
+                  className="flex min-h-[40px] w-full items-center gap-2 rounded-md border border-[#f0f0f0] bg-[#fcfcfc] px-3 py-2 text-left"
+                >
+                  <div className="flex flex-1 flex-wrap items-center gap-1.5">
+                    {selectedMediaTypes.length > 0 ? (
+                      selectedMediaTypes.map((type) => (
+                        <span
+                          key={type}
+                          className="flex items-center gap-1 rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-medium text-[#334155]"
+                        >
+                          {type}
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleMediaType(type);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                toggleMediaType(type);
+                              }
+                            }}
+                            className="rounded-full hover:bg-[#e2e8f0]"
+                          >
+                            <X className="size-3" />
+                          </span>
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-sm text-[#8d8d8d]">Select media types...</span>
+                    )}
                   </div>
-                  <div className="flex gap-8">
-                    <InputField label="Estimated Ad Spend" placeholder="Ad Spend value..." value={formValues[`Estimated Ad Spend ${idx}`] ?? formValues["Estimated Ad Spend"] ?? ""} onChange={(v) => updateField(`Estimated Ad Spend ${idx}`, v)} />
-                    <InputField label="Estimated Impressions" placeholder="Impressions value..." value={formValues[`Estimated Impressions ${idx}`] ?? formValues["Estimated Impressions"] ?? ""} onChange={(v) => updateField(`Estimated Impressions ${idx}`, v)} />
+                  <ChevronDown className="size-4 shrink-0 text-[#8d8d8d]" />
+                </button>
+                {mediaTypeMenuOpen && (
+                  <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-[#e2e8f0] bg-white shadow-lg">
+                    <div className="flex items-center justify-between border-b border-[#e2e8f0] px-3 py-2">
+                      <button type="button" onClick={() => setSelectedMediaTypes([...MEDIA_TYPE_OPTIONS])} className="text-xs font-medium text-[#212be9] hover:underline">
+                        Select All
+                      </button>
+                      <button type="button" onClick={() => setSelectedMediaTypes([])} className="text-xs font-medium text-[#ef4444] hover:underline">
+                        Reset
+                      </button>
+                    </div>
+                    <div className="p-2">
+                      {MEDIA_TYPE_OPTIONS.map((type) => (
+                        <label key={type} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-[#f8fafc]">
+                          <Checkbox
+                            checked={selectedMediaTypes.includes(type)}
+                            onCheckedChange={() => toggleMediaType(type)}
+                            className="data-[state=checked]:bg-[#212be9] data-[state=checked]:border-[#212be9]"
+                          />
+                          <span className="text-[#020617]">{type}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          ))}
-          <button
-            onClick={() => setMediaTypes((prev) => [...prev, { id: prev.length + 1, value: "" }])}
-            className="flex items-center gap-1 self-start text-sm font-medium text-[#212be9]"
-          >
-            <Plus className="size-4" />
-            Add a Media Type
-          </button>
+            <InputField label="Estimated Impressions" placeholder="Impressions value..." value={formValues["Estimated Impressions"] ?? ""} onChange={(v) => updateField("Estimated Impressions", v)} />
+          </div>
         </div>
 
         {/* Contact Info */}
         <div className="flex flex-col gap-2">
           <p className="text-xs font-semibold text-[#646464]">Contact Info</p>
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-8">
-              <SelectField label="Sales/Account Manager Name" value={formValues["Sales/Account Manager Name"] ?? ""} onChange={(v) => updateField("Sales/Account Manager Name", v)} error={hasError("Sales/Account Manager Name")} options={SALES_MANAGER_OPTIONS} />
-              <InputField label="Sales/Account Manager Email" placeholder="Email..." value={formValues["Sales/Account Manager Email"] ?? ""} onChange={(v) => updateField("Sales/Account Manager Email", v)} />
-            </div>
-            <div className="flex gap-8">
-              <SelectField label="Ad Ops Contact Name" value={formValues["Ad Ops Contact Name"] ?? ""} onChange={(v) => updateField("Ad Ops Contact Name", v)} options={AD_OPS_OPTIONS} />
-              <InputField label="Ad Ops Contact Email" placeholder="Email..." value={formValues["Ad Ops Contact Email"] ?? ""} onChange={(v) => updateField("Ad Ops Contact Email", v)} />
-            </div>
+          <div className="flex gap-8">
+            <SelectField label="Sales/Account Manager Name" value={formValues["Sales/Account Manager Name"] ?? ""} onChange={(v) => updateField("Sales/Account Manager Name", v)} options={SALES_MANAGER_OPTIONS} />
+            <InputField label="Sales/Account Manager Email" placeholder="Email..." value={formValues["Sales/Account Manager Email"] ?? ""} onChange={(v) => updateField("Sales/Account Manager Email", v)} />
           </div>
-        </div>
-
-        {/* Notes */}
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-black">Notes (Optional)</label>
-          <textarea
-            placeholder="Type down your notes here..."
-            className="h-20 resize-y rounded-md border border-[#f0f0f0] bg-[#fcfcfc] px-3 py-2.5 text-sm text-[#020617] outline-none placeholder:text-[#8d8d8d] focus:border-[#212be9]"
-          />
         </div>
       </div>
 
@@ -1091,7 +1241,7 @@ function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValu
           Discard Changes
         </button>
         <button
-          onClick={() => onSave(formValues)}
+          onClick={handleSave}
           className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]"
         >
           Save Media Partner
@@ -1438,7 +1588,7 @@ function PlacementSubSteps({ activeStep, hasReuploaded }: { activeStep: number; 
         {PLACEMENT_SUB_STEPS.map((s) => (
           <div
             key={s.num}
-            className={`h-1 flex-1 ${s.num <= activeStep ? "bg-[#020617]" : "bg-[#e2e8f0]"} ${s.num === 1 ? "rounded-l-full" : ""} ${s.num === PLACEMENT_SUB_STEPS.length ? "rounded-r-full" : ""}`}
+            className={`h-1 flex-1 ${s.num <= activeStep ? "bg-[#64748b]" : "bg-[#e2e8f0]"} ${s.num === 1 ? "rounded-l-full" : ""} ${s.num === PLACEMENT_SUB_STEPS.length ? "rounded-r-full" : ""}`}
           />
         ))}
       </div>
@@ -1450,13 +1600,13 @@ function PlacementSubSteps({ activeStep, hasReuploaded }: { activeStep: number; 
                 s.num < activeStep
                   ? "border border-[#d1d5db] bg-white text-[#9ca3af]"
                   : s.num === activeStep
-                    ? "border-2 border-[#020617] bg-[#020617] text-white"
+                    ? "border-2 border-[#64748b] bg-[#64748b] text-white"
                     : "border-2 border-gray-300 text-gray-400"
               }`}
             >
               {s.num < activeStep ? <Check className="size-3.5" /> : s.num}
             </div>
-            <span className={`text-sm ${s.num === activeStep ? "font-semibold text-[#020617]" : s.num < activeStep ? "text-[#020617]" : "text-[#757575]"}`}>
+            <span className={`text-sm ${s.num === activeStep ? "font-semibold text-[#64748b]" : s.num < activeStep ? "text-[#64748b]" : "text-[#757575]"}`}>
               {s.label}
             </span>
           </div>
@@ -1467,7 +1617,7 @@ function PlacementSubSteps({ activeStep, hasReuploaded }: { activeStep: number; 
 }
 
 
-function PlacementDetailsContent({ placementState, onContinueToMapTaxonomies, onUpload, onFileDrop, hasReuploaded, alreadyParsed, onAlreadyParsedChange }: { placementState: PlacementState; onContinueToMapTaxonomies: () => void; onUpload: () => void; onFileDrop: (name: string) => void; hasReuploaded?: boolean; alreadyParsed: boolean; onAlreadyParsedChange: (v: boolean) => void }) {
+function PlacementDetailsContent({ placementState, onContinueToMapTaxonomies, onUpload, onFileDrop, hasReuploaded, alreadyParsed, onAlreadyParsedChange, campaignEnteredManually, mediaPlanMode, onMediaPlanModeChange }: { placementState: PlacementState; onContinueToMapTaxonomies: () => void; onUpload: () => void; onFileDrop: (name: string) => void; hasReuploaded?: boolean; alreadyParsed: boolean; onAlreadyParsedChange: (v: boolean) => void; campaignEnteredManually?: boolean; mediaPlanMode?: "none" | "upload" | "template"; onMediaPlanModeChange?: (mode: "none" | "upload" | "template") => void }) {
   const [showUploadBanner, setShowUploadBanner] = useState(placementState === "new-upload");
   const hasResults = placementState === "uploaded" || placementState === "new-upload";
 
@@ -1626,6 +1776,54 @@ function PlacementDetailsContent({ placementState, onContinueToMapTaxonomies, on
                 Check this if the media plan file already has taxonomy values broken into separate columns. The Keys tab selection will be disabled.
               </p>
             </div>
+          </div>
+        </>
+      ) : campaignEnteredManually ? (
+        <>
+          <div className="mb-6 text-sm leading-5 text-[#646464]">
+            <p>Upload a media plan to parse placement data, or start from the basic template and enter partners and taxonomies yourself.</p>
+          </div>
+          <div className="mb-6 grid gap-4 md:grid-cols-2">
+            <div className={`rounded-lg border p-4 ${mediaPlanMode === "upload" ? "border-[#212be9] bg-[#f8f9ff]" : "border-[#e2e8f0] bg-white"}`}>
+              <p className="mb-3 text-sm font-semibold text-[#020617]">Upload Media Plan</p>
+              <div
+                onClick={() => { onMediaPlanModeChange?.("upload"); onUpload(); }}
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-[#212be9]", "bg-[#f8f9ff]"); }}
+                onDragLeave={(e) => { e.currentTarget.classList.remove("border-[#212be9]", "bg-[#f8f9ff]"); }}
+                onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-[#212be9]", "bg-[#f8f9ff]"); onMediaPlanModeChange?.("upload"); const f = e.dataTransfer.files?.[0]; if (f) onFileDrop(f.name); else onUpload(); }}
+                className="flex h-16 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-[#e0e0e0] bg-[#f9f9f9] transition-colors hover:border-[#212be9] hover:bg-[#f8f9ff]"
+              >
+                <div className="flex items-center gap-2">
+                  <Upload className="size-4 text-[#020617]" />
+                  <span className="text-sm text-[#020617]">
+                    Drop here or <span className="cursor-pointer text-[#3333ff]">browse from your files</span>
+                  </span>
+                </div>
+              </div>
+              <p className="mt-2 text-sm text-[#8d8d8d]">Supported file types: .xls, .xlsx, .csv</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onMediaPlanModeChange?.("template")}
+              className={`flex flex-col items-start rounded-lg border p-4 text-left transition-colors ${
+                mediaPlanMode === "template"
+                  ? "border-[#212be9] bg-[#f8f9ff]"
+                  : "border-[#e2e8f0] bg-white hover:border-[#212be9]"
+              }`}
+            >
+              <div className="mb-3 flex items-center gap-2">
+                <LayoutTemplate className="size-4 text-[#020617]" />
+                <p className="text-sm font-semibold text-[#020617]">Use Basic Template</p>
+              </div>
+              <p className="text-sm leading-5 text-[#646464]">
+                Skip the file upload and use a blank media plan. You will add partners and enter taxonomies in the next steps.
+              </p>
+              {mediaPlanMode === "template" && (
+                <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-[#f0fdf4] px-2 py-0.5 text-xs font-semibold text-[#166534]">
+                  <Check className="size-3.5" /> Basic template selected
+                </span>
+              )}
+            </button>
           </div>
         </>
       ) : (
@@ -1928,7 +2126,127 @@ function PartnerOnboardingModal({ step, onNext, onSkip, onBack, onDismissPermane
 
 
 
-function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy, hasReuploaded }: { onBackToMediaPlan: () => void; onContinueToTaxonomy: () => void; hasReuploaded?: boolean }) {
+function BlankTemplateMapPartners({ onBackToMediaPlan, onContinueToTaxonomy, hasReuploaded }: { onBackToMediaPlan: () => void; onContinueToTaxonomy: () => void; hasReuploaded?: boolean }) {
+  const [partners, setPartners] = useState<Record<string, string>[]>([]);
+  const [formMode, setFormMode] = useState<"closed" | "add" | "edit">("closed");
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+
+  const savePartner = (formData: Record<string, string>) => {
+    if (formMode === "edit" && editIndex !== null) {
+      setPartners((prev) => prev.map((p, i) => (i === editIndex ? formData : p)));
+    } else {
+      setPartners((prev) => [...prev, formData]);
+    }
+    setFormMode("closed");
+    setEditIndex(null);
+  };
+
+  return (
+    <>
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-[#020617]">Placement Details</h2>
+        <div className="mt-1 text-sm leading-5 text-[#646464]">
+          <p>This campaign uses a blank media plan. Add each media partner and their details.</p>
+        </div>
+      </div>
+
+      <PlacementSubSteps activeStep={2} hasReuploaded={hasReuploaded} />
+
+      {formMode !== "closed" ? (
+        <AddPartnerForm
+          key={formMode === "edit" ? `edit-${editIndex}` : "add"}
+          mode={formMode === "edit" ? "edit" : "add"}
+          initialValues={formMode === "edit" && editIndex !== null ? partners[editIndex] : {}}
+          onDiscard={() => { setFormMode("closed"); setEditIndex(null); }}
+          onSave={savePartner}
+        />
+      ) : (
+        <>
+          {partners.length === 0 ? (
+            <div className="mb-6 rounded-lg border border-dashed border-[#e2e8f0] bg-[#f8fafc] px-6 py-10 text-center">
+              <p className="text-sm font-medium text-[#020617]">No partners added yet</p>
+              <p className="mt-1 text-sm text-[#646464]">Add a partner to include them on this blank media plan.</p>
+            </div>
+          ) : (
+            <div className="mb-6 overflow-hidden rounded-lg border border-[#e2e8f0]">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b]">Partner</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b]">Media Type</th>
+                    <th className="w-24 px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {partners.map((p, i) => (
+                    <tr key={`${p["Partner/Platform Name"]}-${i}`} className="border-b border-[#e2e8f0] last:border-b-0">
+                      <td className="px-4 py-3 text-sm font-medium text-[#020617]">{p["Partner/Platform Name"] || "Untitled partner"}</td>
+                      <td className="px-4 py-3 text-sm text-[#374151]">{p["Media Types"] || p["Media Type 0"] || p["Media Type"] || "—"}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => { setEditIndex(i); setFormMode("edit"); }}
+                            className="rounded-md p-1.5 text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#020617]"
+                            aria-label="Edit partner"
+                          >
+                            <SquarePen className="size-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPartners((prev) => prev.filter((_, idx) => idx !== i))}
+                            className="rounded-md p-1.5 text-[#94a3b8] hover:bg-[#fef2f2] hover:text-[#dc2626]"
+                            aria-label="Delete partner"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => { setEditIndex(null); setFormMode("add"); }}
+            className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-[#212be9] hover:text-[#1a22c4]"
+          >
+            <Plus className="size-4" />
+            Add Partner
+          </button>
+
+          <div className="mt-8 flex items-center justify-between py-4">
+            <button
+              onClick={onBackToMediaPlan}
+              className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
+            >
+              Back to Media Plan
+            </button>
+            <button
+              onClick={onContinueToTaxonomy}
+              disabled={partners.length === 0}
+              className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Continue to Taxonomy Mappings
+            </button>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy, hasReuploaded, blankTemplate }: { onBackToMediaPlan: () => void; onContinueToTaxonomy: () => void; hasReuploaded?: boolean; blankTemplate?: boolean }) {
+  if (blankTemplate) {
+    return <BlankTemplateMapPartners onBackToMediaPlan={onBackToMediaPlan} onContinueToTaxonomy={onContinueToTaxonomy} hasReuploaded={hasReuploaded} />;
+  }
+  return <MapPartnersFromUpload onBackToMediaPlan={onBackToMediaPlan} onContinueToTaxonomy={onContinueToTaxonomy} hasReuploaded={hasReuploaded} />;
+}
+
+function MapPartnersFromUpload({ onBackToMediaPlan, onContinueToTaxonomy, hasReuploaded }: { onBackToMediaPlan: () => void; onContinueToTaxonomy: () => void; hasReuploaded?: boolean }) {
   const [showOnboarding, setShowOnboarding] = useState(() => {
     if (typeof window !== "undefined") return !localStorage.getItem("hide-partner-onboarding");
     return true;
@@ -2371,7 +2689,410 @@ function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy, hasReuplo
 /* ───── MapTaxonomiesContent ───── */
 
 
-function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean }) {
+function ManualTaxonomyTable({ onBack, onContinue, hasReuploaded }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean }) {
+  const [columns, setColumns] = useState<ColumnDef[]>(() =>
+    PARSED_COLUMNS.map((col) => ({ ...col, sampleData: [""] }))
+  );
+  const [mappings, setMappings] = useState<Record<string, string | null>>(() => {
+    const m: Record<string, string | null> = {};
+    PARSED_COLUMNS.forEach((col) => { m[col.id] = null; });
+    return m;
+  });
+  const [draggingLabel, setDraggingLabel] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [customLabels, setCustomLabels] = useState<SystemLabel[]>([]);
+  const [isAddingCustom, setIsAddingCustom] = useState(false);
+  const [customLabelName, setCustomLabelName] = useState("");
+  const [isAddingColumn, setIsAddingColumn] = useState(false);
+  const [newColumnName, setNewColumnName] = useState("");
+
+  const rowCount = columns[0]?.sampleData.length ?? 1;
+  const allLabels = useMemo(() => [...SYSTEM_LABELS, ...customLabels], [customLabels]);
+
+  const assignedLabelIds = useMemo(() => {
+    const assigned = new Set<string>();
+    Object.values(mappings).forEach((labelId) => {
+      if (labelId) assigned.add(labelId);
+    });
+    return assigned;
+  }, [mappings]);
+
+  const mappedCount = columns.filter((col) => mappings[col.id]).length;
+
+  const assignLabel = (colId: string, labelId: string) => {
+    setMappings((prev) => {
+      const next = { ...prev };
+      const existingCol = Object.entries(next).find(([, v]) => v === labelId);
+      if (existingCol) next[existingCol[0]] = null;
+      next[colId] = labelId;
+      return next;
+    });
+  };
+
+  const unassignLabel = (colId: string) => {
+    setMappings((prev) => ({ ...prev, [colId]: null }));
+  };
+
+  const handleDragStart = useCallback((e: DragEvent, labelId: string) => {
+    setDraggingLabel(labelId);
+    e.dataTransfer.setData("text/plain", labelId);
+    e.dataTransfer.effectAllowed = "move";
+  }, []);
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const dragCounterRef = useRef<Record<string, number>>({});
+
+  const handleDragEnter = useCallback((e: DragEvent, colId: string) => {
+    e.preventDefault();
+    dragCounterRef.current[colId] = (dragCounterRef.current[colId] || 0) + 1;
+    setDragOverCol(colId);
+  }, []);
+
+  const handleDragLeave = useCallback((_e: DragEvent, colId: string) => {
+    dragCounterRef.current[colId] = (dragCounterRef.current[colId] || 0) - 1;
+    if (dragCounterRef.current[colId] <= 0) {
+      dragCounterRef.current[colId] = 0;
+      setDragOverCol((prev) => (prev === colId ? null : prev));
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: DragEvent, colId: string) => {
+    e.preventDefault();
+    dragCounterRef.current = {};
+    setDragOverCol(null);
+    const labelId = e.dataTransfer.getData("text/plain") || draggingLabel;
+    if (labelId) assignLabel(colId, labelId);
+    setDraggingLabel(null);
+  }, [draggingLabel]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggingLabel(null);
+    setDragOverCol(null);
+    dragCounterRef.current = {};
+  }, []);
+
+  const getLabelForCol = (colId: string) => {
+    const labelId = mappings[colId];
+    if (!labelId) return null;
+    return allLabels.find((l) => l.id === labelId) || null;
+  };
+
+  const updateCell = (colId: string, rowIdx: number, value: string) => {
+    setColumns((prev) =>
+      prev.map((col) =>
+        col.id === colId
+          ? { ...col, sampleData: col.sampleData.map((cell, i) => (i === rowIdx ? value : cell)) }
+          : col
+      )
+    );
+  };
+
+  const addRow = () => {
+    setColumns((prev) => prev.map((col) => ({ ...col, sampleData: [...col.sampleData, ""] })));
+  };
+
+  const deleteRow = (rowIdx: number) => {
+    setColumns((prev) =>
+      prev.map((col) => {
+        const next = col.sampleData.filter((_, i) => i !== rowIdx);
+        return { ...col, sampleData: next.length > 0 ? next : [""] };
+      })
+    );
+  };
+
+  const addColumn = () => {
+    const name = newColumnName.trim();
+    if (!name) return;
+    const id = `col-${Date.now()}`;
+    setColumns((prev) => [...prev, { id, rawName: name, sampleData: Array.from({ length: rowCount }, () => "") }]);
+    setMappings((prev) => ({ ...prev, [id]: null }));
+    setNewColumnName("");
+    setIsAddingColumn(false);
+  };
+
+  const removeColumn = (colId: string) => {
+    setColumns((prev) => (prev.length <= 1 ? prev : prev.filter((col) => col.id !== colId)));
+    setMappings((prev) => {
+      const next = { ...prev };
+      delete next[colId];
+      return next;
+    });
+  };
+
+  const canContinue = mappedCount > 0;
+
+  return (
+    <>
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-[#020617]">Placement Details</h2>
+        <div className="mt-1 text-sm leading-5 text-[#646464]">
+          <p>Match your column names to the system&apos;s internal labels. Not every partner uses the same taxonomies — add or remove columns as needed, then drag labels onto columns or use the dropdown.</p>
+        </div>
+      </div>
+
+      <PlacementSubSteps activeStep={3} hasReuploaded={hasReuploaded} />
+
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-sm text-[#646464]">
+          <span className="font-medium text-[#020617]">{mappedCount}</span> of <span className="font-medium text-[#020617]">{columns.length}</span> columns mapped
+        </p>
+        <div className="flex items-center gap-2">
+          {mappedCount === columns.length && columns.length > 0 && (
+            <span className="flex items-center gap-1 text-sm font-medium text-[#16a34a]">
+              <Check className="size-4" /> All columns mapped
+            </span>
+          )}
+          {isAddingColumn ? (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={newColumnName}
+                onChange={(e) => setNewColumnName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") addColumn();
+                  if (e.key === "Escape") { setNewColumnName(""); setIsAddingColumn(false); }
+                }}
+                autoFocus
+                placeholder="Column name..."
+                className="h-8 w-[160px] rounded-md border border-[#212be9] bg-white px-3 text-sm outline-none placeholder:text-[#9ca3af]"
+              />
+              <button type="button" onClick={addColumn} className="flex size-8 items-center justify-center rounded-md bg-[#212be9] text-white">
+                <Check className="size-3.5" />
+              </button>
+              <button type="button" onClick={() => { setNewColumnName(""); setIsAddingColumn(false); }} className="flex size-8 items-center justify-center rounded-md border border-[#e2e8f0] text-[#64748b]">
+                <X className="size-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsAddingColumn(true)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-1.5 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
+            >
+              <Plus className="size-3.5" />
+              Add column
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="mb-6 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-4">
+        <p className="mb-2 text-xs font-medium text-[#64748b]">Available Labels — Drag Onto Columns or Use the Dropdown</p>
+        <div className="flex flex-wrap gap-2">
+          {allLabels.map((label) => {
+            const isAssigned = assignedLabelIds.has(label.id);
+            const isCustom = label.id.startsWith("custom-");
+            return (
+              <div
+                key={label.id}
+                draggable={!isAssigned}
+                onDragStart={(e) => handleDragStart(e, label.id)}
+                onDragEnd={handleDragEnd}
+                className={`flex cursor-grab items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all active:cursor-grabbing ${
+                  isAssigned
+                    ? "cursor-default bg-[#f1f5f9] text-[#94a3b8] line-through opacity-50"
+                    : "border border-[#e2e8f0] bg-white text-[#020617] shadow-sm hover:shadow-md"
+                } ${draggingLabel === label.id ? "scale-95 opacity-60" : ""}`}
+              >
+                <GripVertical className={`size-3 ${isAssigned ? "text-[#cbd5e1]" : "text-[#9ca3af]"}`} />
+                {label.name}
+                {isCustom && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMappings((prev) => {
+                        const next = { ...prev };
+                        Object.entries(next).forEach(([k, v]) => { if (v === label.id) next[k] = null; });
+                        return next;
+                      });
+                      setCustomLabels((prev) => prev.filter((l) => l.id !== label.id));
+                    }}
+                    className="ml-0.5 rounded-full p-0.5 text-[#94a3b8] transition-colors hover:bg-[#fee2e2] hover:text-[#dc2626]"
+                  >
+                    <X className="size-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {isAddingCustom ? (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={customLabelName}
+                onChange={(e) => setCustomLabelName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && customLabelName.trim()) {
+                    setCustomLabels((prev) => [...prev, { id: `custom-${Date.now()}`, name: customLabelName.trim(), color: "#6b7280" }]);
+                    setCustomLabelName("");
+                    setIsAddingCustom(false);
+                  }
+                  if (e.key === "Escape") { setCustomLabelName(""); setIsAddingCustom(false); }
+                }}
+                autoFocus
+                placeholder="Label name..."
+                className="h-7 w-[140px] rounded-full border border-[#212be9] bg-white px-3 text-xs outline-none placeholder:text-[#9ca3af] focus:ring-2 focus:ring-[#212be9]/20"
+              />
+              <button
+                onClick={() => {
+                  if (customLabelName.trim()) {
+                    setCustomLabels((prev) => [...prev, { id: `custom-${Date.now()}`, name: customLabelName.trim(), color: "#6b7280" }]);
+                    setCustomLabelName("");
+                    setIsAddingCustom(false);
+                  }
+                }}
+                className="flex size-7 items-center justify-center rounded-full bg-[#212be9] text-white transition-colors hover:bg-[#1a22c4]"
+              >
+                <Check className="size-3.5" />
+              </button>
+              <button
+                onClick={() => { setCustomLabelName(""); setIsAddingCustom(false); }}
+                className="flex size-7 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#64748b] transition-colors hover:bg-gray-50"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsAddingCustom(true)}
+              className="flex items-center gap-1 rounded-full border border-dashed border-[#cbd5e1] px-3 py-1.5 text-xs font-medium text-[#64748b] transition-colors hover:border-[#212be9] hover:text-[#212be9]"
+            >
+              <Plus className="size-3" />
+              Add Custom
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="w-full overflow-x-auto rounded-lg border border-[#e2e8f0]">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-[#e2e8f0]">
+              {columns.map((col) => {
+                const assignedLabel = getLabelForCol(col.id);
+                const isOver = dragOverCol === col.id;
+                const isDragging = !!draggingLabel;
+                return (
+                  <th
+                    key={col.id}
+                    onDragOver={handleDragOver}
+                    onDragEnter={(e) => handleDragEnter(e, col.id)}
+                    onDragLeave={(e) => handleDragLeave(e, col.id)}
+                    onDrop={(e) => handleDrop(e, col.id)}
+                    className={`relative min-w-[160px] px-3 py-3 text-left transition-all ${
+                      isOver ? "bg-[#dbeafe] ring-2 ring-inset ring-[#212be9] shadow-[inset_0_0_0_1px_#212be9]" :
+                      isDragging && !assignedLabel ? "bg-[#f8fafc] ring-1 ring-inset ring-[#cbd5e1] ring-dashed" : ""
+                    }`}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-start justify-between gap-1">
+                        {assignedLabel ? (
+                          <div className="flex flex-col gap-1">
+                            <span className="flex items-center gap-1 whitespace-nowrap rounded-full border border-[#e2e8f0] bg-[#f1f5f9] px-2 py-0.5 text-xs font-semibold text-[#020617]">
+                              {assignedLabel.name}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); unassignLabel(col.id); }}
+                                className="ml-0.5 rounded-full p-0.5 text-[#64748b] transition-colors hover:bg-[#e2e8f0] hover:text-[#020617]"
+                              >
+                                <X className="size-2.5" />
+                              </button>
+                            </span>
+                            <span className="text-[10px] text-[#94a3b8]">{col.rawName}</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs font-medium text-[#020617]">{col.rawName}</span>
+                            <Select onValueChange={(labelId) => assignLabel(col.id, labelId)}>
+                              <SelectTrigger className="h-6 w-auto gap-1 border-dashed border-[#cbd5e1] px-2 text-[10px] text-[#64748b] shadow-none hover:border-[#212be9] hover:text-[#212be9]">
+                                <SelectValue placeholder="Select Label" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-[240px]">
+                                {allLabels.map((label) => {
+                                  const isUsed = assignedLabelIds.has(label.id);
+                                  return (
+                                    <SelectItem key={label.id} value={label.id} disabled={isUsed}>
+                                      {label.name}
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeColumn(col.id)}
+                          className="rounded p-0.5 text-[#94a3b8] hover:bg-[#fef2f2] hover:text-[#dc2626]"
+                          aria-label={`Remove ${col.rawName} column`}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </th>
+                );
+              })}
+              <th className="w-12 px-3 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: rowCount }, (_, rowIdx) => (
+              <tr key={rowIdx} className="border-b border-[#e2e8f0]/50 last:border-b-0">
+                {columns.map((col) => (
+                  <td key={col.id} className="px-3 py-2">
+                    <Input
+                      value={col.sampleData[rowIdx] ?? ""}
+                      onChange={(e) => updateCell(col.id, rowIdx, e.target.value)}
+                      placeholder="—"
+                      className="h-8 min-w-[120px] text-sm"
+                    />
+                  </td>
+                ))}
+                <td className="px-2 py-2">
+                  <button
+                    type="button"
+                    onClick={() => deleteRow(rowIdx)}
+                    className="flex size-8 items-center justify-center rounded-md text-[#94a3b8] transition-colors hover:bg-[#fef2f2] hover:text-[#dc2626]"
+                    aria-label="Delete row"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <button
+        type="button"
+        onClick={addRow}
+        className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#212be9] hover:text-[#1a22c4]"
+      >
+        <Plus className="size-3.5" />
+        Add row
+      </button>
+
+      <div className="mt-8 flex items-center justify-between py-4">
+        <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back to Map Partners</button>
+        <button onClick={onContinue} disabled={!canContinue} className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50">Continue to Apply Placements</button>
+      </div>
+    </>
+  );
+}
+
+function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded, blankTemplate }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean; blankTemplate?: boolean }) {
+  if (blankTemplate) {
+    return <ManualTaxonomyTable onBack={onBack} onContinue={onContinue} hasReuploaded={hasReuploaded} />;
+  }
+  return <MapTaxonomiesFromUpload onBack={onBack} onContinue={onContinue} hasReuploaded={hasReuploaded} />;
+}
+
+function MapTaxonomiesFromUpload({ onBack, onContinue, hasReuploaded }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean }) {
   const [mappings, setMappings] = useState<Record<string, string | null>>(() => {
     const m: Record<string, string | null> = {};
     PARSED_COLUMNS.forEach((col) => { m[col.id] = null; });
@@ -4351,6 +5072,7 @@ function NewCampaignContent() {
   const [pixelStepValid, setPixelStepValid] = useState(false);
   const [campaignSubmitted, setCampaignSubmitted] = useState(false);
   const [alreadyParsed, setAlreadyParsed] = useState(false);
+  const [mediaPlanMode, setMediaPlanMode] = useState<"none" | "upload" | "template">("none");
   const [visitedSteps, setVisitedSteps] = useState<Set<string>>(new Set([initialStep]));
   const [isReparsing, setIsReparsing] = useState(false);
   const [reparseError, setReparseError] = useState<string | null>(null);
@@ -4432,6 +5154,7 @@ function NewCampaignContent() {
     setTimeout(() => {
       setIsUploading(false);
       setHasUploadedFile(true);
+      setMediaPlanMode("upload");
       setShowForm(true);
       if (isReupload) {
         setHasReuploaded(true);
@@ -4619,6 +5342,9 @@ function NewCampaignContent() {
               hasReuploaded={hasReuploaded}
               alreadyParsed={alreadyParsed}
               onAlreadyParsedChange={setAlreadyParsed}
+              campaignEnteredManually={showForm && !hasUploadedFile}
+              mediaPlanMode={mediaPlanMode}
+              onMediaPlanModeChange={setMediaPlanMode}
             />
           )}
           {currentStep === "map-partners" && (
@@ -4626,6 +5352,7 @@ function NewCampaignContent() {
               onBackToMediaPlan={() => goToStep("placement")}
               onContinueToTaxonomy={() => goToStep("map-taxonomies")}
               hasReuploaded={hasReuploaded}
+              blankTemplate={mediaPlanMode === "template" && !hasUploadedFile}
             />
           )}
           {currentStep === "map-taxonomies" && (
@@ -4633,6 +5360,7 @@ function NewCampaignContent() {
               onBack={() => goToStep("map-partners")}
               onContinue={() => goToStep("apply-placements")}
               hasReuploaded={hasReuploaded}
+              blankTemplate={mediaPlanMode === "template" && !hasUploadedFile}
             />
           )}
           {currentStep === "apply-placements" && (
@@ -4699,7 +5427,8 @@ function NewCampaignContent() {
               </button>
               <button
                 onClick={() => goToStep(alreadyParsed ? "apply-placements" : "map-partners")}
-                className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]"
+                disabled={!hasUploadedFile && mediaPlanMode !== "template"}
+                className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {alreadyParsed ? "Continue to Apply Placements" : "Continue to Map Partners"}
               </button>

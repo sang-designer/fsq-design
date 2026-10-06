@@ -7,8 +7,9 @@ import {
   Upload, ChevronDown, ChevronUp, Calendar as CalendarIcon,
   CircleDashed, Check, Plus, ChevronLeft, ChevronRight, Search, Download,
   Copy, Mail, X, Loader2, Info, GripVertical, FileText,
-  CircleAlert, SlidersHorizontal, ArrowUpDown, SquarePen, MoreHorizontal, ExternalLink, ArrowLeft,
+  CircleAlert, SlidersHorizontal, ArrowUpDown, SquarePen, MoreHorizontal, ExternalLink, ArrowLeft, Trash2, LayoutTemplate,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -75,6 +76,7 @@ function SinglePartnerCampaignContent() {
   const [reparseError, setReparseError] = useState<string | null>(null);
   const pendingDelimitersRef = useRef<string[]>([]);
   const [droppedFileName, setDroppedFileName] = useState<string | null>(null);
+  const [mediaPlanMode, setMediaPlanMode] = useState<"none" | "upload" | "template">("none");
 
   const completedSteps = (() => {
     if (campaignSubmitted) return ["campaign", "placement", "pixel", "review"];
@@ -114,6 +116,7 @@ function SinglePartnerCampaignContent() {
     setTimeout(() => {
       setIsUploading(false);
       setHasUploadedFile(true);
+      setMediaPlanMode("upload");
       setShowForm(true);
       if (isReupload) {
         setHasReuploaded(true);
@@ -284,7 +287,7 @@ function SinglePartnerCampaignContent() {
               <p className="text-base font-semibold text-black">Upload Results</p>
               <div className="flex items-center gap-1">
                 <FileText className="size-4 text-[#8d8d8d]" />
-                <span className="text-xs text-black">{hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}</span>
+                <span className="text-xs text-black">{hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026"}</span>
               </div>
             </div>
             <div className="flex flex-1 items-stretch">
@@ -326,7 +329,7 @@ function SinglePartnerCampaignContent() {
           disabledSteps={disabledSteps}
           onStepClick={(s) => !campaignSubmitted && goToStep(s as Step)}
           hasUploadedFile={hasUploadedFile}
-          fileName={hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}
+          fileName={hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026"}
           onUpload={currentStep === "campaign" ? handleCampaignUpload : handleUpload}
           isUploading={isUploading || isReparsing}
           disabled={campaignSubmitted}
@@ -377,6 +380,9 @@ function SinglePartnerCampaignContent() {
               hasReuploaded={hasReuploaded}
               isUploading={isUploading}
               onUpload={handleUpload}
+              campaignEnteredManually={showForm && !hasUploadedFile}
+              mediaPlanMode={mediaPlanMode}
+              onMediaPlanModeChange={setMediaPlanMode}
               onBack={() => goToStep("campaign")}
               onContinue={() => goToStep("pixel")}
               onValidChange={setPlacementStepValid}
@@ -766,7 +772,7 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
 
   const isStepValid = sfValidated && !!brand.trim() && !!measurementBudget.trim() && !!metric.trim() && (
     hasUploadedFile || (
-      !!campaignName.trim() && !!advertiser.trim() && !!startDate && !!endDate && !!agencyName.trim() && !!country.trim() && !!storeChains.trim()
+      !!campaignName.trim() && !!startDate && !!endDate && !!agencyName.trim() && !!country.trim()
     )
   );
 
@@ -934,7 +940,7 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
             </div>
           ) : hasUploadedFile ? (
             <SingleInlineUploadedCard
-              fileName={hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}
+              fileName={hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026"}
               delimiters={delimiters}
               onDelimitersChange={onDelimitersChange}
               onReplace={onUpload}
@@ -1004,7 +1010,7 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
               <p className="text-xs font-semibold text-[#646464]">Ownership</p>
               <div className="flex flex-col gap-4">
                 <div className="flex gap-4">
-                  <SelectField label="Agency/Partner Name" value={agencyName} onChange={setAgencyName} required />
+                  <SelectField label="Agency/Partner Name" value={agencyName} onChange={setAgencyName} required options={AGENCY_OPTIONS} />
                   <SelectField label="Owner Type (relationship)" value={ownerType} onChange={setOwnerType} />
                 </div>
                 <div className="flex gap-4">
@@ -1018,9 +1024,9 @@ function CampaignDetailsStep({ campaignName, onCampaignNameChange, measurementBu
               <p className="text-xs font-semibold text-[#646464]">Conversions</p>
               <div className="flex flex-col gap-4">
                 <div className="flex gap-4">
-                  <SelectField label="Country" value={country} onChange={setCountry} required />
+                  <SelectField label="Country" value={country} onChange={setCountry} required options={["United States", "Canada", "Mexico", "United Kingdom"]} />
                   <div className="flex flex-1 flex-col gap-2 min-w-[280px]">
-                    <label className="text-sm font-semibold text-black">Store Chains to be measured <span className="text-[#dc2626]">*</span></label>
+                    <label className="text-sm font-semibold text-black">Store Chains to be measured</label>
                     <div className="relative flex items-center">
                       <select
                         value={storeChains}
@@ -1384,7 +1390,7 @@ function SinglePlacementSubSteps({ activeStep }: { activeStep: number }) {
         {SINGLE_PLACEMENT_SUB_STEPS.map((s) => (
           <div
             key={s.num}
-            className={`h-1 flex-1 ${s.num <= activeStep ? "bg-[#020617]" : "bg-[#e2e8f0]"} ${s.num === 1 ? "rounded-l-full" : ""} ${s.num === 3 ? "rounded-r-full" : ""}`}
+            className={`h-1 flex-1 ${s.num <= activeStep ? "bg-[#64748b]" : "bg-[#e2e8f0]"} ${s.num === 1 ? "rounded-l-full" : ""} ${s.num === 3 ? "rounded-r-full" : ""}`}
           />
         ))}
       </div>
@@ -1396,13 +1402,13 @@ function SinglePlacementSubSteps({ activeStep }: { activeStep: number }) {
                 s.num < activeStep
                   ? "border border-[#d1d5db] bg-white text-[#9ca3af]"
                   : s.num === activeStep
-                    ? "border-2 border-[#020617] bg-[#020617] text-white"
+                    ? "border-2 border-[#64748b] bg-[#64748b] text-white"
                     : "border-2 border-gray-300 text-gray-400"
               }`}
             >
               {s.num < activeStep ? <Check className="size-3.5" /> : s.num}
             </div>
-            <span className={`text-sm ${s.num === activeStep ? "font-semibold text-[#020617]" : s.num < activeStep ? "text-[#020617]" : "text-[#757575]"}`}>
+            <span className={`text-sm ${s.num === activeStep ? "font-semibold text-[#64748b]" : s.num < activeStep ? "text-[#64748b]" : "text-[#757575]"}`}>
               {s.label}
             </span>
           </div>
@@ -1412,8 +1418,11 @@ function SinglePlacementSubSteps({ activeStep }: { activeStep: number }) {
   );
 }
 
-function PlacementDetailsStep({ partnerName, hasUploadedFile, hasReuploaded, isUploading, onUpload, onBack, onContinue, onValidChange }: {
+function PlacementDetailsStep({ partnerName, hasUploadedFile, hasReuploaded, isUploading, onUpload, campaignEnteredManually, mediaPlanMode, onMediaPlanModeChange, onBack, onContinue, onValidChange }: {
   partnerName: string; hasUploadedFile: boolean; hasReuploaded?: boolean; isUploading: boolean; onUpload: () => void; onBack: () => void; onContinue: () => void;
+  campaignEnteredManually?: boolean;
+  mediaPlanMode: "none" | "upload" | "template";
+  onMediaPlanModeChange: (mode: "none" | "upload" | "template") => void;
   onValidChange?: (valid: boolean) => void;
 }) {
   const [activeSubStep, setActiveSubStep] = useState(1);
@@ -1422,6 +1431,8 @@ function PlacementDetailsStep({ partnerName, hasUploadedFile, hasReuploaded, isU
   const [alreadyParsed, setAlreadyParsed] = useState(false);
 
   const DETECTED_TABS = ["Media Plan Q2", "Media Plan Q3", "Budget Summary", "Placement Keys", "Campaign Overview", "Partner List"];
+  const usingTemplate = campaignEnteredManually && mediaPlanMode === "template" && !hasUploadedFile;
+  const canContinueToMap = hasUploadedFile || usingTemplate;
 
   useEffect(() => {
     onValidChange?.(activeSubStep < 3 || applyValid);
@@ -1494,6 +1505,63 @@ function PlacementDetailsStep({ partnerName, hasUploadedFile, hasReuploaded, isU
                 </div>
               </div>
             </>
+          ) : campaignEnteredManually ? (
+            <>
+              <div className="mb-6 text-sm leading-5 text-[#646464]">
+                <p>Upload a media plan to parse placement data, or start from the basic template and enter taxonomies manually.</p>
+              </div>
+              <div className="mb-6 grid gap-4 md:grid-cols-2">
+                <div className={`rounded-lg border p-4 ${mediaPlanMode === "upload" ? "border-[#212be9] bg-[#f8f9ff]" : "border-[#e2e8f0] bg-white"}`}>
+                  <p className="mb-3 text-sm font-semibold text-[#020617]">Upload Media Plan</p>
+                  {isUploading ? (
+                    <div className="flex h-16 w-full items-center justify-center rounded-lg border-2 border-dashed border-[#212be9] bg-[#f8f9ff]">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="size-4 animate-spin text-[#212be9]" />
+                        <span className="text-sm font-medium text-[#212be9]">Processing media plan...</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => { onMediaPlanModeChange("upload"); onUpload(); }}
+                      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-[#212be9]", "bg-[#f8f9ff]"); }}
+                      onDragLeave={(e) => { e.currentTarget.classList.remove("border-[#212be9]", "bg-[#f8f9ff]"); }}
+                      onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-[#212be9]", "bg-[#f8f9ff]"); onMediaPlanModeChange("upload"); onUpload(); }}
+                      className="flex h-16 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-[#e0e0e0] bg-[#f9f9f9] transition-colors hover:border-[#212be9] hover:bg-[#f8f9ff]"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Upload className="size-4 text-[#020617]" />
+                        <span className="text-sm text-[#020617]">
+                          Drop here or <span className="cursor-pointer text-[#3333ff]">browse from your files</span>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <p className="mt-2 text-sm text-[#8d8d8d]">Supported file types: .xls, .xlsx, .csv</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onMediaPlanModeChange("template")}
+                  className={`flex flex-col items-start rounded-lg border p-4 text-left transition-colors ${
+                    mediaPlanMode === "template"
+                      ? "border-[#212be9] bg-[#f8f9ff]"
+                      : "border-[#e2e8f0] bg-white hover:border-[#212be9]"
+                  }`}
+                >
+                  <div className="mb-3 flex items-center gap-2">
+                    <LayoutTemplate className="size-4 text-[#020617]" />
+                    <p className="text-sm font-semibold text-[#020617]">Use Basic Template</p>
+                  </div>
+                  <p className="text-sm leading-5 text-[#646464]">
+                    Skip the file upload and enter placement taxonomies yourself in the next step.
+                  </p>
+                  {mediaPlanMode === "template" && (
+                    <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[#16a34a]">
+                      <Check className="size-3.5" /> Template selected
+                    </span>
+                  )}
+                </button>
+              </div>
+            </>
           ) : (
             <>
               <div className="mb-6 text-sm leading-5 text-[#646464]">
@@ -1530,13 +1598,17 @@ function PlacementDetailsStep({ partnerName, hasUploadedFile, hasReuploaded, isU
           )}
           <div className="mt-8 flex items-center justify-between">
             <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-4 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back</button>
-            <button onClick={() => setActiveSubStep(2)} disabled={!hasUploadedFile} className="rounded-md bg-[#212be9] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:opacity-50 disabled:cursor-not-allowed">Continue to Map Taxonomies</button>
+            <button onClick={() => setActiveSubStep(2)} disabled={!canContinueToMap} className="rounded-md bg-[#212be9] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4] disabled:opacity-50 disabled:cursor-not-allowed">Continue to Map Taxonomies</button>
           </div>
         </>
       )}
 
       {activeSubStep === 2 && (
-        <MapTaxonomiesSubStep onBack={() => setActiveSubStep(1)} onContinue={() => setActiveSubStep(3)} />
+        usingTemplate ? (
+          <ManualTaxonomyTable onBack={() => setActiveSubStep(1)} onContinue={() => setActiveSubStep(3)} />
+        ) : (
+          <MapTaxonomiesSubStep onBack={() => setActiveSubStep(1)} onContinue={() => setActiveSubStep(3)} />
+        )
       )}
 
       {activeSubStep === 3 && (
@@ -1609,6 +1681,120 @@ const PARSED_COLUMNS: ColumnDef[] = [
   { id: "col-7", rawName: "Locale", sampleData: ["English", "English", "Spanish", "English", "English", "English", "English", "English", "Spanish", "English", "English", "French", "English", "English", "English", "English", "Spanish", "English", "English", "English"] },
   { id: "col-8", rawName: "DMA_Region", sampleData: ["Los_Angeles", "Houston", "Dallas", "San_Francisco", "Seattle", "Denver", "New_York", "Phoenix", "Dallas", "New_York", "Chicago", "Philadelphia", "Los_Angeles", "Phoenix", "New_York", "San_Francisco", "Dallas", "Houston", "Seattle", "Chicago"] },
 ];
+
+const MANUAL_TAXONOMY_COLUMNS = [
+  { key: "placementName", label: "Placement_Name" },
+  { key: "mediaType", label: "Media Type" },
+  { key: "targetGroup", label: "Target Group" },
+  { key: "adUnit", label: "Ad_Unit" },
+  { key: "creativeFormat", label: "Creative Format" },
+  { key: "rate", label: "Rate" },
+  { key: "locale", label: "Locale" },
+  { key: "dmaRegion", label: "DMA_Region" },
+] as const;
+
+type ManualTaxonomyField = (typeof MANUAL_TAXONOMY_COLUMNS)[number]["key"];
+type ManualTaxonomyRow = { id: string } & Record<ManualTaxonomyField, string>;
+
+function createEmptyTaxonomyRow(): ManualTaxonomyRow {
+  return {
+    id: `row-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    placementName: "",
+    mediaType: "",
+    targetGroup: "",
+    adUnit: "",
+    creativeFormat: "",
+    rate: "",
+    locale: "",
+    dmaRegion: "",
+  };
+}
+
+function ManualTaxonomyTable({ onBack, onContinue }: { onBack: () => void; onContinue: () => void }) {
+  const [rows, setRows] = useState<ManualTaxonomyRow[]>([createEmptyTaxonomyRow()]);
+
+  const updateCell = (id: string, key: ManualTaxonomyField, value: string) => {
+    setRows((prev) => prev.map((row) => (row.id === id ? { ...row, [key]: value } : row)));
+  };
+
+  const addRow = () => setRows((prev) => [...prev, createEmptyTaxonomyRow()]);
+  const deleteRow = (id: string) => {
+    setRows((prev) => {
+      const next = prev.filter((row) => row.id !== id);
+      return next.length > 0 ? next : [createEmptyTaxonomyRow()];
+    });
+  };
+
+  const canContinue = rows.some((row) => MANUAL_TAXONOMY_COLUMNS.some((col) => row[col.key].trim()));
+
+  return (
+    <>
+      <p className="mb-6 text-sm text-[#6b7280]">
+        Enter placement taxonomy values for each row. Use the same columns as a parsed media plan. Add or delete rows as needed.
+      </p>
+
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-sm text-[#646464]">
+          <span className="font-medium text-[#020617]">{rows.length}</span> {rows.length === 1 ? "row" : "rows"}
+        </p>
+        <button
+          type="button"
+          onClick={addRow}
+          className="inline-flex items-center gap-1.5 rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-1.5 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
+        >
+          <Plus className="size-3.5" />
+          Add row
+        </button>
+      </div>
+
+      <div className="w-full overflow-x-auto rounded-lg border border-[#e2e8f0]">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-[#e2e8f0]">
+              {MANUAL_TAXONOMY_COLUMNS.map((col) => (
+                <th key={col.key} className="min-w-[140px] px-3 py-3 text-left">
+                  <span className="text-xs font-medium text-[#020617]">{col.label}</span>
+                </th>
+              ))}
+              <th className="w-12 px-3 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id} className="border-b border-[#e2e8f0]/50 last:border-b-0">
+                {MANUAL_TAXONOMY_COLUMNS.map((col) => (
+                  <td key={col.key} className="px-3 py-2">
+                    <Input
+                      value={row[col.key]}
+                      onChange={(e) => updateCell(row.id, col.key, e.target.value)}
+                      placeholder="—"
+                      className="h-8 min-w-[120px] text-sm"
+                    />
+                  </td>
+                ))}
+                <td className="px-2 py-2">
+                  <button
+                    type="button"
+                    onClick={() => deleteRow(row.id)}
+                    className="flex size-8 items-center justify-center rounded-md text-[#94a3b8] transition-colors hover:bg-[#fef2f2] hover:text-[#dc2626]"
+                    aria-label="Delete row"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-8 flex items-center justify-between py-4">
+        <button onClick={onBack} className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]">Back to Media Plan</button>
+        <button onClick={onContinue} disabled={!canContinue} className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50">Continue to Apply Placements</button>
+      </div>
+    </>
+  );
+}
 
 function MapTaxonomiesSubStep({ onBack, onContinue }: { onBack: () => void; onContinue: () => void }) {
   const [mappings, setMappings] = useState<Record<string, string | null>>(() => {
@@ -2124,7 +2310,7 @@ function ApplyPlacementsSubStep({ onBack, onContinue, hasReuploaded, onValidChan
       {/* File summary banner */}
       <div className="mb-6 flex items-center justify-between rounded-lg border border-border bg-white px-5 py-3.5">
         <div>
-          <p className="text-sm font-semibold text-[#1f2430]">{hasReuploaded ? "Carta/Mcdonalds2024_new" : "Carta/Mcdonalds2024"}</p>
+          <p className="text-sm font-semibold text-[#1f2430]">{hasReuploaded ? "QSR_Q2_2026_v2" : "QSR_Q2_2026"}</p>
           <p className="text-xs text-[#6b7280]">Uploaded by Sang Yeo</p>
         </div>
         <div className="flex items-center gap-5">
