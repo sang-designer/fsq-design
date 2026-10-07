@@ -1124,7 +1124,7 @@ function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValu
   const handleSave = () => {
     const next: Record<string, string> = { ...formValues };
     Object.keys(next).forEach((k) => {
-      if (k.startsWith("Media Type ") || k.startsWith("Estimated Ad Spend")) delete next[k];
+      if (k.startsWith("Media Type ")) delete next[k];
     });
     next["Media Types"] = selectedMediaTypes.join(", ");
     selectedMediaTypes.forEach((type, i) => {
@@ -1133,102 +1133,86 @@ function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValu
     onSave(next);
   };
 
+  const canSave = !!(formValues["Partner/Platform Name"] ?? "").trim() && selectedMediaTypes.length > 0;
+
   return (
     <div className="flex flex-col gap-6">
       <p className="text-base font-semibold text-black">{mode === "add" ? "Add" : "Edit"} Media Partner</p>
 
-      <div className="flex flex-col gap-4">
-        {/* Partner/Platform Setup */}
-        <div className="flex flex-col gap-2">
+      <div className="flex gap-8">
+        <div className="flex flex-1 flex-col gap-2">
           <p className="text-xs font-semibold text-[#646464]">Partner/Platform Setup</p>
-          <div className="flex gap-8">
-            <ComboField label="Partner/Platform Name" placeholder="Type or Select" value={formValues["Partner/Platform Name"] ?? ""} onChange={(v) => updateField("Partner/Platform Name", v)} options={PARTNER_NAME_OPTIONS} />
-            <div className="flex-1 min-w-[280px]" />
-          </div>
+          <ComboField required label="Partner/Platform Name" placeholder="Type or select" value={formValues["Partner/Platform Name"] ?? ""} onChange={(v) => updateField("Partner/Platform Name", v)} options={PARTNER_NAME_OPTIONS} />
         </div>
-
-        {/* Media Types */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-1 flex-col gap-2">
           <p className="text-xs font-semibold text-[#646464]">Media Types</p>
-          <div className="flex gap-8">
-            <div className="flex flex-1 flex-col gap-2 min-w-[280px]">
-              <label className="text-sm font-semibold text-black">Media Type</label>
-              <div className="relative" ref={mediaTypeMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setMediaTypeMenuOpen((o) => !o)}
-                  className="flex min-h-[40px] w-full items-center gap-2 rounded-md border border-[#f0f0f0] bg-[#fcfcfc] px-3 py-2 text-left"
-                >
-                  <div className="flex flex-1 flex-wrap items-center gap-1.5">
-                    {selectedMediaTypes.length > 0 ? (
-                      selectedMediaTypes.map((type) => (
+          <div className="flex flex-col gap-2 min-w-[280px]">
+            <label className="text-sm font-semibold text-black">Media Type <span className="text-[#dc2626]">*</span></label>
+            <div className="relative" ref={mediaTypeMenuRef}>
+              <button
+                type="button"
+                onClick={() => setMediaTypeMenuOpen((o) => !o)}
+                className="flex min-h-[40px] w-full items-center gap-2 rounded-md border border-[#f0f0f0] bg-[#fcfcfc] px-3 py-2 text-left"
+              >
+                <div className="flex flex-1 flex-wrap items-center gap-1.5">
+                  {selectedMediaTypes.length > 0 ? (
+                    selectedMediaTypes.map((type) => (
+                      <span
+                        key={type}
+                        className="flex items-center gap-1 rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-medium text-[#334155]"
+                      >
+                        {type}
                         <span
-                          key={type}
-                          className="flex items-center gap-1 rounded-full bg-[#f1f5f9] px-2.5 py-0.5 text-xs font-medium text-[#334155]"
-                        >
-                          {type}
-                          <span
-                            role="button"
-                            tabIndex={0}
-                            onClick={(e) => {
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleMediaType(type);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
                               e.stopPropagation();
                               toggleMediaType(type);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                toggleMediaType(type);
-                              }
-                            }}
-                            className="rounded-full hover:bg-[#e2e8f0]"
-                          >
-                            <X className="size-3" />
-                          </span>
+                            }
+                          }}
+                          className="rounded-full hover:bg-[#e2e8f0]"
+                        >
+                          <X className="size-3" />
                         </span>
-                      ))
-                    ) : (
-                      <span className="text-sm text-[#8d8d8d]">Select media types...</span>
-                    )}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-[#8d8d8d]">Select media types...</span>
+                  )}
+                </div>
+                <ChevronDown className="size-4 shrink-0 text-[#8d8d8d]" />
+              </button>
+              {mediaTypeMenuOpen && (
+                <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-[#e2e8f0] bg-white shadow-lg">
+                  <div className="flex items-center justify-between border-b border-[#e2e8f0] px-3 py-2">
+                    <button type="button" onClick={() => setSelectedMediaTypes([...MEDIA_TYPE_OPTIONS])} className="text-xs font-medium text-[#212be9] hover:underline">
+                      Select All
+                    </button>
+                    <button type="button" onClick={() => setSelectedMediaTypes([])} className="text-xs font-medium text-[#ef4444] hover:underline">
+                      Reset
+                    </button>
                   </div>
-                  <ChevronDown className="size-4 shrink-0 text-[#8d8d8d]" />
-                </button>
-                {mediaTypeMenuOpen && (
-                  <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-[#e2e8f0] bg-white shadow-lg">
-                    <div className="flex items-center justify-between border-b border-[#e2e8f0] px-3 py-2">
-                      <button type="button" onClick={() => setSelectedMediaTypes([...MEDIA_TYPE_OPTIONS])} className="text-xs font-medium text-[#212be9] hover:underline">
-                        Select All
-                      </button>
-                      <button type="button" onClick={() => setSelectedMediaTypes([])} className="text-xs font-medium text-[#ef4444] hover:underline">
-                        Reset
-                      </button>
-                    </div>
-                    <div className="p-2">
-                      {MEDIA_TYPE_OPTIONS.map((type) => (
-                        <label key={type} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-[#f8fafc]">
-                          <Checkbox
-                            checked={selectedMediaTypes.includes(type)}
-                            onCheckedChange={() => toggleMediaType(type)}
-                            className="data-[state=checked]:bg-[#212be9] data-[state=checked]:border-[#212be9]"
-                          />
-                          <span className="text-[#020617]">{type}</span>
-                        </label>
-                      ))}
-                    </div>
+                  <div className="p-2">
+                    {MEDIA_TYPE_OPTIONS.map((type) => (
+                      <label key={type} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-[#f8fafc]">
+                        <Checkbox
+                          checked={selectedMediaTypes.includes(type)}
+                          onCheckedChange={() => toggleMediaType(type)}
+                          className="data-[state=checked]:bg-[#212be9] data-[state=checked]:border-[#212be9]"
+                        />
+                        <span className="text-[#020617]">{type}</span>
+                      </label>
+                    ))}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
-            <InputField label="Estimated Impressions" placeholder="Impressions value..." value={formValues["Estimated Impressions"] ?? ""} onChange={(v) => updateField("Estimated Impressions", v)} />
-          </div>
-        </div>
-
-        {/* Contact Info */}
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-semibold text-[#646464]">Contact Info</p>
-          <div className="flex gap-8">
-            <SelectField label="Sales/Account Manager Name" value={formValues["Sales/Account Manager Name"] ?? ""} onChange={(v) => updateField("Sales/Account Manager Name", v)} options={SALES_MANAGER_OPTIONS} />
-            <InputField label="Sales/Account Manager Email" placeholder="Email..." value={formValues["Sales/Account Manager Email"] ?? ""} onChange={(v) => updateField("Sales/Account Manager Email", v)} />
           </div>
         </div>
       </div>
@@ -1242,7 +1226,8 @@ function AddPartnerForm({ mode, onDiscard, onSave, errorFields = [], initialValu
         </button>
         <button
           onClick={handleSave}
-          className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4]"
+          disabled={!canSave}
+          className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
         >
           Save Media Partner
         </button>
@@ -1917,6 +1902,12 @@ const INITIAL_ASSIGNED_PARTNERS: AssignedPartner[] = [
   { id: "ap3", name: "Ignored Partners", count: 0, tokens: [] },
 ];
 
+const BLANK_ASSIGNED_PARTNERS: AssignedPartner[] = [
+  { id: "ap1", name: "Viant Technologies", count: 0, tokens: [] },
+  { id: "ap2", name: "Adtheorent", count: 0, tokens: [] },
+  { id: "ap3", name: "Ignored", count: 0, tokens: [] },
+];
+
 const SALESFORCE_PARTNERS: PartnerToken[] = [
   { id: "sf-1", name: "Viant Technologies" },
   { id: "sf-2", name: "Adtheorent" },
@@ -2127,113 +2118,46 @@ function PartnerOnboardingModal({ step, onNext, onSkip, onBack, onDismissPermane
 
 
 function BlankTemplateMapPartners({ onBackToMediaPlan, onContinueToTaxonomy, hasReuploaded }: { onBackToMediaPlan: () => void; onContinueToTaxonomy: () => void; hasReuploaded?: boolean }) {
-  const [partners, setPartners] = useState<Record<string, string>[]>([]);
-  const [formMode, setFormMode] = useState<"closed" | "add" | "edit">("closed");
-  const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [showForm, setShowForm] = useState(true);
+  const [formKey, setFormKey] = useState(0);
+  const [pendingUnassigned, setPendingUnassigned] = useState<PartnerToken | null>(null);
 
   const savePartner = (formData: Record<string, string>) => {
-    if (formMode === "edit" && editIndex !== null) {
-      setPartners((prev) => prev.map((p, i) => (i === editIndex ? formData : p)));
-    } else {
-      setPartners((prev) => [...prev, formData]);
+    const name = formData["Partner/Platform Name"]?.trim();
+    if (name) {
+      setPendingUnassigned({
+        id: `manual-${Date.now()}`,
+        name,
+      });
     }
-    setFormMode("closed");
-    setEditIndex(null);
+    setShowForm(false);
   };
 
   return (
     <>
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-[#020617]">Placement Details</h2>
-        <div className="mt-1 text-sm leading-5 text-[#646464]">
-          <p>This campaign uses a blank media plan. Add each media partner and their details.</p>
-        </div>
+      <div className={showForm ? "hidden" : undefined}>
+        <MapPartnersFromUpload
+          onBackToMediaPlan={onBackToMediaPlan}
+          onContinueToTaxonomy={onContinueToTaxonomy}
+          hasReuploaded={hasReuploaded}
+          initialUnassigned={[]}
+          initialAssigned={BLANK_ASSIGNED_PARTNERS}
+          pendingUnassigned={pendingUnassigned}
+          onPendingConsumed={() => setPendingUnassigned(null)}
+          onAddPartnerClick={() => {
+            setFormKey((k) => k + 1);
+            setShowForm(true);
+          }}
+        />
       </div>
-
-      <PlacementSubSteps activeStep={2} hasReuploaded={hasReuploaded} />
-
-      {formMode !== "closed" ? (
+      {showForm && (
         <AddPartnerForm
-          key={formMode === "edit" ? `edit-${editIndex}` : "add"}
-          mode={formMode === "edit" ? "edit" : "add"}
-          initialValues={formMode === "edit" && editIndex !== null ? partners[editIndex] : {}}
-          onDiscard={() => { setFormMode("closed"); setEditIndex(null); }}
+          key={formKey}
+          mode="add"
+          initialValues={{}}
+          onDiscard={() => setShowForm(false)}
           onSave={savePartner}
         />
-      ) : (
-        <>
-          {partners.length === 0 ? (
-            <div className="mb-6 rounded-lg border border-dashed border-[#e2e8f0] bg-[#f8fafc] px-6 py-10 text-center">
-              <p className="text-sm font-medium text-[#020617]">No partners added yet</p>
-              <p className="mt-1 text-sm text-[#646464]">Add a partner to include them on this blank media plan.</p>
-            </div>
-          ) : (
-            <div className="mb-6 overflow-hidden rounded-lg border border-[#e2e8f0]">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b]">Partner</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748b]">Media Type</th>
-                    <th className="w-24 px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {partners.map((p, i) => (
-                    <tr key={`${p["Partner/Platform Name"]}-${i}`} className="border-b border-[#e2e8f0] last:border-b-0">
-                      <td className="px-4 py-3 text-sm font-medium text-[#020617]">{p["Partner/Platform Name"] || "Untitled partner"}</td>
-                      <td className="px-4 py-3 text-sm text-[#374151]">{p["Media Types"] || p["Media Type 0"] || p["Media Type"] || "—"}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            type="button"
-                            onClick={() => { setEditIndex(i); setFormMode("edit"); }}
-                            className="rounded-md p-1.5 text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#020617]"
-                            aria-label="Edit partner"
-                          >
-                            <SquarePen className="size-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPartners((prev) => prev.filter((_, idx) => idx !== i))}
-                            className="rounded-md p-1.5 text-[#94a3b8] hover:bg-[#fef2f2] hover:text-[#dc2626]"
-                            aria-label="Delete partner"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={() => { setEditIndex(null); setFormMode("add"); }}
-            className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-[#212be9] hover:text-[#1a22c4]"
-          >
-            <Plus className="size-4" />
-            Add Partner
-          </button>
-
-          <div className="mt-8 flex items-center justify-between py-4">
-            <button
-              onClick={onBackToMediaPlan}
-              className="rounded-md border border-[#212be9] bg-[#fcfcfc] px-3 py-2 text-sm font-medium text-[#212be9] transition-colors hover:bg-[#ebf1ff]"
-            >
-              Back to Media Plan
-            </button>
-            <button
-              onClick={onContinueToTaxonomy}
-              disabled={partners.length === 0}
-              className="rounded-md bg-[#212be9] px-3 py-2 text-sm font-medium text-[#f5f8ff] transition-colors hover:bg-[#1a22c4] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Continue to Taxonomy Mappings
-            </button>
-          </div>
-        </>
       )}
     </>
   );
@@ -2246,14 +2170,22 @@ function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy, hasReuplo
   return <MapPartnersFromUpload onBackToMediaPlan={onBackToMediaPlan} onContinueToTaxonomy={onContinueToTaxonomy} hasReuploaded={hasReuploaded} />;
 }
 
-function MapPartnersFromUpload({ onBackToMediaPlan, onContinueToTaxonomy, hasReuploaded }: { onBackToMediaPlan: () => void; onContinueToTaxonomy: () => void; hasReuploaded?: boolean }) {
+function MapPartnersFromUpload({ onBackToMediaPlan, onContinueToTaxonomy, hasReuploaded, initialUnassigned, initialAssigned, pendingUnassigned, onPendingConsumed, onAddPartnerClick }: {
+  onBackToMediaPlan: () => void; onContinueToTaxonomy: () => void; hasReuploaded?: boolean;
+  initialUnassigned?: PartnerToken[];
+  initialAssigned?: AssignedPartner[];
+  pendingUnassigned?: PartnerToken | null;
+  onPendingConsumed?: () => void;
+  onAddPartnerClick?: () => void;
+}) {
   const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (onAddPartnerClick) return false;
     if (typeof window !== "undefined") return !localStorage.getItem("hide-partner-onboarding");
     return true;
   });
   const [onboardingStep, setOnboardingStep] = useState(0);
-  const [unassigned, setUnassigned] = useState<PartnerToken[]>(INITIAL_UNASSIGNED_PARTNERS);
-  const [assigned, setAssigned] = useState<AssignedPartner[]>(INITIAL_ASSIGNED_PARTNERS);
+  const [unassigned, setUnassigned] = useState<PartnerToken[]>(initialUnassigned ?? INITIAL_UNASSIGNED_PARTNERS);
+  const [assigned, setAssigned] = useState<AssignedPartner[]>(initialAssigned ?? INITIAL_ASSIGNED_PARTNERS);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [dragTokenIds, setDragTokenIds] = useState<string[]>([]);
@@ -2267,6 +2199,17 @@ function MapPartnersFromUpload({ onBackToMediaPlan, onContinueToTaxonomy, hasReu
   const [addPartnerError, setAddPartnerError] = useState(false);
   const [addPartnerShowAll, setAddPartnerShowAll] = useState(false);
   const addPartnerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!pendingUnassigned) return;
+    setUnassigned((prev) => {
+      if (prev.some((t) => t.id === pendingUnassigned.id || t.name.toLowerCase() === pendingUnassigned.name.toLowerCase())) {
+        return prev;
+      }
+      return [...prev, pendingUnassigned];
+    });
+    onPendingConsumed?.();
+  }, [pendingUnassigned, onPendingConsumed]);
 
   const existingNames = useMemo(() => {
     const names = new Set<string>();
@@ -2549,7 +2492,7 @@ function MapPartnersFromUpload({ onBackToMediaPlan, onContinueToTaxonomy, hasReu
           <div className="relative" ref={addPartnerRef}>
             {!addPartnerOpen ? (
               <button
-                onClick={openAddPartner}
+                onClick={onAddPartnerClick ?? openAddPartner}
                 className="mt-3 flex items-center gap-1 text-sm font-medium text-[#212be9] transition-colors hover:text-[#1a22c4]"
               >
                 <Plus className="size-4" />
