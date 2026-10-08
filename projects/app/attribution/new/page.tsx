@@ -2135,6 +2135,24 @@ function BlankTemplateMapPartners({ onBackToMediaPlan, onContinueToTaxonomy, has
 
   return (
     <>
+      {showForm && (
+        <>
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-[#020617]">Placement Details</h2>
+            <div className="mt-1 text-sm leading-5 text-[#646464]">
+              <p>This campaign uses a blank media plan. Add each media partner and their details.</p>
+            </div>
+          </div>
+          <PlacementSubSteps activeStep={2} hasReuploaded={hasReuploaded} />
+          <AddPartnerForm
+            key={formKey}
+            mode="add"
+            initialValues={{}}
+            onDiscard={() => setShowForm(false)}
+            onSave={savePartner}
+          />
+        </>
+      )}
       <div className={showForm ? "hidden" : undefined}>
         <MapPartnersFromUpload
           onBackToMediaPlan={onBackToMediaPlan}
@@ -2150,15 +2168,6 @@ function BlankTemplateMapPartners({ onBackToMediaPlan, onContinueToTaxonomy, has
           }}
         />
       </div>
-      {showForm && (
-        <AddPartnerForm
-          key={formKey}
-          mode="add"
-          initialValues={{}}
-          onDiscard={() => setShowForm(false)}
-          onSave={savePartner}
-        />
-      )}
     </>
   );
 }
