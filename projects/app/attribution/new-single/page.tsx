@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Header } from "../_components/campaign-header";
-import { SelectField, DateField, InputField, BrandSearchSelect, ComboField } from "../_components/form-fields";
+import { SelectField, DateField, InputField, BrandSearchSelect, ComboField, ComboCell } from "../_components/form-fields";
 import { CampaignSidebar } from "../_components/campaign-sidebar";
 
 type Step = "campaign" | "pixel" | "placement" | "review";
@@ -1934,7 +1934,15 @@ function PlacementDetailsStep({ partnerName, hasUploadedFile, hasReuploaded, isU
 
       {activeSubStep === 3 && (
         usingTemplate ? (
-          <ManualTaxonomyTable onBack={() => setActiveSubStep(2)} onContinue={() => setActiveSubStep(4)} />
+          <ManualTaxonomyTable
+            onBack={() => setActiveSubStep(2)}
+            onContinue={() => setActiveSubStep(4)}
+            templatePartners={
+              manualPartner
+                ? [{ name: manualPartner["Partner/Platform Name"] || "", mediaTypes: parseMediaTypesFromForm(manualPartner) }]
+                : []
+            }
+          />
         ) : (
           <MapTaxonomiesSubStep onBack={() => setActiveSubStep(2)} onContinue={() => setActiveSubStep(4)} />
         )
@@ -2013,10 +2021,54 @@ const PARSED_COLUMNS: ColumnDef[] = [
   { id: "col-8", rawName: "DMA_Region", sampleData: ["Los_Angeles", "Houston", "Dallas", "San_Francisco", "Seattle", "Denver", "New_York", "Phoenix", "Dallas", "New_York", "Chicago", "Philadelphia", "Los_Angeles", "Phoenix", "New_York", "San_Francisco", "Dallas", "Houston", "Seattle", "Chicago"] },
 ];
 
-function ManualTaxonomyTable({ onBack, onContinue }: { onBack: () => void; onContinue: () => void }) {
-  const [columns, setColumns] = useState<ColumnDef[]>(() =>
-    PARSED_COLUMNS.map((col) => ({ ...col, sampleData: [""] }))
-  );
+type TemplatePartner = { name: string; mediaTypes: string[] };
+
+function parseMediaTypesFromForm(formData: Record<string, string>): string[] {
+  if (formData["Media Types"]) {
+    return formData["Media Types"].split(",").map((t) => t.trim()).filter(Boolean);
+  }
+  const types: string[] = [];
+  let i = 0;
+  while (formData[`Media Type ${i}`]) {
+    types.push(formData[`Media Type ${i}`]);
+    i++;
+  }
+  if (formData["Media Type"]) types.push(formData["Media Type"]);
+  return [...new Set(types)];
+}
+
+function taxonomyColumnsFromPartners(partners: TemplatePartner[]): ColumnDef[] {
+  const rows = partners.flatMap((p) => {
+    const types = p.mediaTypes.length > 0 ? p.mediaTypes : [""];
+    return types.map((mediaType) => ({ vendor: p.name, mediaType }));
+  });
+  const count = Math.max(1, rows.length);
+  return PARSED_COLUMNS.map((col) => ({
+    ...col,
+    sampleData: Array.from({ length: count }, (_, i) => {
+      const row = rows[i];
+      if (!row) return "";
+      if (col.rawName === "Vendor") return row.vendor;
+      if (col.rawName === "Media Type") return row.mediaType;
+      return "";
+    }),
+  }));
+}
+
+function taxonomyCellOptions(rawName: string, partners: TemplatePartner[], columnValues: string[]): string[] {
+  const key = rawName.toLowerCase();
+  const uniq = (arr: string[]) => [...new Set(arr.map((v) => v.trim()).filter(Boolean))];
+  if (key === "media type") return uniq([...MEDIA_TYPE_OPTIONS, ...partners.flatMap((p) => p.mediaTypes), ...columnValues]);
+  if (key === "vendor") return uniq([...PARTNER_NAME_OPTIONS, ...partners.map((p) => p.name), ...columnValues]);
+  if (key.includes("ad unit") || key === "ad_unit") return uniq(["300x250", "728x90", "320x50", "300x50", "300x600", "970x250", ...columnValues]);
+  if (key.includes("creative format")) return uniq(["Standard_Banner", "Rich_Media", "Video_Pre_Roll", "Interactive", "Native_Content", ...columnValues]);
+  if (key.includes("locale")) return uniq(["English", "Spanish", "French", "German", ...columnValues]);
+  if (key.includes("dma") || key.includes("region")) return uniq(["New_York", "Los_Angeles", "Chicago", "Houston", "Phoenix", "Dallas", "San_Francisco", "Seattle", "Denver", ...columnValues]);
+  return uniq(columnValues);
+}
+
+function ManualTaxonomyTable({ onBack, onContinue, templatePartners = [] }: { onBack: () => void; onContinue: () => void; templatePartners?: TemplatePartner[] }) {
+  const [columns, setColumns] = useState<ColumnDef[]>(() => taxonomyColumnsFromPartners(templatePartners));
   const [mappings, setMappings] = useState<Record<string, string | null>>(() => {
     const m: Record<string, string | null> = {};
     PARSED_COLUMNS.forEach((col) => { m[col.id] = null; });
@@ -2359,11 +2411,10 @@ function ManualTaxonomyTable({ onBack, onContinue }: { onBack: () => void; onCon
               <tr key={rowIdx} className="border-b border-[#e2e8f0]/50 last:border-b-0">
                 {columns.map((col) => (
                   <td key={col.id} className="px-3 py-2">
-                    <Input
+                    <ComboCell
                       value={col.sampleData[rowIdx] ?? ""}
-                      onChange={(e) => updateCell(col.id, rowIdx, e.target.value)}
-                      placeholder="—"
-                      className="h-8 min-w-[120px] text-sm"
+                      onChange={(v) => updateCell(col.id, rowIdx, v)}
+                      options={taxonomyCellOptions(col.rawName, templatePartners, col.sampleData)}
                     />
                   </td>
                 ))}

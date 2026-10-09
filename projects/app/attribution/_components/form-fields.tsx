@@ -115,6 +115,74 @@ export function ComboField({ label, placeholder = "Type or Select", value, onCha
   );
 }
 
+export function ComboCell({ placeholder = "—", value = "", onChange, options }: {
+  placeholder?: string;
+  value?: string;
+  onChange?: (v: string) => void;
+  options: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const query = value ?? "";
+  const filtered = options.filter((o) => o.toLowerCase().includes(query.toLowerCase()));
+  const showCreate = query.trim().length > 0 && !options.some((o) => o.toLowerCase() === query.trim().toLowerCase());
+
+  const commit = (v: string) => {
+    onChange?.(v);
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <div className="relative min-w-[120px]">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => {
+              onChange?.(e.target.value);
+              if (!open) setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            placeholder={placeholder}
+            className="h-8 w-full rounded-md border border-[#e2e8f0] bg-white px-2 pr-7 text-sm outline-none placeholder:text-[#8d8d8d] focus:border-[#212be9]"
+          />
+          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-3.5 -translate-y-1/2 text-[#8d8d8d]" />
+        </div>
+      </PopoverTrigger>
+      <PopoverContent
+        className="max-h-[220px] w-[var(--radix-popover-trigger-width)] overflow-y-auto p-1"
+        align="start"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        {filtered.map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => commit(opt)}
+            className="flex w-full rounded-sm px-2 py-1.5 text-left text-sm text-[#020617] hover:bg-[#ebf1ff] hover:text-[#212be9]"
+          >
+            {opt}
+          </button>
+        ))}
+        {showCreate && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => commit(query.trim())}
+            className="flex w-full rounded-sm px-2 py-1.5 text-left text-sm text-[#020617] hover:bg-[#ebf1ff]"
+          >
+            Use “{query.trim()}”
+          </button>
+        )}
+        {filtered.length === 0 && !showCreate && (
+          <p className="px-2 py-1.5 text-sm text-[#8d8d8d]">Type to add a value</p>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function SelectField({ label, placeholder = "Type or Select", helpText, value, onChange, error, options, required }: {
   label: string;
   placeholder?: string;

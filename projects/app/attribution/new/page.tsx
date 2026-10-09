@@ -18,6 +18,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { ComboCell } from "../_components/form-fields";
 
 type Step = "campaign" | "placement" | "map-partners" | "map-taxonomies" | "apply-placements" | "funding" | "pixel-generation" | "review";
 
@@ -1880,6 +1881,52 @@ const PARSED_COLUMNS: ColumnDef[] = [
   { id: "col-9", rawName: "DMA Region", sampleData: ["Los_Angeles", "Houston", "", "San_Francisco", "Seattle", "Denver", "", "", "Dallas", "New_York", "Chicago", "Philadelphia", "", "Phoenix", "", "San_Antonio", "", "Los_Angeles", "Seattle", "Houston"] },
 ];
 
+type TemplatePartner = { name: string; mediaTypes: string[] };
+
+function parseMediaTypesFromForm(formData: Record<string, string>): string[] {
+  if (formData["Media Types"]) {
+    return formData["Media Types"].split(",").map((t) => t.trim()).filter(Boolean);
+  }
+  const types: string[] = [];
+  let i = 0;
+  while (formData[`Media Type ${i}`]) {
+    types.push(formData[`Media Type ${i}`]);
+    i++;
+  }
+  if (formData["Media Type"]) types.push(formData["Media Type"]);
+  return [...new Set(types)];
+}
+
+function taxonomyColumnsFromPartners(partners: TemplatePartner[]): ColumnDef[] {
+  const rows = partners.flatMap((p) => {
+    const types = p.mediaTypes.length > 0 ? p.mediaTypes : [""];
+    return types.map((mediaType) => ({ vendor: p.name, mediaType }));
+  });
+  const count = Math.max(1, rows.length);
+  return PARSED_COLUMNS.map((col) => ({
+    ...col,
+    sampleData: Array.from({ length: count }, (_, i) => {
+      const row = rows[i];
+      if (!row) return "";
+      if (col.rawName === "Vendor") return row.vendor;
+      if (col.rawName === "Media Type") return row.mediaType;
+      return "";
+    }),
+  }));
+}
+
+function taxonomyCellOptions(rawName: string, partners: TemplatePartner[], columnValues: string[]): string[] {
+  const key = rawName.toLowerCase();
+  const uniq = (arr: string[]) => [...new Set(arr.map((v) => v.trim()).filter(Boolean))];
+  if (key === "media type") return uniq([...MEDIA_TYPE_OPTIONS, ...partners.flatMap((p) => p.mediaTypes), ...columnValues]);
+  if (key === "vendor") return uniq([...PARTNER_NAME_OPTIONS, ...partners.map((p) => p.name), ...columnValues]);
+  if (key.includes("ad unit") || key === "ad_unit") return uniq(["300x250", "728x90", "320x50", "300x50", "300x600", "970x250", ...columnValues]);
+  if (key.includes("creative format")) return uniq(["Standard_Banner", "Rich_Media", "Video_Pre_Roll", "Interactive", "Native_Content", ...columnValues]);
+  if (key.includes("locale")) return uniq(["English", "Spanish", "French", "German", ...columnValues]);
+  if (key.includes("dma") || key.includes("region")) return uniq(["New_York", "Los_Angeles", "Chicago", "Houston", "Phoenix", "Dallas", "San_Francisco", "Seattle", "Denver", ...columnValues]);
+  return uniq(columnValues);
+}
+
 type PartnerToken = { id: string; name: string };
 type AssignedPartner = { id: string; name: string; count: number; tokens: PartnerToken[] };
 
@@ -2117,7 +2164,11 @@ function PartnerOnboardingModal({ step, onNext, onSkip, onBack, onDismissPermane
 
 
 
-function BlankTemplateMapPartners({ onBackToMediaPlan, onContinueToTaxonomy, hasReuploaded }: { onBackToMediaPlan: () => void; onContinueToTaxonomy: () => void; hasReuploaded?: boolean }) {
+function BlankTemplateMapPartners({ onBackToMediaPlan, onContinueToTaxonomy, hasReuploaded, templatePartners = [], onTemplatePartnersChange }: {
+  onBackToMediaPlan: () => void; onContinueToTaxonomy: () => void; hasReuploaded?: boolean;
+  templatePartners?: TemplatePartner[];
+  onTemplatePartnersChange?: (partners: TemplatePartner[]) => void;
+}) {
   const [showForm, setShowForm] = useState(true);
   const [formKey, setFormKey] = useState(0);
   const [pendingUnassigned, setPendingUnassigned] = useState<PartnerToken | null>(null);
@@ -2129,6 +2180,8 @@ function BlankTemplateMapPartners({ onBackToMediaPlan, onContinueToTaxonomy, has
         id: `manual-${Date.now()}`,
         name,
       });
+      const nextPartner: TemplatePartner = { name, mediaTypes: parseMediaTypesFromForm(formData) };
+      onTemplatePartnersChange?.([...(templatePartners ?? []), nextPartner]);
     }
     setShowForm(false);
   };
@@ -2172,9 +2225,13 @@ function BlankTemplateMapPartners({ onBackToMediaPlan, onContinueToTaxonomy, has
   );
 }
 
-function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy, hasReuploaded, blankTemplate }: { onBackToMediaPlan: () => void; onContinueToTaxonomy: () => void; hasReuploaded?: boolean; blankTemplate?: boolean }) {
+function MapPartnersContent({ onBackToMediaPlan, onContinueToTaxonomy, hasReuploaded, blankTemplate, templatePartners, onTemplatePartnersChange }: {
+  onBackToMediaPlan: () => void; onContinueToTaxonomy: () => void; hasReuploaded?: boolean; blankTemplate?: boolean;
+  templatePartners?: TemplatePartner[];
+  onTemplatePartnersChange?: (partners: TemplatePartner[]) => void;
+}) {
   if (blankTemplate) {
-    return <BlankTemplateMapPartners onBackToMediaPlan={onBackToMediaPlan} onContinueToTaxonomy={onContinueToTaxonomy} hasReuploaded={hasReuploaded} />;
+    return <BlankTemplateMapPartners onBackToMediaPlan={onBackToMediaPlan} onContinueToTaxonomy={onContinueToTaxonomy} hasReuploaded={hasReuploaded} templatePartners={templatePartners} onTemplatePartnersChange={onTemplatePartnersChange} />;
   }
   return <MapPartnersFromUpload onBackToMediaPlan={onBackToMediaPlan} onContinueToTaxonomy={onContinueToTaxonomy} hasReuploaded={hasReuploaded} />;
 }
@@ -2641,10 +2698,8 @@ function MapPartnersFromUpload({ onBackToMediaPlan, onContinueToTaxonomy, hasReu
 /* ───── MapTaxonomiesContent ───── */
 
 
-function ManualTaxonomyTable({ onBack, onContinue, hasReuploaded }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean }) {
-  const [columns, setColumns] = useState<ColumnDef[]>(() =>
-    PARSED_COLUMNS.map((col) => ({ ...col, sampleData: [""] }))
-  );
+function ManualTaxonomyTable({ onBack, onContinue, hasReuploaded, templatePartners = [] }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean; templatePartners?: TemplatePartner[] }) {
+  const [columns, setColumns] = useState<ColumnDef[]>(() => taxonomyColumnsFromPartners(templatePartners));
   const [mappings, setMappings] = useState<Record<string, string | null>>(() => {
     const m: Record<string, string | null> = {};
     PARSED_COLUMNS.forEach((col) => { m[col.id] = null; });
@@ -2996,11 +3051,10 @@ function ManualTaxonomyTable({ onBack, onContinue, hasReuploaded }: { onBack: ()
               <tr key={rowIdx} className="border-b border-[#e2e8f0]/50 last:border-b-0">
                 {columns.map((col) => (
                   <td key={col.id} className="px-3 py-2">
-                    <Input
+                    <ComboCell
                       value={col.sampleData[rowIdx] ?? ""}
-                      onChange={(e) => updateCell(col.id, rowIdx, e.target.value)}
-                      placeholder="—"
-                      className="h-8 min-w-[120px] text-sm"
+                      onChange={(v) => updateCell(col.id, rowIdx, v)}
+                      options={taxonomyCellOptions(col.rawName, templatePartners, col.sampleData)}
                     />
                   </td>
                 ))}
@@ -3037,9 +3091,9 @@ function ManualTaxonomyTable({ onBack, onContinue, hasReuploaded }: { onBack: ()
   );
 }
 
-function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded, blankTemplate }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean; blankTemplate?: boolean }) {
+function MapTaxonomiesContent({ onBack, onContinue, hasReuploaded, blankTemplate, templatePartners }: { onBack: () => void; onContinue: () => void; hasReuploaded?: boolean; blankTemplate?: boolean; templatePartners?: TemplatePartner[] }) {
   if (blankTemplate) {
-    return <ManualTaxonomyTable onBack={onBack} onContinue={onContinue} hasReuploaded={hasReuploaded} />;
+    return <ManualTaxonomyTable onBack={onBack} onContinue={onContinue} hasReuploaded={hasReuploaded} templatePartners={templatePartners} />;
   }
   return <MapTaxonomiesFromUpload onBack={onBack} onContinue={onContinue} hasReuploaded={hasReuploaded} />;
 }
@@ -5025,6 +5079,7 @@ function NewCampaignContent() {
   const [campaignSubmitted, setCampaignSubmitted] = useState(false);
   const [alreadyParsed, setAlreadyParsed] = useState(false);
   const [mediaPlanMode, setMediaPlanMode] = useState<"none" | "upload" | "template">("none");
+  const [templatePartners, setTemplatePartners] = useState<TemplatePartner[]>([]);
   const [visitedSteps, setVisitedSteps] = useState<Set<string>>(new Set([initialStep]));
   const [isReparsing, setIsReparsing] = useState(false);
   const [reparseError, setReparseError] = useState<string | null>(null);
@@ -5305,6 +5360,8 @@ function NewCampaignContent() {
               onContinueToTaxonomy={() => goToStep("map-taxonomies")}
               hasReuploaded={hasReuploaded}
               blankTemplate={mediaPlanMode === "template" && !hasUploadedFile}
+              templatePartners={templatePartners}
+              onTemplatePartnersChange={setTemplatePartners}
             />
           )}
           {currentStep === "map-taxonomies" && (
@@ -5313,6 +5370,7 @@ function NewCampaignContent() {
               onContinue={() => goToStep("apply-placements")}
               hasReuploaded={hasReuploaded}
               blankTemplate={mediaPlanMode === "template" && !hasUploadedFile}
+              templatePartners={templatePartners}
             />
           )}
           {currentStep === "apply-placements" && (
