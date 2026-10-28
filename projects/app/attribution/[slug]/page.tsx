@@ -1547,7 +1547,6 @@ ${pSummary}
           <span className="ml-2 animate-pulse rounded-full bg-[#dbeafe] px-2.5 py-0.5 text-xs font-medium text-[#2563eb]">In progress</span>
         </div>
         <div className="flex items-center gap-2">
-          <button className="btn-press flex size-8 items-center justify-center rounded-md text-muted-foreground transition-all duration-200 hover:scale-110 hover:bg-gray-50"><MoreVertical className="size-4" /></button>
           <button className="btn-press flex size-8 items-center justify-center rounded-md text-muted-foreground transition-all duration-200 hover:scale-110 hover:bg-gray-50"><Share2 className="size-4" /></button>
 
           {/* Download Reports Button + Panel */}
