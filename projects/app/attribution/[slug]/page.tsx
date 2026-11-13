@@ -16,16 +16,13 @@ import {
   Lightbulb,
   Brain,
   Settings,
-  Grid3X3,
   CircleAlert,
   ChevronsRight,
   FileText,
-  UserCircle,
   PanelRightClose,
   PanelRightOpen,
   Bookmark,
   ChartColumn,
-  LogOut,
   RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -38,6 +35,10 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, useEffect, useRef, useCallback } from "react";
+import { Masthead } from "../_components/masthead";
+import { CampaignSignalStrip } from "../_components/alerts/campaign-signal-strip";
+import { SIGNAL_ASK_RESPONSES } from "../_components/alerts/data";
+import { signalStore } from "../_components/alerts/store";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1188,6 +1189,11 @@ function CampaignSystemError() {
 function CampaignDetailPageContent() {
   const searchParams = useSearchParams();
   const systemUnavailable = searchParams.get("system_error") === "1";
+  const detailPath = usePathname();
+  const campaignSlug = detailPath.split("/").filter(Boolean).pop() ?? "qsr-q2-2026";
+  const askParam = searchParams.get("ask");
+  const signalParam = searchParams.get("signal");
+  const askedRef = useRef(false);
 
   const THINKING_DURATION = 3000;
   const [initialPhase, setInitialPhase] = useState<"thinking" | "typing" | "done">("thinking");
@@ -1196,7 +1202,6 @@ function CampaignDetailPageContent() {
   const [promptsPanelOpen, setPromptsPanelOpen] = useState(true);
   const [kpiExpanded, setKpiExpanded] = useState(true);
   const [promptTab, setPromptTab] = useState<"default" | "saved">("default");
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [savedPrompts, setSavedPrompts] = useState<Set<string>>(new Set());
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isResponding, setIsResponding] = useState(false);
@@ -1285,7 +1290,8 @@ function CampaignDetailPageContent() {
     const query = text.trim();
     const queryLower = query.toLowerCase();
     const userMsg: ChatMessage = { role: "user", content: query };
-    const resp = promptResponses[query];
+    const signalResp = SIGNAL_ASK_RESPONSES[query];
+    const resp = promptResponses[query] ?? signalResp;
 
     const isPartnerSummary = !resp && /partner\s*summary\s*report/i.test(query);
     const matchedResp = resp || (isPartnerSummary ? promptResponses["Show me the partner summary report."] : undefined);
@@ -1299,7 +1305,9 @@ function CampaignDetailPageContent() {
     let chartType: ChatMessage["chartType"] = undefined;
     let chartSummary = "";
 
-    if (queryLower.includes("cohort") || queryLower.includes("user cohort")) {
+    if (signalResp) {
+      // Opened from a signal: answer with the signal's own explanation.
+    } else if (queryLower.includes("cohort") || queryLower.includes("user cohort")) {
       chartType = "userCohort";
       chartSummary = `**User Cohort Analysis**
 
@@ -1448,6 +1456,22 @@ ${pSummary}
     setInputValue("");
   }, [isResponding]);
 
+  // Arriving from a signal: ask the question for the user, or open the shared signal.
+  useEffect(() => {
+    if (askedRef.current) return;
+    if (askParam) {
+      askedRef.current = true;
+      const q = askParam;
+      window.setTimeout(() => submitPrompt(q), 350);
+      window.history.replaceState(null, "", detailPath);
+    }
+    if (signalParam) {
+      askedRef.current = true;
+      signalStore.open(signalParam);
+      window.history.replaceState(null, "", detailPath);
+    }
+  }, [askParam, signalParam, submitPrompt, detailPath]);
+
   const handlePromptClick = useCallback((prompt: string) => {
     submitPrompt(prompt);
   }, [submitPrompt]);
@@ -1470,69 +1494,7 @@ ${pSummary}
   return (
     <TooltipProvider delayDuration={250}>
     <div className="flex h-screen flex-col bg-white font-sans">
-      {/* Masthead */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-white px-12">
-        <div className="flex items-center gap-0.5">
-          <span className="text-lg font-semibold tracking-tight text-[#000033]">FSQ</span>
-          <span className="font-mono text-lg font-medium text-[#000033]">/</span>
-          <span className="font-mono text-lg font-medium text-[#000033]">attribution</span>
-        </div>
-        <div className="flex items-center">
-          <div className="flex items-center gap-4 px-4">
-            <button className="btn-press flex size-9 items-center justify-center rounded-md text-[#555] transition-all duration-200 hover:scale-110 hover:bg-gray-50"><CircleAlert className="size-4" /></button>
-            <button className="btn-press flex size-9 items-center justify-center rounded-md text-[#555] transition-all duration-200 hover:scale-110 hover:bg-gray-50"><FileText className="size-4" /></button>
-            <div className="relative">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className={`btn-press flex size-9 items-center justify-center rounded-md text-[#555] transition-all duration-200 hover:scale-110 hover:bg-gray-50 ${userMenuOpen ? "ring-2 ring-[#212be9] ring-offset-2" : ""}`}
-              >
-                <UserCircle className="size-4" />
-              </button>
-              {userMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
-                  <div className="absolute right-0 top-full z-50 mt-2 w-[280px] overflow-hidden rounded-md border border-border bg-white shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="border-b border-border p-3">
-                      <p className="text-sm font-medium text-[#000033]">Sang Yeo</p>
-                      <p className="text-sm text-[#8d8d8d]">syeo@foursquare.com</p>
-                    </div>
-                    <div className="p-1">
-                      <p className="px-2 py-1.5 text-[11px] font-medium tracking-wide text-[#8d8d8d]">SETTINGS</p>
-                      <div className="flex flex-col">
-                        {["Profile", "Admin Dashboard", "Permission Groups", "Impersonate"].map((item) => (
-                          item === "Permission Groups" || item === "Admin Dashboard" ? (
-                            <Link
-                              key={item}
-                              href={item === "Permission Groups" ? "/attribution/permission-groups" : "/attribution/admin"}
-                              className="w-full rounded px-2 py-1.5 text-left text-sm text-[#000033] transition-colors hover:bg-gray-50"
-                              onClick={() => setUserMenuOpen(false)}
-                            >
-                              {item}
-                            </Link>
-                          ) : (
-                            <button key={item} className="w-full rounded px-2 py-1.5 text-left text-sm text-[#000033] transition-colors hover:bg-gray-50">
-                              {item}
-                            </button>
-                          )
-                        ))}
-                      </div>
-                    </div>
-                    <div className="border-t border-border p-1">
-                      <button className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-[#000033] transition-colors hover:bg-gray-50">
-                        <LogOut className="size-4 text-[#555]" />
-                        Logout
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center border-l border-border pl-4">
-            <button className="btn-press flex size-9 items-center justify-center rounded-md text-[#555] transition-all duration-200 hover:scale-110 hover:bg-gray-50"><Grid3X3 className="size-4" /></button>
-          </div>
-        </div>
-      </header>
+      <Masthead />
 
       {/* Breadcrumb */}
       <div className="flex h-11 shrink-0 items-center justify-between border-b border-border bg-white px-4">
@@ -1746,9 +1708,9 @@ ${pSummary}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
 
           {/* Full-width top section: Title + KPIs */}
-          <div className="shrink-0 px-8 py-6">
+          <div className={`shrink-0 px-8 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${kpiExpanded ? "py-6" : "py-2"}`}>
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-semibold leading-7 text-[#171417]">
+              <h1 className={`font-semibold text-[#171417] transition-all duration-300 ${kpiExpanded ? "text-xl leading-7" : "text-sm leading-5"}`}>
                 QSR Q2 2026 Campaign Overview
               </h1>
               <button onClick={() => setKpiExpanded(!kpiExpanded)} className="btn-press flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-gray-100 transition-all duration-200">
@@ -1757,11 +1719,14 @@ ${pSummary}
             </div>
 
             {kpiExpanded && (
-              <div className="mt-5 flex gap-3">
-                {metrics.map((m, i) => (
-                  <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
-                ))}
-              </div>
+              <>
+                <div className="mt-5 flex gap-3">
+                  {metrics.map((m, i) => (
+                    <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
+                  ))}
+                </div>
+                <CampaignSignalStrip campaignSlug={campaignSlug} />
+              </>
             )}
           </div>
 
