@@ -1,21 +1,29 @@
 // Mock signal data for the attribution notification flow.
-// Signals come in the six types customers told us they value (see ALERT_TYPES).
+// Alert types follow the client-facing alert list: each one answers a question clients ask us.
 
 export type Severity = "critical" | "warning" | "positive" | "info";
-export type SignalKind = "ranking" | "change" | "lift" | "trend" | "delivery" | "health" | "reminder";
+export type SignalKind = "ranking" | "change" | "trend" | "lift" | "delivery" | "reminder" | "spend" | "sufficiency" | "report";
 
 export type SignalPoint = { label: string; value: number; low: number; high: number };
 
-/** The six alert types customers can turn on, off, and tune on the Alerts page. */
-export const ALERT_TYPES: { kind: SignalKind; title: string; description: string }[] = [
-  { kind: "ranking", title: "Ranking shifts", description: "When a partner, tactic, DMA or audience moves up or down the rankings." },
-  { kind: "change", title: "Metric changes", description: "When a metric you pick changes more than your chosen percentage week over week." },
-  { kind: "lift", title: "Lift results", description: "When lift becomes measurable in a report, or a section's behavioral lift index goes above 100." },
-  { kind: "trend", title: "Trends", description: "When a core metric keeps moving the same way for several weeks." },
-  { kind: "delivery", title: "Delivery", description: "When impressions slow down or rapidly increase." },
-  { kind: "health", title: "Measurement health", description: "When something could stop us from measuring a campaign: pixel tracking drops, a sample that won't be big enough in time, or unmapped placement IDs." },
-  { kind: "reminder", title: "Campaign reminders", description: "Before a campaign ends, a reminder to share every placement ID with Foursquare." },
+export type AlertGroup = "Performance and metrics" | "Delivery and pacing" | "Report status";
+export const ALERT_GROUPS: AlertGroup[] = ["Performance and metrics", "Delivery and pacing", "Report status"];
+
+/** The client-facing alert types customers can turn on, off, and tune on the Alerts page. */
+export const ALERT_TYPES: { kind: SignalKind; group: AlertGroup; title: string; type: "Alert" | "Reminder"; question: string; description: string }[] = [
+  { kind: "ranking", group: "Performance and metrics", type: "Alert", title: "Stack-ranking shifts", question: "Who moved in my rankings?", description: "When a partner, cut or other item moves up or down a ranking you follow." },
+  { kind: "change", group: "Performance and metrics", type: "Alert", title: "Metric changes", question: "Did anything big change this week?", description: "When a metric you pick changes week over week by more than your chosen percentage." },
+  { kind: "trend", group: "Performance and metrics", type: "Alert", title: "Core metric trends", question: "Is performance heading the right way?", description: "When Lift, Conv. rate, CPIV or CPV keeps moving the same way for several weeks." },
+  { kind: "lift", group: "Performance and metrics", type: "Alert", title: "Lift results", question: "Do I have results to share?", description: "When lift becomes reportable, or a section's behavioral lift index rises above 100." },
+  { kind: "delivery", group: "Delivery and pacing", type: "Alert", title: "Impression pace changes", question: "Is delivery on track?", description: "When impressions slow sharply or spike." },
+  { kind: "sufficiency", group: "Delivery and pacing", type: "Alert", title: "Sufficiency pacing", question: "Will this report have enough data?", description: "When impressions or sample aren't on pace to reach sufficiency by the end of the campaign." },
+  { kind: "reminder", group: "Delivery and pacing", type: "Reminder", title: "Campaign ending soon", question: "Have I sent everything you need?", description: "As a campaign nears its end date, a reminder to share every placement ID with Foursquare." },
+  { kind: "spend", group: "Delivery and pacing", type: "Reminder", title: "Final spend and impressions due", question: "What do I owe Foursquare, and when?", description: "3 days before final spend and impression counts are due." },
+  { kind: "report", group: "Report status", type: "Alert", title: "Reports not yet at sample", question: "Is my report ready yet?", description: "When a report hasn't reached sample, with its estimated ready date and pacing against the feasibility estimate." },
 ];
+
+/** Reminders are about dates and to-dos, not a measured change, so they skip confidence and scope. */
+export const isReminder = (k: SignalKind) => k === "reminder" || k === "spend";
 
 export const KIND_LABEL: Record<SignalKind, string> = Object.fromEntries(ALERT_TYPES.map((t) => [t.kind, t.title])) as Record<SignalKind, string>;
 
@@ -51,7 +59,7 @@ export type Signal = {
   checklistTitle?: string;
   checklistAside?: string;
   /** Progress toward a target by a deadline (sample sufficiency). */
-  pace?: { unit: string; today: number; projected: number; needed: number; deadline: string };
+  pace?: { unit: string; today: number; projected: number; needed: number; deadline: string; title?: string };
   drivers?: { text: string; confidence: "High" | "Medium" | "Low" }[];
   impact: string;
   recommendation: string;
@@ -73,6 +81,7 @@ function series(values: number[], band: number): SignalPoint[] {
 }
 
 const QSR = { campaignSlug: "qsr-q2-2026", campaignName: "QSR Q2 2026 Campaign", campaignLogo: "QS", logoColor: "#6366f1" };
+const MCS = { campaignSlug: "mcdonalds-summer", campaignName: "Mcdonald's Summer Campaign", campaignLogo: "M", logoColor: "#FFC72C" };
 const MCD = { campaignSlug: "mcdonalds-q3-fall", campaignName: "McDonald's Q3 Fall Campaign", campaignLogo: "M", logoColor: "#FFC72C" };
 
 export const SIGNALS: Signal[] = [
@@ -109,44 +118,13 @@ export const SIGNALS: Signal[] = [
     recommendation:
       "Confirm the Snap creative is live again. Consider moving the paused NY budget to Atlanta or Dallas, where lift is 3 to 4 times higher.",
     askPrompt: "Why did impressions slow down 5.2% week over week in the Northeast?",
-    ruleName: "Delivery",
+    ruleName: "Impression pace changes",
     related: ["sig-snap-ny"],
-  },
-  {
-    id: "sig-pixel-drop",
-    ...QSR,
-    kind: "health",
-    severity: "critical",
-    metric: "Pixel match rate",
-    headline: "Impression tracking dropped 38% on the Teads pixel",
-    summary:
-      "Since Mar 27, the Teads pixel has recorded 38% fewer impressions than Teads reports serving. Those impressions can't be measured until the pixel is fixed.",
-    scope: { dimension: "Pixel", value: "Teads · CM360" },
-    change: -38.0,
-    comparison: "",
-    current: "58%",
-    previous: "96% match rate last week",
-    unusualness: "Pixel match rate is normally 94–97%. This is the lowest on any pixel in this campaign.",
-    confidence: "High",
-    minutesAgo: 60,
-    series: series([96, 95, 97, 96, 95, 96, 81, 58], 0.03),
-    breakdown: [
-      { label: "PXL-48213 · Outstream video", change: -61.0, share: "84% of the gap" },
-      { label: "PXL-48214 · In-app display", change: -9.5, share: "16% of the gap" },
-      { label: "PXL-48215 · CTV", change: 0.4, share: "Steady" },
-    ],
-    drivers: [
-      { text: "The outstream creative was re-trafficked in CM360 on Mar 27, and the new version doesn't include the Foursquare pixel.", confidence: "High" },
-    ],
-    impact: "About 410K impressions a day aren't being measured. Teads' lift and visits will look lower than they really are.",
-    recommendation: "Ask Teads to add the Foursquare pixel back to the re-trafficked outstream creative in CM360.",
-    askPrompt: "Why did impression tracking drop on the Teads pixel?",
-    ruleName: "Measurement health",
   },
   {
     id: "sig-sample-pace",
     ...QSR,
-    kind: "health",
+    kind: "sufficiency",
     severity: "warning",
     metric: "Exposed sample",
     headline: "Sample isn't on pace to be big enough by Jun 30",
@@ -172,40 +150,69 @@ export const SIGNALS: Signal[] = [
     impact: "Lift for Yelp and Epsilon may not reach confidence, so they'd show visits but not lift in the final report.",
     recommendation: "Raise Yelp and Epsilon delivery by about 20%, or combine them into one group for lift reporting.",
     askPrompt: "Will we reach a large enough sample by the end of the campaign?",
-    ruleName: "Measurement health",
+    ruleName: "Sufficiency pacing",
   },
   {
-    id: "sig-unmapped-ids",
-    ...MCD,
-    kind: "health",
-    severity: "warning",
-    metric: "Unmapped placement IDs",
-    headline: "14 placement IDs in delivery data aren't mapped",
+    id: "sig-report-sample",
+    ...QSR,
+    kind: "report",
+    severity: "info",
+    metric: "Custom report · Dining Out",
+    headline: "Your Dining Out custom report hasn't reached sample yet",
     summary:
-      "Partners are sending impressions for 14 placement IDs that aren't mapped to a placement in this campaign, so we can't tell which partner or tactic they belong to.",
+      "The report has 186K of the 250K exposed devices it needs. At today's pace it's ready around Jun 12, a week later than the feasibility estimate.",
+    scope: { dimension: "Report", value: "Dining Out audience" },
+    change: 0,
+    comparison: "",
+    current: "Jun 12",
+    previous: "Estimated ready date, 7 days after the Jun 5 feasibility estimate",
+    unusualness: "Delivery to the Dining Out audience is 12% under plan, mostly on Yelp.",
+    confidence: "Medium",
+    minutesAgo: 60 * 20,
+    series: [],
+    badge: "Ready ~Jun 12",
+    pace: { unit: "exposed devices", today: 186, projected: 262, needed: 250, deadline: "Jun 30", title: "Progress to sample" },
+    breakdown: [
+      { label: "Yelp", change: -21.0, share: "Behind plan" },
+      { label: "Pandora", change: -6.0, share: "Slightly behind" },
+      { label: "Snap", change: 4.0, share: "On plan" },
+    ],
+    impact: "Until it reaches sample, the report shows visits but not lift for this audience.",
+    recommendation: "No action needed to finish by Jun 30. To get it sooner, raise Yelp delivery to the Dining Out audience.",
+    askPrompt: "When will my Dining Out custom report be ready?",
+    ruleName: "Reports not yet at sample",
+  },
+  {
+    id: "sig-final-spend",
+    ...MCS,
+    kind: "spend",
+    severity: "warning",
+    metric: "Final numbers submitted",
+    headline: "Final spend and impressions are due in 3 days",
+    summary:
+      "Final spend and impression counts for Mcdonald's Summer Campaign are due Aug 15. We use them to calculate cost per visit and ROAS in your final report.",
     scope: { dimension: "Campaign", value: "All partners" },
     change: 0,
     comparison: "",
-    current: "2.3M",
-    previous: "impressions on unmapped IDs",
-    unusualness: "6 of these IDs started appearing this week.",
+    current: "2 of 4",
+    previous: "Partners submitted. Due Aug 15",
+    unusualness: "",
     confidence: "High",
-    minutesAgo: 60 * 30,
+    minutesAgo: 60 * 4,
     series: [],
-    badge: "14 IDs",
-    checklistTitle: "Unmapped placement IDs",
-    checklistAside: "Top 5 of 14",
+    badge: "3 days left",
+    checklistTitle: "Final spend and impressions",
+    checklistAside: "2 still needed",
     checklist: [
-      { label: "TDS-0091827", detail: "612K impressions", done: false },
-      { label: "TDS-0091828", detail: "488K impressions", done: false },
-      { label: "ZT-55120-CTV", detail: "341K impressions", done: false },
-      { label: "SNP-77213", detail: "205K impressions", done: false },
-      { label: "PND-30018", detail: "164K impressions", done: false },
+      { label: "Snap", detail: "Submitted Aug 8", done: true },
+      { label: "Pandora", detail: "Submitted Aug 9", done: true },
+      { label: "Teads", detail: "Not submitted", done: false },
+      { label: "Zeta", detail: "Not submitted", done: false },
     ],
-    impact: "These impressions count toward campaign totals, but they're missing from partner and tactic breakdowns.",
-    recommendation: "Map each ID to its placement. Most look like Teads and Zeta placements added after setup.",
-    cta: { label: "Map placement IDs", href: "/attribution/taxonomy" },
-    ruleName: "Measurement health",
+    impact: "Without final numbers, cost metrics in the final report use planned spend, which may not match what you paid.",
+    recommendation: "Send Teads and Zeta final spend and impression counts by Aug 15.",
+    cta: { label: "Submit final numbers", href: "/attribution/edit" },
+    ruleName: "Final spend and impressions due",
   },
   {
     id: "sig-mcd-placements",
@@ -235,7 +242,7 @@ export const SIGNALS: Signal[] = [
     impact: "About 14% of planned impressions would be left out of the final report.",
     recommendation: "Ask Teads and Zeta for their placement IDs, then add them to the campaign before Sep 25.",
     cta: { label: "Add placement IDs", href: "/attribution/edit" },
-    ruleName: "Campaign reminders",
+    ruleName: "Campaign ending soon",
   },
   {
     id: "sig-atl-lift",
@@ -304,7 +311,7 @@ export const SIGNALS: Signal[] = [
     impact: "Pandora now delivers the most incremental visits per dollar of any partner ($16.97 per incremental visit).",
     recommendation: "Consider shifting 5 to 10% of budget toward Pandora while its lift is rising.",
     askPrompt: "Why did Pandora overtake AdTheorent in the partner lift ranking?",
-    ruleName: "Ranking shifts",
+    ruleName: "Stack-ranking shifts",
   },
   {
     id: "sig-index-100",
@@ -389,7 +396,7 @@ export const SIGNALS: Signal[] = [
     impact: "About $6.8K more spend per week for the same number of incremental visits.",
     recommendation: "Cap frequency at 5 on Snap and iHeartRadio.",
     askPrompt: "Why has cost per incremental visit risen three weeks in a row?",
-    ruleName: "Trends",
+    ruleName: "Core metric trends",
   },
   {
     id: "sig-snap-ny",
@@ -413,7 +420,7 @@ export const SIGNALS: Signal[] = [
     impact: "This explains most of the Northeast impression slowdown.",
     recommendation: "No action needed. Delivery has started again.",
     askPrompt: "Show me Snap performance.",
-    ruleName: "Delivery",
+    ruleName: "Impression pace changes",
   },
 ];
 
@@ -438,23 +445,24 @@ export const LIVE_SIGNAL_ID = "sig-ne-impr";
 
 /** Answers the campaign chat gives when opened from a signal. */
 export const SIGNAL_ASK_RESPONSES: Record<string, { title: string; content: string }> = {
-  "Why did impression tracking drop on the Teads pixel?": {
-    title: "Teads pixel: what changed",
-    content: `**Short answer:** the outstream creative was re-trafficked in CM360 on Mar 27, and the new version doesn't include the Foursquare pixel.
+  "When will my Dining Out custom report be ready?": {
+    title: "Dining Out report: ready date",
+    content: `**Short answer:** around **Jun 12**, a week later than the Jun 5 feasibility estimate.
 
-**What moved**
-   - **Pixel match rate:** 96% → **58%** in two weeks
-   - **PXL-48213 (outstream video):** −61%, 84% of the gap
-   - **PXL-48214 (in-app display):** −9.5%
-   - **PXL-48215 (CTV):** steady
+**Where it stands**
+   - **Sample today:** 186K of the 250K exposed devices needed (74%)
+   - **Projected by Jun 30:** 262K, so it will reach sample before the campaign ends
 
-**Why it matters**
-   - About **410K impressions a day** aren't being measured.
-   - Teads' visits and lift will look lower than they really are until it's fixed.
+**Why it's later than planned**
+   - **Yelp:** delivering 21% under plan to the Dining Out audience
+   - **Pandora:** 6% under plan
+   - **Snap:** 4% ahead of plan
 
-**Recommendation**
-1. Ask Teads to add the Foursquare pixel back to the outstream creative in CM360.
-2. Once it's fixed, we'll re-check the match rate within 24 hours and tell you if it recovers.`,
+**What you'll see until then**
+   - Visits for the Dining Out audience, but not lift.
+
+**To get it sooner**
+1. Raise Yelp delivery to the Dining Out audience by about 25%. That brings the ready date to about Jun 7.`,
   },
   "Will we reach a large enough sample by the end of the campaign?": {
     title: "Sample pace",

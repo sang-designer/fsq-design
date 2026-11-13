@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { Masthead } from "../_components/masthead";
 import { signalStore, useSignalState } from "../_components/alerts/store";
-import { ALERT_TYPES, type SignalKind } from "../_components/alerts/data";
+import { ALERT_GROUPS, ALERT_TYPES, type SignalKind } from "../_components/alerts/data";
 
 /* ---------- Settings model ---------- */
 
@@ -24,12 +24,14 @@ type Settings = {
   lift: { measurable: boolean; index: boolean; above: number; sections: string[] };
   trend: { metrics: string[]; weeks: number };
   delivery: { slow: boolean; spike: boolean; mode: "smart" | "fixed"; pct: number };
-  health: { pixel: boolean; pixelPct: number; sample: boolean; unmapped: boolean };
+  sufficiency: { impressions: boolean; sample: boolean; shortPct: number };
   reminder: { days: number; onlyMissing: boolean };
+  spend: { days: number; onlyMissing: boolean };
+  report: { behind: boolean; behindDays: number; weekly: boolean; ready: boolean };
 };
 
 const INITIAL: Settings = {
-  enabled: { ranking: true, change: true, lift: true, trend: true, delivery: true, health: true, reminder: true },
+  enabled: { ranking: true, change: true, trend: true, lift: true, delivery: true, sufficiency: true, reminder: true, spend: true, report: true },
   ranking: { by: "Lift", cuts: ["Partners", "Tactics"] },
   change: [
     { id: "t1", metric: "Lift", pct: 15 },
@@ -39,8 +41,10 @@ const INITIAL: Settings = {
   lift: { measurable: true, index: true, above: 100, sections: ["Audiences", "DMAs"] },
   trend: { metrics: ["Lift", "Conv. rate", "CPIV", "CPV"], weeks: 3 },
   delivery: { slow: true, spike: true, mode: "smart", pct: 10 },
-  health: { pixel: true, pixelPct: 20, sample: true, unmapped: true },
+  sufficiency: { impressions: true, sample: true, shortPct: 5 },
   reminder: { days: 7, onlyMissing: true },
+  spend: { days: 3, onlyMissing: true },
+  report: { behind: true, behindDays: 3, weekly: true, ready: true },
 };
 
 /** Last 30 days, per type (mock). */
@@ -50,8 +54,10 @@ const STATS: Record<SignalKind, { sent: number; useful: number | null }> = {
   lift: { sent: 4, useful: 100 },
   trend: { sent: 2, useful: 88 },
   delivery: { sent: 4, useful: 92 },
-  health: { sent: 3, useful: 100 },
+  sufficiency: { sent: 2, useful: 100 },
   reminder: { sent: 1, useful: null },
+  spend: { sent: 1, useful: 100 },
+  report: { sent: 3, useful: 94 },
 };
 
 /* Weekly moves over the last 12 weeks (mock), so each threshold can say how often it would have fired. */
@@ -117,10 +123,11 @@ function AlertsPageContent() {
 
         <div className="mt-8 grid grid-cols-[minmax(0,1fr)_340px] gap-8 max-lg:grid-cols-1">
           <div className="min-w-0 space-y-8">
-            <section>
-              <h2 className="text-base font-semibold text-[#171417]">Alerts you get</h2>
+            {ALERT_GROUPS.map((group) => (
+            <section key={group}>
+              <h2 className="text-base font-semibold text-[#171417]">{group}</h2>
               <ul className="mt-3 divide-y divide-border rounded-xl border border-border">
-                {ALERT_TYPES.map((t) => {
+                {ALERT_TYPES.filter((t) => t.group === group).map((t) => {
                   const on = settings.enabled[t.kind];
                   const muted = s.mutedRules.includes(t.title);
                   const expanded = open === t.kind && on && !muted;
@@ -131,10 +138,14 @@ function AlertsPageContent() {
                         <div className={`min-w-0 flex-1 transition-opacity ${on && !muted ? "" : "opacity-50"}`}>
                           <p className="text-sm font-semibold text-[#171417]">
                             {t.title}
+                            {t.type === "Reminder" && <span className="ml-2 rounded bg-[#f1f2f6] px-1.5 py-0.5 text-[11px] font-medium text-[#555]">Reminder</span>}
                             {muted && <span className="ml-2 text-xs font-normal text-muted-foreground">Muted</span>}
                           </p>
                           <p className="mt-0.5 text-[13px] leading-5 text-[#555]">{t.description}</p>
                           <p className="mt-1.5 text-xs text-muted-foreground">
+                            Answers &ldquo;{t.question}&rdquo;
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
                             {summary(t.kind, settings)}
                             {on && !muted && (
                               <>
@@ -168,6 +179,7 @@ function AlertsPageContent() {
                 })}
               </ul>
             </section>
+            ))}
 
             {suggestions.length > 0 && (
               <section>
@@ -228,8 +240,13 @@ function summary(kind: SignalKind, s: Settings) {
       const what = [s.delivery.slow && "Slowdowns", s.delivery.spike && "spikes"].filter(Boolean).join(" and ") || "Nothing selected";
       return `${what} · ${s.delivery.mode === "smart" ? "Smart sensitivity" : `More than ${s.delivery.pct}%`}`;
     }
-    case "health": return [s.health.pixel && `Pixel tracking drops ${s.health.pixelPct}%+`, s.health.sample && "Sample off pace", s.health.unmapped && "Unmapped IDs"].filter(Boolean).join(" · ") || "Nothing selected";
+    case "sufficiency": {
+      const what = list([s.sufficiency.impressions && "Impressions", s.sufficiency.sample && "sample"].filter(Boolean) as string[]);
+      return what ? `${what} projected more than ${s.sufficiency.shortPct}% short` : "Nothing selected";
+    }
     case "reminder": return `${s.reminder.days} days before a campaign ends`;
+    case "spend": return `${s.spend.days} days before final numbers are due`;
+    case "report": return [s.report.weekly && "Weekly ready-date update", s.report.behind && `Behind feasibility by ${s.report.behindDays}+ days`, s.report.ready && "When it's ready"].filter(Boolean).join(" · ") || "Nothing selected";
   }
 }
 
@@ -303,15 +320,48 @@ function Options({ kind, settings: s, set }: { kind: SignalKind; settings: Setti
       </div>
     );
 
-  if (kind === "health")
+  if (kind === "sufficiency")
+    return (
+      <div className="space-y-4">
+        <Field label="Watch">
+          <Chips
+            options={["Impressions", "Sample"] as const}
+            selected={[s.sufficiency.impressions && "Impressions", s.sufficiency.sample && "Sample"].filter(Boolean) as string[]}
+            onToggle={(v) => set("sufficiency", v === "Impressions" ? { ...s.sufficiency, impressions: !s.sufficiency.impressions } : { ...s.sufficiency, sample: !s.sufficiency.sample })}
+          />
+        </Field>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-[#171417]">
+          Alert me when the end-of-campaign projection is more than
+          <NumberInput value={s.sufficiency.shortPct} onChange={(v) => set("sufficiency", { ...s.sufficiency, shortPct: v })} min={1} max={50} suffix="%" label="Shortfall percent" />
+          short of sufficiency
+        </div>
+      </div>
+    );
+
+  if (kind === "spend")
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-[#171417]">
+          Remind me
+          <Select value={`${s.spend.days} ${s.spend.days === 1 ? "day" : "days"}`} options={["1 day", "3 days", "5 days", "7 days"] as const} onChange={(v) => set("spend", { ...s.spend, days: parseInt(v) })} />
+          before final spend and impression counts are due
+        </div>
+        <Check checked={s.spend.onlyMissing} onChange={(v) => set("spend", { ...s.spend, onlyMissing: v })} label="Only if some partners haven't submitted final numbers" />
+        <p className="rounded-md bg-white px-3 py-2 text-[13px] leading-5 text-[#555] ring-1 ring-border">
+          &ldquo;Final spend and impression counts are due in {s.spend.days} {s.spend.days === 1 ? "day" : "days"}. 2 of 4 partners have submitted.&rdquo;
+        </p>
+      </div>
+    );
+
+  if (kind === "report")
     return (
       <div className="space-y-3">
+        <Check checked={s.report.weekly} onChange={(v) => set("report", { ...s.report, weekly: v })} label="Weekly update with each report's estimated ready date" />
         <div className="flex flex-wrap items-center gap-2">
-          <Check checked={s.health.pixel} onChange={(v) => set("health", { ...s.health, pixel: v })} label="When impression tracking on a pixel drops more than" />
-          <NumberInput value={s.health.pixelPct} onChange={(v) => set("health", { ...s.health, pixelPct: v })} min={5} max={90} suffix="%" label="Pixel drop percent" disabled={!s.health.pixel} />
+          <Check checked={s.report.behind} onChange={(v) => set("report", { ...s.report, behind: v })} label="When a report falls behind its feasibility estimate by more than" />
+          <NumberInput value={s.report.behindDays} onChange={(v) => set("report", { ...s.report, behindDays: v })} min={1} max={30} suffix="days" label="Days behind" disabled={!s.report.behind} />
         </div>
-        <Check checked={s.health.sample} onChange={(v) => set("health", { ...s.health, sample: v })} label="When impressions or sample aren't on pace to be big enough by the end of the campaign" />
-        <Check checked={s.health.unmapped} onChange={(v) => set("health", { ...s.health, unmapped: v })} label="When delivery data has placement IDs that aren't mapped to a placement" />
+        <Check checked={s.report.ready} onChange={(v) => set("report", { ...s.report, ready: v })} label="When a report reaches sample and is ready to view" />
       </div>
     );
 

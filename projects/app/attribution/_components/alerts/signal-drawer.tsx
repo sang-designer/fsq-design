@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { X, MoreHorizontal } from "lucide-react";
 import { Area, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
-import { KIND_LABEL, SIGNALS, SEVERITY_META, timeAgo } from "./data";
+import { KIND_LABEL, SIGNALS, SEVERITY_META, isReminder, timeAgo } from "./data";
 import { signalStore, useSignalState } from "./store";
 import { SeverityPill, SignalBadge, risingIsGood } from "./primitives";
 
@@ -116,14 +116,14 @@ export function SignalDrawer() {
             {/* The number */}
             <div className="mt-5 grid grid-cols-[1fr_auto] items-end gap-4 rounded-lg border border-border p-4">
               <div>
-                <p className="text-xs text-muted-foreground">{signal.metric}{signal.kind !== "reminder" && <> · {signal.scope.dimension}: <span className="font-medium text-[#171417]">{signal.scope.value}</span></>}</p>
+                <p className="text-xs text-muted-foreground">{signal.metric}{!isReminder(signal.kind) && signal.kind !== "report" && <> · {signal.scope.dimension}: <span className="font-medium text-[#171417]">{signal.scope.value}</span></>}</p>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="text-[28px] font-semibold leading-8 tabular-nums text-[#171417]">{signal.current}</span>
-                  {(!signal.badge || signal.kind === "reminder") && <SignalBadge signal={signal} className="text-sm" />}
+                  {(!signal.badge || isReminder(signal.kind)) && <SignalBadge signal={signal} className="text-sm" />}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">{signal.previous} {signal.comparison}</p>
               </div>
-              {signal.kind !== "reminder" ? (
+              {!isReminder(signal.kind) ? (
                 <div className="max-w-[200px] text-right">
                   <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Confidence</p>
                   <p className="text-sm font-semibold text-[#171417]">{signal.confidence}</p>
@@ -143,8 +143,8 @@ export function SignalDrawer() {
                 <ul className="mt-2 divide-y divide-border rounded-lg border border-border">
                   {signal.checklist.map((c, i) => (
                     <li key={c.label} className="flex items-center justify-between gap-3 px-3 py-2.5 animate-prompt-cascade" style={{ animationDelay: `${i * 60}ms` }}>
-                      <span className={`min-w-0 truncate text-sm ${c.done ? "text-[#777]" : "font-medium text-[#171417]"} ${signal.checklistTitle ? "font-mono text-[13px]" : ""}`}>{c.label}</span>
-                      <span className={`shrink-0 text-xs font-medium tabular-nums ${c.done ? "text-[#067647]" : signal.checklistTitle ? "text-[#555]" : "text-[#b42318]"}`}>{c.detail}</span>
+                      <span className={`min-w-0 truncate text-sm ${c.done ? "text-[#777]" : "font-medium text-[#171417]"}`}>{c.label}</span>
+                      <span className={`shrink-0 text-xs font-medium tabular-nums ${c.done ? "text-[#067647]" : "text-[#b42318]"}`}>{c.detail}</span>
                     </li>
                   ))}
                 </ul>
@@ -341,7 +341,7 @@ export function SignalDrawer() {
             onClick={close}
             className="btn-press flex h-9 flex-1 items-center justify-center gap-2 rounded-md bg-[#212be9] px-4 text-sm font-medium text-white transition-colors hover:bg-[#1a22c4]"
           >
-            {signal.cta ? signal.cta.label : signal.kind === "lift" && !signal.drivers ? "Open the report" : signal.pace ? "Ask AI how to catch up" : "Ask AI why this happened"}
+            {signal.cta ? signal.cta.label : signal.kind === "lift" && !signal.drivers ? "Open the report" : signal.kind === "report" ? "Ask AI about the ready date" : signal.pace ? "Ask AI how to catch up" : "Ask AI why this happened"}
           </Link>
           <button onClick={copyLink} className="btn-press flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium text-[#171417] hover:bg-gray-50">
             {copied ? "Link copied" : "Share"}
@@ -359,7 +359,7 @@ function PaceBar({ pace }: { pace: NonNullable<import("./data").Signal["pace"]> 
   const short = pace.projected < pace.needed;
   return (
     <section className="mt-6">
-      <SectionTitle title="Sample pace" aside={`Needed by ${pace.deadline}`} />
+      <SectionTitle title={pace.title ?? "Sample pace"} aside={`Needed by ${pace.deadline}`} />
       <div className="relative mt-8 h-3 rounded-full bg-[#f1f2f6]">
         {/* Projected by the deadline */}
         <span

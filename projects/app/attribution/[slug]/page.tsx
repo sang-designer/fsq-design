@@ -24,6 +24,8 @@ import {
   Bookmark,
   ChartColumn,
   RefreshCw,
+  TrendingUp,
+  GitCompareArrows,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -39,6 +41,8 @@ import { Masthead } from "../_components/masthead";
 import { CampaignSignalStrip } from "../_components/alerts/campaign-signal-strip";
 import { SIGNAL_ASK_RESPONSES } from "../_components/alerts/data";
 import { signalStore } from "../_components/alerts/store";
+import { TrendView } from "../_components/report-views/trend-view";
+import { CompareView } from "../_components/report-views/compare-view";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,6 +50,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 
 const sidebarItems = [
   { icon: Brain, label: "Campaign Overview" },
+  { icon: TrendingUp, label: "In-flight trends" },
+  { icon: GitCompareArrows, label: "Compare reports" },
 ];
 
 const metrics = [
@@ -1198,7 +1204,8 @@ function CampaignDetailPageContent() {
   const THINKING_DURATION = 3000;
   const [initialPhase, setInitialPhase] = useState<"thinking" | "typing" | "done">("thinking");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
-  const [activeSidebarItem, setActiveSidebarItem] = useState("Campaign Overview");
+  const viewParam = searchParams.get("view");
+  const [activeSidebarItem, setActiveSidebarItem] = useState(viewParam === "trends" ? "In-flight trends" : viewParam === "compare" ? "Compare reports" : "Campaign Overview");
   const [promptsPanelOpen, setPromptsPanelOpen] = useState(true);
   const [kpiExpanded, setKpiExpanded] = useState(true);
   const [promptTab, setPromptTab] = useState<"default" | "saved">("default");
@@ -1734,6 +1741,7 @@ ${pSummary}
           <div className="shrink-0 border-t border-border" />
 
           {/* Bottom section: Chat (left) | Divider | Prompts (right) */}
+          {activeSidebarItem === "Campaign Overview" ? (
           <div className="flex min-h-0 flex-1">
             {/* Left: Chat content + sticky input */}
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -1915,6 +1923,11 @@ ${pSummary}
               </div>
             )}
           </div>
+          ) : (
+            <div key={activeSidebarItem} className="min-h-0 flex-1 overflow-y-auto animate-in fade-in duration-300">
+              {activeSidebarItem === "In-flight trends" ? <TrendView /> : <CompareView />}
+            </div>
+          )}
         </div>
       </div>
       )}

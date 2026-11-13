@@ -17,9 +17,9 @@ type State = {
   centerOpen: boolean;
 };
 
-const KEY = "fsq-attribution-signals-v3";
+const KEY = "fsq-attribution-signals-v4";
 const initial: State = {
-  read: ["sig-index-100", "sig-mcd-lift-ready", "sig-cpiv-trend", "sig-unmapped-ids", "sig-partner-rank"],
+  read: ["sig-index-100", "sig-mcd-lift-ready", "sig-cpiv-trend", "sig-partner-rank"],
   snoozed: [],
   mutedRules: [],
   feedback: {},
