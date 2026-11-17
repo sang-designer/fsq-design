@@ -24,6 +24,9 @@ import {
   Bookmark,
   ChartColumn,
   RefreshCw,
+  Hourglass,
+  SearchX,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -76,10 +79,13 @@ function KpiMetricCard({
   label,
   value,
   animationDelayMs,
+  note,
 }: {
   label: string;
-  value: string;
+  value: string | null;
   animationDelayMs?: number;
+  /** Small caption under the value, e.g. "Not yet available" or "Low sample". */
+  note?: string;
 }) {
   const description = KPI_TOOLTIPS[label] ?? `${label} for the selected reporting period.`;
   return (
@@ -109,7 +115,10 @@ function KpiMetricCard({
           </KpiTooltipContent>
         </KpiTooltip>
       </div>
-      <p className="mt-1 text-base font-semibold tabular-nums text-[#171417]">{value}</p>
+      <p className={cn("mt-1 text-base font-semibold tabular-nums", value == null ? "text-muted-foreground/60" : "text-[#171417]")}>
+        {value ?? "—"}
+      </p>
+      {note && <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">{note}</p>}
     </div>
   );
 }
@@ -580,6 +589,9 @@ type ChatMessage = {
   title?: string;
   tableType?: "partnerSummary";
   chartType?: "userCohort" | "demographic" | "geography" | "dateTime" | "campaignPerformance";
+  /** The answer failed; `query` is what to ask again. */
+  error?: boolean;
+  query?: string;
 };
 
 type PartnerSummaryRow = {
@@ -609,7 +621,10 @@ const partnerSummaryData: PartnerSummaryRow[] = [
   { name: "Epsilon", spend: "$26,800", impressions: "7,840,200", reach: "2,480,600", frequency: "3.16", cvr: "2.58%", visits: "34,280", cpsv: "$0.78", bvrLift: "2.84%", liftVisits: "1,340", cplv: "$20.00" },
 ];
 
-function PartnerSummaryReportTable({ onPartnerClick }: { onPartnerClick?: (name: string) => void }) {
+const LIFT_COLUMNS = new Set(["BVR Lift", "Lift Visits", "CPLV"]);
+
+function PartnerSummaryReportTable({ onPartnerClick, lowSample }: { onPartnerClick?: (name: string) => void; lowSample?: boolean }) {
+  const lift = (v: string) => (lowSample ? <span className="text-muted-foreground/60">—</span> : v);
   return (
     <div>
       <div className="mb-3 flex items-center gap-2">
@@ -630,9 +645,9 @@ function PartnerSummaryReportTable({ onPartnerClick }: { onPartnerClick?: (name:
               <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">CVR</th>
               <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Visits</th>
               <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">CPSV</th>
-              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">BVR Lift</th>
-              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">Lift Visits</th>
-              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground">CPLV</th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground"><LiftHeader label="BVR Lift" lowSample={lowSample} /></th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground"><LiftHeader label="Lift Visits" lowSample={lowSample} /></th>
+              <th className="whitespace-nowrap px-4 py-3 text-xs font-medium text-muted-foreground"><LiftHeader label="CPLV" lowSample={lowSample} /></th>
             </tr>
           </thead>
           <tbody>
@@ -653,15 +668,31 @@ function PartnerSummaryReportTable({ onPartnerClick }: { onPartnerClick?: (name:
                 <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.cvr}</td>
                 <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.visits}</td>
                 <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.cpsv}</td>
-                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.bvrLift}</td>
-                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.liftVisits}</td>
-                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{row.cplv}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{lift(row.bvrLift)}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{lift(row.liftVisits)}</td>
+                <td className="whitespace-nowrap px-4 py-3.5 text-sm tabular-nums text-[#171417]">{lift(row.cplv)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {lowSample && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Hourglass className="size-3 shrink-0" aria-hidden />
+          Lift columns fill in once the campaign reaches a measurable sample. Delivery and visit columns are already final for the dates shown.
+        </p>
+      )}
     </div>
+  );
+}
+
+function LiftHeader({ label, lowSample }: { label: string; lowSample?: boolean }) {
+  if (!lowSample || !LIFT_COLUMNS.has(label)) return <>{label}</>;
+  return (
+    <span className="inline-flex items-center gap-1" title="Not enough data yet to measure lift">
+      {label}
+      <Hourglass className="size-3" aria-hidden />
+    </span>
   );
 }
 
@@ -685,7 +716,8 @@ function useTypewriter(text: string, speed: number = 8) {
     return () => clearInterval(interval);
   }, [text, speed]);
 
-  return { displayed, isComplete };
+  // Guard against the stale "complete" left over from the previous text.
+  return { displayed, isComplete: isComplete && displayed === text };
 }
 
 function SummarizingDots() {
@@ -1139,6 +1171,215 @@ function CampaignPerformanceChart() {
   );
 }
 
+/* ── Report states ───────────────────────────────────────────────
+ * Preview with ?state=collecting | low_sample | section_error | chat_error | not_found
+ * (and ?system_error=1 for the whole-page error). */
+type ReportState = "ready" | "collecting" | "low_sample" | "section_error" | "chat_error" | "not_found";
+const REPORT_STATES: ReportState[] = ["ready", "collecting", "low_sample", "section_error", "chat_error", "not_found"];
+
+const FIRST_READ_DATE = "Apr 15, 2026";
+const LIFT_READ_DATE = "May 2, 2026";
+
+const COLLECTING_METRICS: Record<string, string | null> = {
+  Impressions: "6,184,920",
+  Spend: "$24,310.00",
+};
+
+const lowSampleSummary = `**Early read**: Delivery and visit counts are in, but lift isn't measurable yet, so this summary covers delivery only.
+
+**What we can say**
+   - **Delivery** is on pace across all 10 partners, with AdTheorent and Snap carrying 43% of impressions
+   - **Conversion rate** is 2.94% so far. Early reads like this often move as the sample grows
+   - **Frequency** of 4.35 is within the usual range for a QSR flight
+
+**What we can't say yet**
+   - Which partners, audiences or dayparts drive incremental visits. That needs lift, expected around ${LIFT_READ_DATE}`;
+
+const collectingAnswer = {
+  title: "Not enough data yet",
+  content: `There's no store-visit data for this campaign yet, so I can't answer that.
+
+**Why**
+   - Store-visit results need about 14 days of data after launch
+   - The first read is expected around ${FIRST_READ_DATE}
+
+**What you can ask now**
+   - Impressions and spend delivered so far, by partner`,
+};
+
+/** Fails on first render, succeeds after "Try again" — for previewing section errors. */
+function useRetry(startFailed: boolean) {
+  const [failed, setFailed] = useState(startFailed);
+  const [retrying, setRetrying] = useState(false);
+  const retry = () => {
+    setRetrying(true);
+    window.setTimeout(() => {
+      setRetrying(false);
+      setFailed(false);
+    }, 900);
+  };
+  return { failed, retrying, retry };
+}
+
+function SectionError({ title, detail, onRetry, retrying }: { title: string; detail: string; onRetry: () => void; retrying?: boolean }) {
+  return (
+    <div role="alert" className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50/60 px-4 py-3">
+      <CircleAlert className="size-4 shrink-0 text-red-500" aria-hidden />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-[#171417]">{title}</p>
+        <p className="text-xs text-muted-foreground">{detail}</p>
+      </div>
+      <Button type="button" variant="outline" size="sm" onClick={onRetry} disabled={retrying} className="gap-1.5 bg-white">
+        {retrying ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : <RefreshCw className="size-3.5" aria-hidden />}
+        {retrying ? "Loading…" : "Try again"}
+      </Button>
+    </div>
+  );
+}
+
+function ProgressBar({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="h-1.5 w-28 overflow-hidden rounded-full bg-[#dbe3ff]" role="progressbar" aria-valuenow={value} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
+        <div className="h-full rounded-full bg-[#212be9]" style={{ width: `${value}%` }} />
+      </div>
+      <span className="text-xs tabular-nums text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+function ReportStateBanner({ state }: { state: ReportState }) {
+  if (state !== "collecting" && state !== "low_sample") return null;
+  const collecting = state === "collecting";
+  return (
+    <div className="mt-4 flex items-start gap-3 rounded-lg border border-[#dbe3ff] bg-[#f5f7ff] px-4 py-3">
+      <Hourglass className="mt-0.5 size-4 shrink-0 text-[#212be9]" aria-hidden />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-[#171417]">{collecting ? "Collecting data" : "Lift isn't measurable yet"}</p>
+        <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
+          {collecting
+            ? `Impressions are arriving from partners. Store-visit results need about 14 days of data after launch, so the first read is expected around ${FIRST_READ_DATE}.`
+            : `Visits are being counted, but the exposed group is still too small to read lift with confidence. At the current pace, lift results are expected around ${LIFT_READ_DATE}.`}
+        </p>
+      </div>
+      <div className="shrink-0 self-center">
+        {collecting ? <ProgressBar value={43} label="Day 6 of 14" /> : <ProgressBar value={46} label="18,420 of ~40,000 visits" />}
+      </div>
+    </div>
+  );
+}
+
+function KpiRow({ state }: { state: ReportState }) {
+  const { failed, retrying, retry } = useRetry(state === "section_error");
+  if (failed) {
+    return (
+      <div className="mt-5">
+        <SectionError
+          title="Couldn't load campaign metrics"
+          detail="The summary and charts below are still up to date."
+          onRetry={retry}
+          retrying={retrying}
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="mt-5 flex gap-3">
+      {metrics.map((m, i) => {
+        let value: string | null = m.value;
+        let note: string | undefined;
+        if (state === "collecting") {
+          value = COLLECTING_METRICS[m.label] ?? null;
+          note = value ? "Delivered so far" : `Expected ${FIRST_READ_DATE.replace(", 2026", "")}`;
+        } else if (state === "low_sample" && ["Store Visits", "Conversion rate", "Cost per Store Visits"].includes(m.label)) {
+          note = "Early read · may change";
+        }
+        return <KpiMetricCard key={m.label} label={m.label} value={value} note={note} animationDelayMs={i * 60} />;
+      })}
+    </div>
+  );
+}
+
+function CollectingSummary() {
+  const steps: { label: string; detail: string; status: "done" | "active" | "next" }[] = [
+    { label: "Campaign set up", detail: "Apr 1, 2026", status: "done" },
+    { label: "Impressions arriving", detail: "10 of 10 partners reporting", status: "done" },
+    { label: "Matching exposures to store visits", detail: "Day 6 of 14", status: "active" },
+    { label: "First read", detail: `Around ${FIRST_READ_DATE}`, status: "next" },
+  ];
+  return (
+    <div className="rounded-lg border border-dashed border-border px-6 py-8">
+      <div className="flex flex-col items-center text-center">
+        <div className="flex size-12 items-center justify-center rounded-full bg-gray-100">
+          <ChartColumn className="size-5 text-muted-foreground" aria-hidden />
+        </div>
+        <h3 className="mt-4 text-sm font-semibold text-[#171417]">No results to summarize yet</h3>
+        <p className="mt-1 max-w-[360px] text-sm text-muted-foreground">
+          Once the first read is in, a summary of what&apos;s driving visits will appear here.
+        </p>
+      </div>
+      <ol className="mx-auto mt-6 max-w-[360px] space-y-3">
+        {steps.map((step) => (
+          <li key={step.label} className="flex items-start gap-3">
+            <span
+              className={cn(
+                "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border",
+                step.status === "done" && "border-[#212be9] bg-[#212be9] text-white",
+                step.status === "active" && "border-[#212be9]",
+                step.status === "next" && "border-border"
+              )}
+              aria-hidden
+            >
+              {step.status === "done" && <Check className="size-2.5" strokeWidth={3} />}
+              {step.status === "active" && <span className="size-1.5 animate-pulse rounded-full bg-[#212be9]" />}
+            </span>
+            <div className="min-w-0">
+              <p className={cn("text-sm", step.status === "next" ? "text-muted-foreground" : "text-[#171417]")}>{step.label}</p>
+              <p className="text-xs text-muted-foreground">{step.detail}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+/** A chart or table inside a chat answer that fails to load the first time. */
+function FailingSection({ label, children }: { label: string; children: React.ReactNode }) {
+  const { failed, retrying, retry } = useRetry(true);
+  if (failed) {
+    return <SectionError title={`Couldn't load ${label}`} detail="The rest of the report is unaffected." onRetry={retry} retrying={retrying} />;
+  }
+  return <>{children}</>;
+}
+
+function CampaignNotFound() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center bg-muted/40 px-4 py-12">
+      <Card className="w-full max-w-lg border-border shadow-md">
+        <CardHeader>
+          <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-gray-100">
+            <SearchX className="size-5 text-muted-foreground" aria-hidden />
+          </div>
+          <CardTitle className="text-lg">Campaign not found</CardTitle>
+          <CardDescription>
+            There&apos;s no campaign at this link. It may have been deleted, or you may not have access to it. Check the link,
+            or ask the person who shared it to add you to the campaign&apos;s permission group.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-end">
+          <Button
+            asChild
+            className="bg-[#212be9] text-white hover:bg-[#1a22c4] hover:shadow-lg hover:shadow-[#212be9]/20"
+          >
+            <Link href="/attribution">Back to campaigns</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function CampaignSystemError() {
   const router = useRouter();
   const pathname = usePathname();
@@ -1188,7 +1429,14 @@ function CampaignSystemError() {
 
 function CampaignDetailPageContent() {
   const searchParams = useSearchParams();
-  const systemUnavailable = searchParams.get("system_error") === "1";
+  const stateParam = searchParams.get("state") as ReportState | null;
+  const reportState: ReportState = stateParam && REPORT_STATES.includes(stateParam) ? stateParam : "ready";
+  const notFound = reportState === "not_found";
+  const collecting = reportState === "collecting";
+  const pageUnavailable = searchParams.get("system_error") === "1" || notFound;
+  // Reports can't be generated when the page failed, or before there's any data to report.
+  const systemUnavailable = pageUnavailable || collecting;
+  const failedQueriesRef = useRef<Set<string>>(new Set());
   const detailPath = usePathname();
   const campaignSlug = detailPath.split("/").filter(Boolean).pop() ?? "qsr-q2-2026";
   const askParam = searchParams.get("ask");
@@ -1273,7 +1521,7 @@ function CampaignDetailPageContent() {
   }, [systemUnavailable]);
 
   const { displayed: initialDisplayed, isComplete: initialComplete } = useTypewriter(
-    initialPhase !== "thinking" ? initialSummary : "",
+    initialPhase !== "thinking" ? (reportState === "low_sample" ? lowSampleSummary : initialSummary) : "",
     6
   );
 
@@ -1440,13 +1688,21 @@ ${pSummary}
    - Type "Show me the partner summary report" for a full comparison table`;
     }
 
-    const assistantMsg: ChatMessage = {
+    let assistantMsg: ChatMessage = {
       role: "assistant",
       content: matchedResp?.content === "__PARTNER_SUMMARY_TABLE__" ? "__PARTNER_SUMMARY_TABLE__" : chartType ? chartSummary : partnerResponse || (matchedResp?.content || customResponse),
       title: matchedResp?.content === "__PARTNER_SUMMARY_TABLE__" ? "Partner Summary Report" : chartType ? undefined : partnerResponse ? `${matchedPartner} Performance` : (matchedResp?.title || "Campaign Analysis"),
       ...(matchedResp?.content === "__PARTNER_SUMMARY_TABLE__" ? { tableType: "partnerSummary" as const } : {}),
       chartType,
     };
+    if (reportState === "collecting") {
+      assistantMsg = { role: "assistant", ...collectingAnswer };
+    }
+    if (reportState === "chat_error" && !failedQueriesRef.current.has(query)) {
+      // Fail the first try of each question so the retry path can be previewed.
+      failedQueriesRef.current.add(query);
+      assistantMsg = { role: "assistant", content: "", error: true, query };
+    }
     setChatMessages((prev) => [...prev, userMsg]);
     setIsResponding(true);
     window.setTimeout(() => {
@@ -1454,23 +1710,38 @@ ${pSummary}
       setIsResponding(false);
     }, 1500);
     setInputValue("");
-  }, [isResponding]);
+  }, [isResponding, reportState]);
+
+  const retryAnswer = useCallback((index: number) => {
+    const failed = chatMessages[index];
+    if (!failed?.query || isResponding) return;
+    // Drop the failed question and its error, then ask again.
+    setChatMessages((prev) => prev.filter((_, i) => i !== index && i !== index - 1));
+    submitPrompt(failed.query);
+  }, [chatMessages, isResponding, submitPrompt]);
 
   // Arriving from a signal: ask the question for the user, or open the shared signal.
   useEffect(() => {
     if (askedRef.current) return;
+    // Drop the one-shot ask/signal params but keep the preview-state ones.
+    const kept = new URLSearchParams();
+    for (const key of ["state", "system_error"]) {
+      const v = searchParams.get(key);
+      if (v) kept.set(key, v);
+    }
+    const keptUrl = kept.size ? `${detailPath}?${kept}` : detailPath;
     if (askParam) {
       askedRef.current = true;
       const q = askParam;
       window.setTimeout(() => submitPrompt(q), 350);
-      window.history.replaceState(null, "", detailPath);
+      window.history.replaceState(null, "", keptUrl);
     }
     if (signalParam) {
       askedRef.current = true;
       signalStore.open(signalParam);
-      window.history.replaceState(null, "", detailPath);
+      window.history.replaceState(null, "", keptUrl);
     }
-  }, [askParam, signalParam, submitPrompt, detailPath]);
+  }, [askParam, signalParam, submitPrompt, detailPath, searchParams]);
 
   const handlePromptClick = useCallback((prompt: string) => {
     submitPrompt(prompt);
@@ -1501,12 +1772,18 @@ ${pSummary}
         <div className="flex items-center gap-2 text-sm">
           <Link href="/attribution" className="text-muted-foreground hover:text-foreground transition-colors">Home</Link>
           <ChevronRight className="size-3.5 text-muted-foreground" />
-          <span className="flex items-center gap-1.5 font-medium text-[#171417]">
-            <span className="flex size-5 items-center justify-center rounded bg-[#6366f1] text-[7px] font-bold text-white">QS</span>
-            QSR Q2 2026 Campaign
-          </span>
-          <span className="ml-2 text-xs text-muted-foreground">Visits + Sales Impact</span>
-          <span className="ml-2 animate-pulse rounded-full bg-[#dbeafe] px-2.5 py-0.5 text-xs font-medium text-[#2563eb]">In progress</span>
+          {notFound ? (
+            <span className="font-medium text-[#171417]">Campaign not found</span>
+          ) : (
+            <>
+              <span className="flex items-center gap-1.5 font-medium text-[#171417]">
+                <span className="flex size-5 items-center justify-center rounded bg-[#6366f1] text-[7px] font-bold text-white">QS</span>
+                QSR Q2 2026 Campaign
+              </span>
+              <span className="ml-2 text-xs text-muted-foreground">Visits + Sales Impact</span>
+              <span className="ml-2 animate-pulse rounded-full bg-[#dbeafe] px-2.5 py-0.5 text-xs font-medium text-[#2563eb]">In progress</span>
+            </>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button className="btn-press flex size-8 items-center justify-center rounded-md text-muted-foreground transition-all duration-200 hover:scale-110 hover:bg-gray-50"><Share2 className="size-4" /></button>
@@ -1525,7 +1802,12 @@ ${pSummary}
                   <h3 className="text-sm font-semibold text-[#171417]">Download Reports</h3>
                 </div>
                 <div className="max-h-[240px] overflow-y-auto">
-                  {reportFiles.length === 0 && (
+                  {reportFiles.length === 0 && collecting && (
+                    <div className="px-4 py-5 text-center text-xs text-muted-foreground">
+                      No reports yet. You can generate one after the first read, around {FIRST_READ_DATE}.
+                    </div>
+                  )}
+                  {reportFiles.length === 0 && !collecting && (
                     <div className="px-4 py-5 text-center text-xs text-muted-foreground">
                       No reports yet. Click{" "}
                       <button
@@ -1604,6 +1886,7 @@ ${pSummary}
             <button
               type="button"
               disabled={systemUnavailable}
+              title={collecting ? `Reports are available after the first read, around ${FIRST_READ_DATE}` : undefined}
               onClick={() => {
                 if (systemUnavailable) return;
                 setReportMenuOpen(!reportMenuOpen);
@@ -1654,8 +1937,8 @@ ${pSummary}
       )}
 
       {/* Main Area */}
-      {systemUnavailable ? (
-        <CampaignSystemError />
+      {pageUnavailable ? (
+        notFound ? <CampaignNotFound /> : <CampaignSystemError />
       ) : (
       <div className="flex min-h-0 flex-1">
             {/* Campaign View: sidebar */}
@@ -1720,12 +2003,13 @@ ${pSummary}
 
             {kpiExpanded && (
               <>
-                <div className="mt-5 flex gap-3">
-                  {metrics.map((m, i) => (
-                    <KpiMetricCard key={m.label} label={m.label} value={m.value} animationDelayMs={i * 60} />
-                  ))}
-                </div>
-                <CampaignSignalStrip campaignSlug={campaignSlug} />
+                <ReportStateBanner state={reportState} />
+                <KpiRow state={reportState} />
+                <CampaignSignalStrip
+                  campaignSlug={campaignSlug}
+                  // Before lift is readable, only delivery and measurement-health signals make sense.
+                  kinds={reportState === "collecting" || reportState === "low_sample" ? ["delivery", "health", "reminder"] : undefined}
+                />
               </>
             )}
           </div>
@@ -1744,6 +2028,7 @@ ${pSummary}
                     {chatMessages.length === 0 && (
                       <div>
                         <h2 className="mb-3 text-base font-semibold text-[#171417]">Campaign Summary</h2>
+                        {collecting ? <CollectingSummary /> : <>
                         <div>
                           {initialPhase === "thinking" && (
                             <div className="flex items-center gap-3">
@@ -1767,6 +2052,7 @@ ${pSummary}
                             Ask a question about your campaign report, or select a suggested prompt on the left to get started.
                           </p>
                         )}
+                        </>}
                       </div>
                     )}
 
@@ -1789,12 +2075,38 @@ ${pSummary}
                           </div>
                         ) : (
                           <div className="animate-slide-in-left">
-                            {msg.tableType === "partnerSummary" ? (
-                              <PartnerSummaryReportTable onPartnerClick={(name) => submitPrompt(`Show me ${name} performance.`)} />
+                            {msg.error ? (
+                              <div role="alert" className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50/60 px-4 py-3">
+                                <CircleAlert className="size-4 shrink-0 text-red-500" aria-hidden />
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium text-[#171417]">Couldn&apos;t get an answer</p>
+                                  <p className="text-xs text-muted-foreground">The analysis service didn&apos;t respond. Your question is kept above.</p>
+                                </div>
+                                <Button type="button" variant="outline" size="sm" onClick={() => retryAnswer(i)} disabled={isResponding} className="gap-1.5 bg-white">
+                                  <RefreshCw className="size-3.5" aria-hidden />
+                                  Try again
+                                </Button>
+                              </div>
+                            ) : msg.tableType === "partnerSummary" ? (
+                              reportState === "section_error" ? (
+                                <FailingSection label="the partner summary">
+                                  <PartnerSummaryReportTable onPartnerClick={(name) => submitPrompt(`Show me ${name} performance.`)} />
+                                </FailingSection>
+                              ) : (
+                                <PartnerSummaryReportTable lowSample={reportState === "low_sample"} onPartnerClick={(name) => submitPrompt(`Show me ${name} performance.`)} />
+                              )
                             ) : (
                               <>
                                 <TypewriterMessage content={msg.content} title={msg.title} />
-                                {msg.chartType && <div className="mt-2"><InlineChart type={msg.chartType} /></div>}
+                                {msg.chartType && (
+                                  <div className="mt-2">
+                                    {reportState === "section_error" ? (
+                                      <FailingSection label="this chart"><InlineChart type={msg.chartType} /></FailingSection>
+                                    ) : (
+                                      <InlineChart type={msg.chartType} />
+                                    )}
+                                  </div>
+                                )}
                               </>
                             )}
                           </div>
