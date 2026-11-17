@@ -2,12 +2,14 @@
 
 import { signalStore, useSignalState, visibleSignals } from "./store";
 import { SignalBadge } from "./primitives";
-import { SEVERITY_META } from "./data";
+import { SEVERITY_META, type SignalKind } from "./data";
 
 /** This campaign's open signals, shown where people already look: under the KPIs. */
-export function CampaignSignalStrip({ campaignSlug }: { campaignSlug: string }) {
+export function CampaignSignalStrip({ campaignSlug, kinds }: { campaignSlug: string; kinds?: SignalKind[] }) {
   const s = useSignalState();
-  const signals = visibleSignals(s, campaignSlug).slice(0, 3);
+  const signals = visibleSignals(s, campaignSlug)
+    .filter((x) => !kinds || kinds.includes(x.kind))
+    .slice(0, 3);
   if (!signals.length) return null;
   return (
     <div className="mt-4 flex flex-wrap items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-500">
