@@ -26,7 +26,6 @@ import {
   RefreshCw,
   Hourglass,
   SearchX,
-  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -1172,18 +1171,12 @@ function CampaignPerformanceChart() {
 }
 
 /* ── Report states ───────────────────────────────────────────────
- * Preview with ?state=collecting | low_sample | section_error | chat_error | not_found
+ * Preview with ?state=no_data | low_sample | section_error | chat_error | not_found
  * (and ?system_error=1 for the whole-page error). */
-type ReportState = "ready" | "collecting" | "low_sample" | "section_error" | "chat_error" | "not_found";
-const REPORT_STATES: ReportState[] = ["ready", "collecting", "low_sample", "section_error", "chat_error", "not_found"];
+type ReportState = "ready" | "no_data" | "low_sample" | "section_error" | "chat_error" | "not_found";
+const REPORT_STATES: ReportState[] = ["ready", "no_data", "low_sample", "section_error", "chat_error", "not_found"];
 
-const FIRST_READ_DATE = "Apr 15, 2026";
 const LIFT_READ_DATE = "May 2, 2026";
-
-const COLLECTING_METRICS: Record<string, string | null> = {
-  Impressions: "6,184,920",
-  Spend: "$24,310.00",
-};
 
 const lowSampleSummary = `**Early read**: Delivery and visit counts are in, but lift isn't measurable yet, so this summary covers delivery only.
 
@@ -1195,16 +1188,11 @@ const lowSampleSummary = `**Early read**: Delivery and visit counts are in, but 
 **What we can't say yet**
    - Which partners, audiences or dayparts drive incremental visits. That needs lift, expected around ${LIFT_READ_DATE}`;
 
-const collectingAnswer = {
-  title: "Not enough data yet",
-  content: `There's no store-visit data for this campaign yet, so I can't answer that.
+const noDataAnswer = {
+  title: "No data yet",
+  content: `There's no data for this campaign yet, so I can't answer that.
 
-**Why**
-   - Store-visit results need about 14 days of data after launch
-   - The first read is expected around ${FIRST_READ_DATE}
-
-**What you can ask now**
-   - Impressions and spend delivered so far, by partner`,
+Answers use the latest data we have, so ask again once impressions start coming in from partners.`,
 };
 
 /** Fails on first render, succeeds after "Try again" — for previewing section errors. */
@@ -1249,21 +1237,18 @@ function ProgressBar({ value, label }: { value: number; label: string }) {
 }
 
 function ReportStateBanner({ state }: { state: ReportState }) {
-  if (state !== "collecting" && state !== "low_sample") return null;
-  const collecting = state === "collecting";
+  if (state !== "low_sample") return null;
   return (
     <div className="mt-4 flex items-start gap-3 rounded-lg border border-[#dbe3ff] bg-[#f5f7ff] px-4 py-3">
       <Hourglass className="mt-0.5 size-4 shrink-0 text-[#212be9]" aria-hidden />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-[#171417]">{collecting ? "Collecting data" : "Lift isn't measurable yet"}</p>
+        <p className="text-sm font-medium text-[#171417]">Lift isn't measurable yet</p>
         <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
-          {collecting
-            ? `Impressions are arriving from partners. Store-visit results need about 14 days of data after launch, so the first read is expected around ${FIRST_READ_DATE}.`
-            : `Visits are being counted, but the exposed group is still too small to read lift with confidence. At the current pace, lift results are expected around ${LIFT_READ_DATE}.`}
+          {`Visits are being counted, but the exposed group is still too small to read lift with confidence. At the current pace, lift results are expected around ${LIFT_READ_DATE}.`}
         </p>
       </div>
       <div className="shrink-0 self-center">
-        {collecting ? <ProgressBar value={43} label="Day 6 of 14" /> : <ProgressBar value={46} label="18,420 of ~40,000 visits" />}
+        <ProgressBar value={46} label="18,420 of ~40,000 visits" />
       </div>
     </div>
   );
@@ -1288,9 +1273,8 @@ function KpiRow({ state }: { state: ReportState }) {
       {metrics.map((m, i) => {
         let value: string | null = m.value;
         let note: string | undefined;
-        if (state === "collecting") {
-          value = COLLECTING_METRICS[m.label] ?? null;
-          note = value ? "Delivered so far" : `Expected ${FIRST_READ_DATE.replace(", 2026", "")}`;
+        if (state === "no_data") {
+          value = null;
         } else if (state === "low_sample" && ["Store Visits", "Conversion rate", "Cost per Store Visits"].includes(m.label)) {
           note = "Early read · may change";
         }
@@ -1300,46 +1284,16 @@ function KpiRow({ state }: { state: ReportState }) {
   );
 }
 
-function CollectingSummary() {
-  const steps: { label: string; detail: string; status: "done" | "active" | "next" }[] = [
-    { label: "Campaign set up", detail: "Apr 1, 2026", status: "done" },
-    { label: "Impressions arriving", detail: "10 of 10 partners reporting", status: "done" },
-    { label: "Matching exposures to store visits", detail: "Day 6 of 14", status: "active" },
-    { label: "First read", detail: `Around ${FIRST_READ_DATE}`, status: "next" },
-  ];
+function NoDataSummary() {
   return (
-    <div className="rounded-lg border border-dashed border-border px-6 py-8">
-      <div className="flex flex-col items-center text-center">
-        <div className="flex size-12 items-center justify-center rounded-full bg-gray-100">
-          <ChartColumn className="size-5 text-muted-foreground" aria-hidden />
-        </div>
-        <h3 className="mt-4 text-sm font-semibold text-[#171417]">No results to summarize yet</h3>
-        <p className="mt-1 max-w-[360px] text-sm text-muted-foreground">
-          Once the first read is in, a summary of what&apos;s driving visits will appear here.
-        </p>
+    <div className="flex flex-col items-center rounded-lg border border-dashed border-border px-6 py-10 text-center">
+      <div className="flex size-12 items-center justify-center rounded-full bg-gray-100">
+        <ChartColumn className="size-5 text-muted-foreground" aria-hidden />
       </div>
-      <ol className="mx-auto mt-6 max-w-[360px] space-y-3">
-        {steps.map((step) => (
-          <li key={step.label} className="flex items-start gap-3">
-            <span
-              className={cn(
-                "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border",
-                step.status === "done" && "border-[#212be9] bg-[#212be9] text-white",
-                step.status === "active" && "border-[#212be9]",
-                step.status === "next" && "border-border"
-              )}
-              aria-hidden
-            >
-              {step.status === "done" && <Check className="size-2.5" strokeWidth={3} />}
-              {step.status === "active" && <span className="size-1.5 animate-pulse rounded-full bg-[#212be9]" />}
-            </span>
-            <div className="min-w-0">
-              <p className={cn("text-sm", step.status === "next" ? "text-muted-foreground" : "text-[#171417]")}>{step.label}</p>
-              <p className="text-xs text-muted-foreground">{step.detail}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
+      <h3 className="mt-4 text-sm font-semibold text-[#171417]">No data yet</h3>
+      <p className="mt-1 max-w-[380px] text-sm text-muted-foreground">
+        This summary updates as data arrives. It will fill in as soon as the first impressions come in from partners.
+      </p>
     </div>
   );
 }
@@ -1430,12 +1384,13 @@ function CampaignSystemError() {
 function CampaignDetailPageContent() {
   const searchParams = useSearchParams();
   const stateParam = searchParams.get("state") as ReportState | null;
-  const reportState: ReportState = stateParam && REPORT_STATES.includes(stateParam) ? stateParam : "ready";
+  const reportState: ReportState =
+    stateParam === ("collecting" as string) ? "no_data" : stateParam && REPORT_STATES.includes(stateParam) ? stateParam : "ready";
   const notFound = reportState === "not_found";
-  const collecting = reportState === "collecting";
+  const noData = reportState === "no_data";
   const pageUnavailable = searchParams.get("system_error") === "1" || notFound;
   // Reports can't be generated when the page failed, or before there's any data to report.
-  const systemUnavailable = pageUnavailable || collecting;
+  const systemUnavailable = pageUnavailable || noData;
   const failedQueriesRef = useRef<Set<string>>(new Set());
   const detailPath = usePathname();
   const campaignSlug = detailPath.split("/").filter(Boolean).pop() ?? "qsr-q2-2026";
@@ -1695,8 +1650,8 @@ ${pSummary}
       ...(matchedResp?.content === "__PARTNER_SUMMARY_TABLE__" ? { tableType: "partnerSummary" as const } : {}),
       chartType,
     };
-    if (reportState === "collecting") {
-      assistantMsg = { role: "assistant", ...collectingAnswer };
+    if (reportState === "no_data") {
+      assistantMsg = { role: "assistant", ...noDataAnswer };
     }
     if (reportState === "chat_error" && !failedQueriesRef.current.has(query)) {
       // Fail the first try of each question so the retry path can be previewed.
@@ -1802,12 +1757,12 @@ ${pSummary}
                   <h3 className="text-sm font-semibold text-[#171417]">Download Reports</h3>
                 </div>
                 <div className="max-h-[240px] overflow-y-auto">
-                  {reportFiles.length === 0 && collecting && (
+                  {reportFiles.length === 0 && noData && (
                     <div className="px-4 py-5 text-center text-xs text-muted-foreground">
-                      No reports yet. You can generate one after the first read, around {FIRST_READ_DATE}.
+                      No reports yet. You can generate one once data starts coming in.
                     </div>
                   )}
-                  {reportFiles.length === 0 && !collecting && (
+                  {reportFiles.length === 0 && !noData && (
                     <div className="px-4 py-5 text-center text-xs text-muted-foreground">
                       No reports yet. Click{" "}
                       <button
@@ -1886,7 +1841,7 @@ ${pSummary}
             <button
               type="button"
               disabled={systemUnavailable}
-              title={collecting ? `Reports are available after the first read, around ${FIRST_READ_DATE}` : undefined}
+              title={noData ? "Reports are available once data starts coming in" : undefined}
               onClick={() => {
                 if (systemUnavailable) return;
                 setReportMenuOpen(!reportMenuOpen);
@@ -2008,7 +1963,7 @@ ${pSummary}
                 <CampaignSignalStrip
                   campaignSlug={campaignSlug}
                   // Before lift is readable, only delivery and measurement-health signals make sense.
-                  kinds={reportState === "collecting" || reportState === "low_sample" ? ["delivery", "health", "reminder"] : undefined}
+                  kinds={reportState === "no_data" ? [] : reportState === "low_sample" ? ["delivery", "health", "reminder"] : undefined}
                 />
               </>
             )}
@@ -2028,7 +1983,7 @@ ${pSummary}
                     {chatMessages.length === 0 && (
                       <div>
                         <h2 className="mb-3 text-base font-semibold text-[#171417]">Campaign Summary</h2>
-                        {collecting ? <CollectingSummary /> : <>
+                        {noData ? <NoDataSummary /> : <>
                         <div>
                           {initialPhase === "thinking" && (
                             <div className="flex items-center gap-3">
