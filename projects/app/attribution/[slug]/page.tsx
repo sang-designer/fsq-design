@@ -1189,16 +1189,14 @@ const PROCESSING_DAYS = 7;
 const DEMO_TODAY = new Date(2026, 5, 25); // matches the "Campaign ends in 5 days" reminder
 const addDays = (d: Date, n: number) => new Date(d.getTime() + n * DAY_MS);
 const fmtDate = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-const fmtShort = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 const WINDOW_CLOSES = addDays(CAMPAIGN_END, CONVERSION_WINDOW_DAYS);
 const REPORT_READY = addDays(WINDOW_CLOSES, PROCESSING_DAYS);
-const REPORT_READY_DATE = fmtDate(REPORT_READY);
 const DAYS_TO_REPORT = Math.round((REPORT_READY.getTime() - DEMO_TODAY.getTime()) / DAY_MS);
 const DAYS_TO_END = Math.round((CAMPAIGN_END.getTime() - DEMO_TODAY.getTime()) / DAY_MS);
 const REPORT_PROGRESS = Math.round(
   ((DEMO_TODAY.getTime() - CAMPAIGN_START.getTime()) / (REPORT_READY.getTime() - CAMPAIGN_START.getTime())) * 100
 );
-const READY_RULE = `${PROCESSING_DAYS} days after the ${CONVERSION_WINDOW_DAYS}-day conversion window closes`;
+const READY_RULE = `${PROCESSING_DAYS} days after the campaign's ${CONVERSION_WINDOW_DAYS}-day conversion window closes`;
 
 const lowSampleSummary = `**Early read**: Delivery and visit counts are in, but lift isn't measurable yet, so this summary covers delivery only.
 
@@ -1214,10 +1212,10 @@ const collectingAnswer = {
   title: "Report not ready yet",
   content: `This campaign's report isn't ready yet, so I can't answer that.
 
-**When it will be ready**
+**What's left**
    - The campaign ends ${fmtDate(CAMPAIGN_END)}
    - Visits keep counting through the ${CONVERSION_WINDOW_DAYS}-day conversion window, to ${fmtDate(WINDOW_CLOSES)}
-   - Results are final ${PROCESSING_DAYS} days later, on **${REPORT_READY_DATE}** (${DAYS_TO_REPORT} days from now)`,
+   - Results are final ${PROCESSING_DAYS} days later: **${DAYS_TO_REPORT} days from now**`,
 };
 
 /** Fails on first render, succeeds after "Try again" — for previewing section errors. */
@@ -1268,15 +1266,15 @@ function ReportStateBanner({ state }: { state: ReportState }) {
     <div className="mt-4 flex items-start gap-3 rounded-lg border border-[#dbe3ff] bg-[#f5f7ff] px-4 py-3">
       <Hourglass className="mt-0.5 size-4 shrink-0 text-[#212be9]" aria-hidden />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-[#171417]">{collecting ? `Report ready ${REPORT_READY_DATE}` : "Lift isn't measurable yet"}</p>
+        <p className="text-sm font-medium text-[#171417]">{collecting ? `${DAYS_TO_REPORT} days until your report is complete` : "Lift isn't measurable yet"}</p>
         <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
           {collecting
-            ? `Results are final ${READY_RULE}. The campaign ends ${fmtShort(CAMPAIGN_END)} and the window closes ${fmtShort(WINDOW_CLOSES)}.`
+            ? `Results are final ${READY_RULE}.`
             : `Visits are being counted, but the exposed group is still too small to read lift with confidence. At the current pace, lift results are expected around ${LIFT_READ_DATE}.`}
         </p>
       </div>
       <div className="shrink-0 self-center">
-        {collecting ? <ProgressBar value={REPORT_PROGRESS} label={`${DAYS_TO_REPORT} days to go`} /> : <ProgressBar value={46} label="18,420 of ~40,000 visits" />}
+        {collecting ? <ProgressBar value={REPORT_PROGRESS} label={`${DAYS_TO_REPORT} days left`} /> : <ProgressBar value={46} label="18,420 of ~40,000 visits" />}
       </div>
     </div>
   );
@@ -1303,7 +1301,7 @@ function KpiRow({ state }: { state: ReportState }) {
         let note: string | undefined;
         if (state === "collecting") {
           value = null;
-          note = `Ready ${fmtShort(REPORT_READY)}`;
+          note = `In ${DAYS_TO_REPORT} days`;
         } else if (state === "low_sample" && ["Store Visits", "Conversion rate", "Cost per Store Visits"].includes(m.label)) {
           note = "Early read · may change";
         }
@@ -1319,7 +1317,7 @@ function CollectingSummary() {
     { label: "Campaign running", detail: `Ends ${fmtDate(CAMPAIGN_END)} · ${DAYS_TO_END} days left`, status: "active" },
     { label: `${CONVERSION_WINDOW_DAYS}-day conversion window`, detail: `Visits counted through ${fmtDate(WINDOW_CLOSES)}`, status: "next" },
     { label: `${PROCESSING_DAYS} days of processing`, detail: "Results are finalized", status: "next" },
-    { label: "Report ready", detail: `${REPORT_READY_DATE} · ${DAYS_TO_REPORT} days to go`, status: "next" },
+    { label: "Report complete", detail: `In ${DAYS_TO_REPORT} days`, status: "next" },
   ];
   return (
     <div className="rounded-lg border border-dashed border-border px-6 py-8">
@@ -1327,9 +1325,9 @@ function CollectingSummary() {
         <div className="flex size-12 items-center justify-center rounded-full bg-gray-100">
           <ChartColumn className="size-5 text-muted-foreground" aria-hidden />
         </div>
-        <h3 className="mt-4 text-sm font-semibold text-[#171417]">Your report will be ready in {DAYS_TO_REPORT} days</h3>
+        <h3 className="mt-4 text-sm font-semibold text-[#171417]">{DAYS_TO_REPORT} days until your report is complete</h3>
         <p className="mt-1 max-w-[360px] text-sm text-muted-foreground">
-          Results are final {READY_RULE}. A summary of what&apos;s driving visits will appear here on {REPORT_READY_DATE}.
+          Results are final {READY_RULE}. A summary of what&apos;s driving visits will appear here then.
         </p>
       </div>
       <ol className="mx-auto mt-6 max-w-[360px] space-y-3">
@@ -1818,7 +1816,7 @@ ${pSummary}
                 <div className="max-h-[240px] overflow-y-auto">
                   {reportFiles.length === 0 && collecting && (
                     <div className="px-4 py-5 text-center text-xs text-muted-foreground">
-                      No reports yet. You can generate one when the report is ready on {REPORT_READY_DATE}.
+                      No reports yet. You can generate one when the report is complete, in {DAYS_TO_REPORT} days.
                     </div>
                   )}
                   {reportFiles.length === 0 && !collecting && (
@@ -1900,7 +1898,7 @@ ${pSummary}
             <button
               type="button"
               disabled={systemUnavailable}
-              title={collecting ? `Reports are available from ${REPORT_READY_DATE}` : undefined}
+              title={collecting ? `Reports are available in ${DAYS_TO_REPORT} days` : undefined}
               onClick={() => {
                 if (systemUnavailable) return;
                 setReportMenuOpen(!reportMenuOpen);
