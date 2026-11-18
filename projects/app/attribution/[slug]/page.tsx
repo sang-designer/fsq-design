@@ -1193,9 +1193,6 @@ const WINDOW_CLOSES = addDays(CAMPAIGN_END, CONVERSION_WINDOW_DAYS);
 const REPORT_READY = addDays(WINDOW_CLOSES, PROCESSING_DAYS);
 const DAYS_TO_REPORT = Math.round((REPORT_READY.getTime() - DEMO_TODAY.getTime()) / DAY_MS);
 const DAYS_TO_END = Math.round((CAMPAIGN_END.getTime() - DEMO_TODAY.getTime()) / DAY_MS);
-const REPORT_PROGRESS = Math.round(
-  ((DEMO_TODAY.getTime() - CAMPAIGN_START.getTime()) / (REPORT_READY.getTime() - CAMPAIGN_START.getTime())) * 100
-);
 const READY_RULE = `${PROCESSING_DAYS} days after the campaign's ${CONVERSION_WINDOW_DAYS}-day conversion window closes`;
 
 const lowSampleSummary = `**Early read**: Delivery and visit counts are in, but lift isn't measurable yet, so this summary covers delivery only.
@@ -1260,21 +1257,18 @@ function ProgressBar({ value, label }: { value: number; label: string }) {
 }
 
 function ReportStateBanner({ state }: { state: ReportState }) {
-  if (state !== "collecting" && state !== "low_sample") return null;
-  const collecting = state === "collecting";
+  if (state !== "low_sample") return null;
   return (
     <div className="mt-4 flex items-start gap-3 rounded-lg border border-[#dbe3ff] bg-[#f5f7ff] px-4 py-3">
       <Hourglass className="mt-0.5 size-4 shrink-0 text-[#212be9]" aria-hidden />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-[#171417]">{collecting ? `${DAYS_TO_REPORT} days until your report is complete` : "Lift isn't measurable yet"}</p>
+        <p className="text-sm font-medium text-[#171417]">Lift isn't measurable yet</p>
         <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
-          {collecting
-            ? `Results are final ${READY_RULE}.`
-            : `Visits are being counted, but the exposed group is still too small to read lift with confidence. At the current pace, lift results are expected around ${LIFT_READ_DATE}.`}
+          {`Visits are being counted, but the exposed group is still too small to read lift with confidence. At the current pace, lift results are expected around ${LIFT_READ_DATE}.`}
         </p>
       </div>
       <div className="shrink-0 self-center">
-        {collecting ? <ProgressBar value={REPORT_PROGRESS} label={`${DAYS_TO_REPORT} days left`} /> : <ProgressBar value={46} label="18,420 of ~40,000 visits" />}
+        <ProgressBar value={46} label="18,420 of ~40,000 visits" />
       </div>
     </div>
   );
